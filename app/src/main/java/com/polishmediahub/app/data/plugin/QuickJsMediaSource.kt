@@ -3,12 +3,13 @@ package com.polishmediahub.app.data.plugin
 import com.polishmediahub.app.data.source.MediaSource
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
+import com.whl.quickjs.wrapper.JSArray
+import com.whl.quickjs.wrapper.JSObject
+import okhttp3.OkHttpClient
 import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
 class QuickJsMediaSource @Inject constructor(
-    private val quickJsEngine: QuickJsEngine
+    private val client: OkHttpClient
 ) : MediaSource {
 
     override val id: String = "quickjs"
@@ -16,12 +17,20 @@ class QuickJsMediaSource @Inject constructor(
     override val isConfigurable: Boolean = true
 
     private var script: String = ""
+    private val engine: QuickJsEngine by lazy { QuickJsEngine(client) }
 
     fun configure(script: String) {
-        this.script = script
-        quickJsEngine.close()
-        quickJsEngine.init()
-        quickJsEngine.evaluate(script)
+        if (this.script != script) {
+            this.script = script
+            engine.close()
+            engine.init()
+            engine.evaluate(script)
+        }
+    }
+
+    fun dispose() {
+        script = ""
+        engine.close()
     }
 
     override suspend fun isAvailable(): Boolean = script.isNotBlank()
@@ -30,7 +39,16 @@ class QuickJsMediaSource @Inject constructor(
         callList("featured") ?: emptyList()
 
     override suspend fun categories(): List<Category> =
-        emptyList()
+        callList("categories")?.let { items ->
+            items.groupBy { it.type }
+                .map { (type, group) ->
+                    Category(
+                        id = "quickjs:${type.name.lowercase()}",
+                        name = type.name,
+                        items = group
+                    )
+                }
+        } ?: emptyList()
 
     override suspend fun search(query: String): List<MediaItem> =
         callList("search", query) ?: emptyList()
@@ -39,29 +57,47 @@ class QuickJsMediaSource @Inject constructor(
         callMap("byId", id)?.let { mapToMediaItem(it) }
 
     override suspend fun resolve(mediaItem: MediaItem): String? {
-        val url = call("resolve", mediaItem.id) as? String
-        return url?.ifBlank { null }
+        val result = call("resolve", mediaItem.id)
+        return when (result) {
+            is String -> result.ifBlank { null }
+            is Map<*, *> -> result["url"] as? String ?: result["videoUrl"] as? String
+            is JSObject -> result.getStringProperty("url") ?: result.getStringProperty("videoUrl")
+            else -> null
+        }?.ifBlank { null }
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun callList(functionName: String, vararg args: Any?): List<MediaItem>? {
         val result = call(functionName, *args) ?: return null
-        return when (result) {
-            is List<*> -> result.filterIsInstance<Map<*, *>>().mapNotNull { mapToMediaItem(it) }
-            is Array<*> -> result.filterIsInstance<Map<*, *>>().mapNotNull { mapToMediaItem(it) }
-            else -> null
+        val rawItems: List<Any?> = when (result) {
+            is JSArray -> result.toArray()
+            is Array<*> -> result.toList()
+            is List<*> -> result
+            is JSObject -> listOf(result)
+            else -> return null
+        }
+        return rawItems.mapNotNull { item ->
+            when (item) {
+                is Map<*, *> -> mapToMediaItem(item)
+                is JSObject -> mapToMediaItem(item.toMap())
+                else -> null
+            }
         }
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun callMap(functionName: String, vararg args: Any?): Map<String, Any?>? {
         val result = call(functionName, *args) ?: return null
-        return result as? Map<String, Any?>
+        return when (result) {
+            is Map<*, *> -> result as? Map<String, Any?>
+            is JSObject -> result.toMap() as? Map<String, Any?>
+            else -> null
+        }
     }
 
     private fun call(functionName: String, vararg args: Any?): Any? {
         return try {
-            quickJsEngine.evaluate("$functionName(${args.joinToString(",") { toJsLiteral(it) }})")
+            engine.evaluate("$functionName(${args.joinToString(",") { toJsLiteral(it) }})")
         } catch (_: Exception) {
             null
         }
@@ -83,6 +119,20 @@ class QuickJsMediaSource @Inject constructor(
     @Suppress("UNCHECKED_CAST")
     private fun mapToMediaItem(map: Map<*, *>): MediaItem? {
         if (map["id"] == null) return null
+        val headersMap = map["headers"]
+        val headers = when (headersMap) {
+            is Map<*, *> -> headersMap.mapNotNull { (k, v) ->
+                val key = k as? String ?: return@mapNotNull null
+                val value = v as? String ?: v?.toString() ?: return@mapNotNull null
+                key to value
+            }.toMap()
+            is JSObject -> headersMap.toMap().mapNotNull { (k, v) ->
+                val key = k as? String ?: return@mapNotNull null
+                val value = v as? String ?: v?.toString() ?: return@mapNotNull null
+                key to value
+            }.toMap()
+            else -> emptyMap()
+        }
         return MediaItem(
             id = map["id"] as String,
             title = map["title"] as? String ?: "",
@@ -96,7 +146,11 @@ class QuickJsMediaSource @Inject constructor(
             posterUrl = map["posterUrl"] as? String,
             backdropUrl = map["backdropUrl"] as? String,
             description = map["description"] as? String ?: "",
-            year = (map["year"] as? Number)?.toInt()?.toString() ?: (map["year"] as? String) ?: ""
+            year = (map["year"] as? Number)?.toInt()?.toString() ?: (map["year"] as? String) ?: "",
+            season = (map["season"] as? Number)?.toInt(),
+            episode = (map["episode"] as? Number)?.toInt(),
+            videoUrl = map["videoUrl"] as? String ?: map["url"] as? String,
+            headers = headers
         )
     }
 }

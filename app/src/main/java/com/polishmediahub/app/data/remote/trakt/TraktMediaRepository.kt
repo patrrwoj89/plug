@@ -84,11 +84,27 @@ class TraktMediaRepository @Inject constructor(
     private fun buildScrobbleBody(mediaItem: MediaItem, progress: Float): TraktScrobbleBody {
         val year = mediaItem.year.toIntOrNull()
         val ids = TraktIds(trakt = 0, tmdb = mediaItem.id.removePrefix("tmdb:").toIntOrNull())
+
+        val movie = if (mediaItem.type == MediaItem.Type.MOVIE) {
+            TraktMovieMinimal(title = mediaItem.title, year = year, ids = ids)
+        } else null
+
+        val (show, episode) = if (mediaItem.type == MediaItem.Type.EPISODE || (mediaItem.season != null && mediaItem.episode != null)) {
+            val showMinimal = TraktShowMinimal(title = mediaItem.title, year = year, ids = ids)
+            val episodeMinimal = TraktEpisodeMinimal(
+                season = mediaItem.season ?: 1,
+                number = mediaItem.episode ?: 1,
+                title = mediaItem.title,
+                ids = ids
+            )
+            showMinimal to episodeMinimal
+        } else null to null
+
         return TraktScrobbleBody(
             progress = progress,
-            movie = if (mediaItem.type == MediaItem.Type.MOVIE) {
-                TraktMovieMinimal(title = mediaItem.title, year = year, ids = ids)
-            } else null
+            movie = movie,
+            show = show,
+            episode = episode
         )
     }
 

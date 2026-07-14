@@ -15,6 +15,11 @@ data class MediaItem(
     val rating: String = "",
     val videoUrl: String? = null,
     val genres: List<String> = emptyList(),
+    val season: Int? = null,
+    val episode: Int? = null,
+    val headers: Map<String, String> = emptyMap(),
+    val subtitleUrl: String? = null,
+    val subtitleLanguage: String? = "pl",
     val type: Type = Type.MOVIE
 ) {
     enum class Type { MOVIE, SERIES, EPISODE, CHANNEL }

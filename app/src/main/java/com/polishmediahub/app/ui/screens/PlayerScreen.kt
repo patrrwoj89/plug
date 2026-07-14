@@ -56,6 +56,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem as ExoMediaItem
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.util.UnstableApi
@@ -86,8 +87,13 @@ fun PlayerScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val exoPlayer = remember(context) {
+    val headers = item?.headers.orEmpty()
+    val exoPlayer = remember(context, item?.videoUrl) {
         val dataSourceFactory = DefaultHttpDataSource.Factory()
+            .apply {
+                setUserAgent("PolishMediaHub/1.0 (Android TV)")
+                if (headers.isNotEmpty()) setDefaultRequestProperties(headers)
+            }
         val drmSessionManagerProvider = DefaultDrmSessionManagerProvider()
             .apply { setDrmHttpDataSourceFactory(dataSourceFactory) }
         val mediaSourceFactory = DefaultMediaSourceFactory(context)
@@ -109,9 +115,33 @@ fun PlayerScreen(
     }
 
     DisposableEffect(exoPlayer, item) {
-        val videoUrl = item?.videoUrl
+        val mediaItem = item
+        val videoUrl = mediaItem?.videoUrl
         if (!videoUrl.isNullOrBlank()) {
-            exoPlayer.setMediaItem(ExoMediaItem.fromUri(videoUrl))
+            val mimeType = when {
+                videoUrl.endsWith(".m3u8", ignoreCase = true) -> MimeTypes.APPLICATION_M3U8
+                videoUrl.endsWith(".mpd", ignoreCase = true) -> MimeTypes.APPLICATION_MPD
+                videoUrl.endsWith(".mp4", ignoreCase = true) -> MimeTypes.VIDEO_MP4
+                else -> null
+            }
+            val mediaItemBuilder = ExoMediaItem.Builder()
+                .setUri(videoUrl)
+                .setMimeType(mimeType)
+            mediaItem.subtitleUrl?.let { subUrl ->
+                val subMimeType = when {
+                    subUrl.endsWith(".vtt", ignoreCase = true) -> MimeTypes.TEXT_VTT
+                    subUrl.endsWith(".srt", ignoreCase = true) -> MimeTypes.APPLICATION_SUBRIP
+                    else -> MimeTypes.TEXT_VTT
+                }
+                val subUri = android.net.Uri.parse(subUrl)
+                val subConfig = androidx.media3.common.MediaItem.SubtitleConfiguration.Builder(subUri)
+                    .setMimeType(subMimeType)
+                    .setLanguage(mediaItem.subtitleLanguage ?: "pl")
+                    .setSelectionFlags(androidx.media3.common.C.SELECTION_FLAG_DEFAULT)
+                    .build()
+                mediaItemBuilder.setSubtitleConfigurations(listOf(subConfig))
+            }
+            exoPlayer.setMediaItem(mediaItemBuilder.build())
             exoPlayer.prepare()
             exoPlayer.seekTo(resumePosition)
         }

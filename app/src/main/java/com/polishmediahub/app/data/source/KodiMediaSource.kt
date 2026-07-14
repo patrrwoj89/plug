@@ -2,6 +2,9 @@ package com.polishmediahub.app.data.source
 
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -20,6 +23,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.net.URLEncoder
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -48,18 +52,26 @@ class KodiMediaSource @Inject constructor(
         }
     }
 
-    override suspend fun featured(): List<MediaItem> =
-        getMovies().take(10) + getTvShows().take(10)
+    override suspend fun featured(): List<MediaItem> = coroutineScope {
+        val movies = async(Dispatchers.IO) { getMovies().take(10) }
+        val tv = async(Dispatchers.IO) { getTvShows().take(10) }
+        movies.await() + tv.await()
+    }
 
-    override suspend fun categories(): List<Category> =
+    override suspend fun categories(): List<Category> = coroutineScope {
+        val movies = async(Dispatchers.IO) { getMovies() }
+        val tv = async(Dispatchers.IO) { getTvShows() }
         listOf(
-            Category("kodi:movies", "Kodi Movies", getMovies()),
-            Category("kodi:tv", "Kodi TV Shows", getTvShows())
+            Category("kodi:movies", "Kodi Movies", movies.await()),
+            Category("kodi:tv", "Kodi TV Shows", tv.await())
         )
+    }
 
-    override suspend fun search(query: String): List<MediaItem> =
-        getMovies().filter { it.title.contains(query, ignoreCase = true) } +
-            getTvShows().filter { it.title.contains(query, ignoreCase = true) }
+    override suspend fun search(query: String): List<MediaItem> = coroutineScope {
+        val movies = async(Dispatchers.IO) { getMovies() }
+        val tv = async(Dispatchers.IO) { getTvShows() }
+        (movies.await() + tv.await()).filter { it.title.contains(query, ignoreCase = true) }
+    }
 
     override suspend fun byId(id: String): MediaItem? {
         return (getMovies() + getTvShows()).find { it.id == id }
@@ -124,7 +136,9 @@ class KodiMediaSource @Inject constructor(
             .url("$baseUrl/jsonrpc")
             .post(payload.toRequestBody("application/json".toMediaType()))
             .build()
-        return client.newCall(request).execute().body?.string().orEmpty()
+        return with(Dispatchers.IO) {
+            client.newCall(request).execute().use { it.body?.string().orEmpty() }
+        }
     }
 
     private fun parseMovies(body: String): List<MediaItem> = try {
@@ -148,6 +162,50 @@ class KodiMediaSource @Inject constructor(
     } catch (_: Exception) {
         emptyList()
     }
+
+    private fun toKodiImageUrl(path: String?): String? {
+        if (path == null) return null
+        if (!path.startsWith("image://", ignoreCase = true)) return path
+        val inner = path.removePrefix("image://").removeSuffix("/")
+        val encoded = URLEncoder.encode("image://$inner", "UTF-8")
+        return "$baseUrl/image/$encoded"
+    }
+
+    private fun JsonObject.toMovie(): MediaItem {
+        val fanart = toKodiImageUrl(string("fanart"))
+        val thumb = toKodiImageUrl(string("thumbnail"))
+        return MediaItem(
+            id = "kodi:movie:${int("movieid")}",
+            title = string("title").orEmpty(),
+            subtitle = int("year")?.toString() ?: "",
+            description = string("plot").orEmpty(),
+            posterUrl = thumb,
+            backdropUrl = fanart ?: thumb,
+            year = int("year")?.toString() ?: "",
+            rating = double("rating")?.toString() ?: "",
+            genres = stringList("genre"),
+            videoUrl = string("file"),
+            type = MediaItem.Type.MOVIE
+        )
+    }
+
+    private fun JsonObject.toTvShow(): MediaItem {
+        val fanart = toKodiImageUrl(string("fanart"))
+        val thumb = toKodiImageUrl(string("thumbnail"))
+        return MediaItem(
+            id = "kodi:tv:${int("tvshowid")}",
+            title = string("title").orEmpty(),
+            subtitle = int("year")?.toString() ?: "",
+            description = string("plot").orEmpty(),
+            posterUrl = thumb,
+            backdropUrl = fanart ?: thumb,
+            year = int("year")?.toString() ?: "",
+            rating = double("rating")?.toString() ?: "",
+            genres = stringList("genre"),
+            videoUrl = string("file"),
+            type = MediaItem.Type.SERIES
+        )
+    }
 }
 
 private fun JsonObject.string(key: String): String? =
@@ -161,39 +219,3 @@ private fun JsonObject.double(key: String): Double? =
 
 private fun JsonObject.stringList(key: String): List<String> =
     get(key)?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
-
-private fun JsonObject.toMovie(): MediaItem {
-    val fanart = string("fanart")
-    val thumb = string("thumbnail")
-    return MediaItem(
-        id = "kodi:movie:${int("movieid")}",
-        title = string("title").orEmpty(),
-        subtitle = int("year")?.toString() ?: "",
-        description = string("plot").orEmpty(),
-        posterUrl = thumb,
-        backdropUrl = fanart ?: thumb,
-        year = int("year")?.toString() ?: "",
-        rating = double("rating")?.toString() ?: "",
-        genres = stringList("genre"),
-        videoUrl = string("file"),
-        type = MediaItem.Type.MOVIE
-    )
-}
-
-private fun JsonObject.toTvShow(): MediaItem {
-    val fanart = string("fanart")
-    val thumb = string("thumbnail")
-    return MediaItem(
-        id = "kodi:tv:${int("tvshowid")}",
-        title = string("title").orEmpty(),
-        subtitle = int("year")?.toString() ?: "",
-        description = string("plot").orEmpty(),
-        posterUrl = thumb,
-        backdropUrl = fanart ?: thumb,
-        year = int("year")?.toString() ?: "",
-        rating = double("rating")?.toString() ?: "",
-        genres = stringList("genre"),
-        videoUrl = string("file"),
-        type = MediaItem.Type.SERIES
-    )
-}

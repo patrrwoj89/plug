@@ -4,7 +4,13 @@ import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.MediaRepository
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,39 +23,78 @@ class FederatedMediaRepository @Inject constructor(
     private val apiConfigRepository: ApiConfigRepository
 ) : MediaRepository {
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val mutex = Mutex()
+    private var configured = false
+
     init {
-        // Apply saved configurations on creation (synchronously is not possible for suspend,
-        // so callers should call configure() explicitly or we rely on first access).
+        scope.launch {
+            applyConfigs()
+        }
     }
 
     private suspend fun applyConfigs() {
-        val kodiUrl = apiConfigRepository.kodiUrl.first()
-        if (kodiUrl.isNotBlank()) kodiMediaSource.configure(kodiUrl)
+        try {
+            val kodiUrl = apiConfigRepository.kodiUrl.first()
+            if (kodiUrl.isNotBlank()) kodiMediaSource.configure(kodiUrl)
 
-        val webConfig = apiConfigRepository.webSourceConfig.first()
-        if (webConfig.isNotBlank()) webMediaSource.configure(webConfig)
+            val webConfig = apiConfigRepository.webSourceConfig.first()
+            if (webConfig.isNotBlank()) webMediaSource.configure(webConfig)
 
-        val cloudstreamRepos = apiConfigRepository.cloudstreamRepoUrls.first()
-        if (cloudstreamRepos.isNotBlank()) cloudstreamSource.configure(cloudstreamRepos)
+            val cloudstreamRepos = apiConfigRepository.cloudstreamRepoUrls.first()
+            if (cloudstreamRepos.isNotBlank()) cloudstreamSource.configure(cloudstreamRepos)
+
+            mutex.withLock { configured = true }
+        } catch (e: Exception) {
+            android.util.Log.w("FederatedMediaRepository", "applyConfigs failed: ${e.message}")
+        }
+    }
+
+    private suspend fun ensureConfigured() {
+        mutex.withLock {
+            if (!configured) {
+                applyConfigs()
+            }
+        }
     }
 
     override suspend fun featured(): List<MediaItem> {
-        applyConfigs()
+        ensureConfigured()
         return registry.featuredAll()
     }
 
     override suspend fun categories(): List<Category> {
-        applyConfigs()
+        ensureConfigured()
         return registry.categoriesAll()
     }
 
     override suspend fun search(query: String): List<MediaItem> {
-        applyConfigs()
+        ensureConfigured()
         return registry.searchAll(query).values.flatten()
     }
 
     override suspend fun byId(id: String): MediaItem? {
-        applyConfigs()
-        return registry.all.firstNotNullOfOrNull { it.byId(id) }
+        ensureConfigured()
+        for (source in registry.all.filter { it.isAvailable() }) {
+            try {
+                source.byId(id)?.let { return it }
+            } catch (e: Exception) {
+                android.util.Log.w("FederatedMediaRepository", "byId failed for ${source.id}: ${e.message}")
+            }
+        }
+        return null
+    }
+
+    override suspend fun resolve(mediaItem: MediaItem): String? {
+        ensureConfigured()
+        val prefix = mediaItem.id.substringBefore(":", missingDelimiterValue = "")
+        val source = registry.source(prefix) ?: registry.all.find { mediaItem.id.startsWith("${it.id}:") }
+        source ?: return null
+        return try {
+            source.resolve(mediaItem)
+        } catch (e: Exception) {
+            android.util.Log.w("FederatedMediaRepository", "resolve failed for ${source.id}: ${e.message}")
+            null
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.polishmediahub.app.data.source
 
+import com.polishmediahub.app.data.plugin.QuickJsEngine
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
 import kotlinx.serialization.SerialName
@@ -10,11 +11,13 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jsoup.Jsoup
 import javax.inject.Inject
+import javax.inject.Provider
 import javax.inject.Singleton
 
 @Singleton
 class WebMediaSource @Inject constructor(
-    private val client: OkHttpClient
+    private val client: OkHttpClient,
+    private val quickJsEngineProvider: Provider<QuickJsEngine>
 ) : MediaSource {
 
     override val id: String = "web"
@@ -49,13 +52,20 @@ class WebMediaSource @Inject constructor(
         search("").find { it.id == id }
 
     override suspend fun resolve(mediaItem: MediaItem): String? {
-        val config = configs.find { mediaItem.id.startsWith("web:${it.id}:") } ?: return null
+        val config = configs.find { mediaItem.id.startsWith("web:${it.id}:") } ?: return mediaItem.videoUrl
         val relativeId = mediaItem.id.removePrefix("web:${config.id}:")
         if (config.itemUrlTemplate.isBlank()) return mediaItem.videoUrl
         val url = config.itemUrlTemplate.replace("{id}", relativeId)
-        val html = fetch(url) ?: return mediaItem.videoUrl
-        return Jsoup.parse(html).select(config.streamSelector).firstOrNull()?.attr(config.streamAttribute)
-            ?: mediaItem.videoUrl
+        val html = fetch(url, config.headers) ?: return mediaItem.videoUrl
+
+        val direct = Jsoup.parse(html).select(config.streamSelector).firstOrNull()?.attr(config.streamAttribute)
+        if (!direct.isNullOrBlank()) return resolveUrl(config.baseUrl, direct)
+
+        if (config.jsScript.isNotBlank()) {
+            return runJsResolver(config.jsScript, url, mediaItem, config.headers)
+        }
+
+        return mediaItem.videoUrl
     }
 
     private suspend fun scrape(config: WebSourceConfig, query: String? = null): List<MediaItem> {
@@ -64,7 +74,7 @@ class WebMediaSource @Inject constructor(
         } else {
             config.catalogUrl
         }
-        val html = fetch(url) ?: return emptyList()
+        val html = fetch(url, config.headers) ?: return emptyList()
         val doc = Jsoup.parse(html, url)
         return doc.select(config.itemSelector).mapNotNull { element ->
             try {
@@ -82,6 +92,7 @@ class WebMediaSource @Inject constructor(
                     backdropUrl = poster,
                     year = element.select(config.yearSelector).firstOrNull()?.text() ?: "",
                     videoUrl = href,
+                    headers = config.headers,
                     type = MediaItem.Type.MOVIE
                 )
             } catch (_: Exception) {
@@ -96,13 +107,58 @@ class WebMediaSource @Inject constructor(
         else -> base.removeSuffix("/") + "/" + path
     }
 
-    private suspend fun fetch(url: String): String? {
+    private suspend fun fetch(url: String, headers: Map<String, String> = emptyMap()): String? {
         return try {
-            val request = Request.Builder().url(url).header("User-Agent", "Mozilla/5.0").build()
+            val request = Request.Builder()
+                .url(url)
+                .apply {
+                    headers.forEach { (k, v) -> header(k, v) }
+                    if (!headers.containsKey("User-Agent") && !headers.containsKey("user-agent")) {
+                        header("User-Agent", "Mozilla/5.0")
+                    }
+                }
+                .build()
             client.newCall(request).execute().body?.string()
         } catch (_: Exception) {
             null
         }
+    }
+
+    private fun runJsResolver(script: String, pageUrl: String, mediaItem: MediaItem, headers: Map<String, String>): String? {
+        val engine = quickJsEngineProvider.get()
+        return try {
+            engine.init()
+            engine.evaluate(script)
+            val headersJson = toJsObjectLiteral(headers)
+            val result = engine.evaluate("resolve(${toJsLiteral(pageUrl)}, ${toJsLiteral(mediaItem.id)}, $headersJson)")
+            when (result) {
+                is String -> result.ifBlank { null }
+                is Map<*, *> -> (result["url"] as? String)?.ifBlank { null }
+                else -> null
+            }
+        } catch (e: Exception) {
+            null
+        } finally {
+            engine.close()
+        }
+    }
+
+    private fun toJsLiteral(value: Any?): String {
+        val quote = Char(34).toString()
+        val escapedQuote = "\\" + quote
+        val escapedBackslash = "\\\\"
+        return when (value) {
+            null -> "null"
+            is String -> quote + value.replace("\\", escapedBackslash).replace(quote, escapedQuote) + quote
+            is Number -> value.toString()
+            is Boolean -> value.toString()
+            else -> quote + value.toString().replace("\\", escapedBackslash).replace(quote, escapedQuote) + quote
+        }
+    }
+
+    private fun toJsObjectLiteral(map: Map<String, String>): String {
+        val entries = map.map { (k, v) -> "${toJsLiteral(k)}:${toJsLiteral(v)}" }
+        return "{" + entries.joinToString(",") + "}"
     }
 }
 
@@ -123,5 +179,7 @@ data class WebSourceConfig(
     val yearSelector: String = ".year",
     val descriptionSelector: String = ".description",
     val streamSelector: String = "video",
-    val streamAttribute: String = "src"
+    val streamAttribute: String = "src",
+    val headers: Map<String, String> = emptyMap(),
+    val jsScript: String = ""
 )

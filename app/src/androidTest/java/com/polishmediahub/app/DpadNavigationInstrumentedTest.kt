@@ -15,20 +15,11 @@ class DpadNavigationInstrumentedTest {
         get() = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
     @Test
-    fun dpadDownMovesFocus() {
-        device.pressKeyCode(KeyEvent.KEYCODE_DPAD_DOWN)
-        assertTrue("DPAD DOWN should be delivered", true)
-    }
-
-    @Test
-    fun dpadRightMovesFocus() {
-        device.pressKeyCode(KeyEvent.KEYCODE_DPAD_RIGHT)
-        assertTrue("DPAD RIGHT should be delivered", true)
-    }
-
-    @Test
-    fun dpadCenterSelects() {
-        device.pressKeyCode(KeyEvent.KEYCODE_DPAD_CENTER)
-        assertTrue("DPAD CENTER should be delivered", true)
+    fun dpadKeysAreDelivered() {
+        assertTrue(device.pressKeyCode(KeyEvent.KEYCODE_DPAD_DOWN))
+        assertTrue(device.pressKeyCode(KeyEvent.KEYCODE_DPAD_RIGHT))
+        assertTrue(device.pressKeyCode(KeyEvent.KEYCODE_DPAD_CENTER))
+        assertTrue(device.pressKeyCode(KeyEvent.KEYCODE_DPAD_UP))
+        assertTrue(device.pressKeyCode(KeyEvent.KEYCODE_DPAD_LEFT))
     }
 }

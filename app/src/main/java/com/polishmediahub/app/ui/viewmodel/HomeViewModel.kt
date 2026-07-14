@@ -32,8 +32,11 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
+                android.util.Log.d("HomeViewModel", "loadHome start")
                 val featured = mediaRepository.featured()
+                android.util.Log.d("HomeViewModel", "featured=${featured.size}")
                 val categories = mediaRepository.categories()
+                android.util.Log.d("HomeViewModel", "categories=${categories.size}")
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -42,6 +45,7 @@ class HomeViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                android.util.Log.e("HomeViewModel", "loadHome error", e)
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }

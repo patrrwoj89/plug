@@ -40,7 +40,8 @@ class PlayerControlsInstrumentedTest {
             }
         }
 
-        composeTestRule.onNodeWithText("PL").assertExists()
+        composeTestRule.onNodeWithContentDescription("Audio: PL").assertExists()
+        composeTestRule.onNodeWithContentDescription("Subtitles: PL").assertExists()
         composeTestRule.onNodeWithContentDescription("Pause").performClick()
         assertTrue(playClicked)
     }

@@ -6,15 +6,21 @@ import com.polishmediahub.app.data.source.CloudstreamSource
 import com.polishmediahub.app.data.source.KodiMediaSource
 import com.polishmediahub.app.data.source.MediaSource
 import com.polishmediahub.app.data.source.WebMediaSource
-import javax.inject.Provider
-import com.polishmediahub.app.model.Category
-import com.polishmediahub.app.model.MediaItem
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import javax.inject.Inject
+import javax.inject.Provider
 import javax.inject.Singleton
 
 @Singleton
@@ -28,8 +34,22 @@ class PluginRepository @Inject constructor(
 ) {
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val mutex = Mutex()
+
+    private val _activeSources = MutableStateFlow<List<MediaSource>>(emptyList())
+    val activeSources: StateFlow<List<MediaSource>> = _activeSources
+    private var previousSources: List<MediaSource> = emptyList()
 
     val plugins: Flow<List<PluginEntity>> = pluginDao.observeAll()
+
+    init {
+        scope.launch {
+            pluginDao.observeAll().collect { entities ->
+                refreshSources(entities.filter { it.enabled })
+            }
+        }
+    }
 
     suspend fun addPluginFromUrl(url: String) {
         val body = fetch(url) ?: throw IllegalStateException("Could not fetch plugin manifest")
@@ -43,7 +63,6 @@ class PluginRepository @Inject constructor(
             sortOrder = 0
         )
         pluginDao.upsert(entity)
-        applyPlugin(manifest)
     }
 
     suspend fun addPluginFromJson(jsonString: String) {
@@ -57,7 +76,6 @@ class PluginRepository @Inject constructor(
             sortOrder = 0
         )
         pluginDao.upsert(entity)
-        applyPlugin(manifest)
     }
 
     suspend fun removePlugin(id: String) {
@@ -100,16 +118,25 @@ class PluginRepository @Inject constructor(
         return updated
     }
 
-    suspend fun loadAll(): List<MediaSource> {
-        val entities = pluginDao.observeAll().first().filter { it.enabled }
-        return entities.flatMap { entity ->
+    fun loadAll(): List<MediaSource> = _activeSources.value
+
+    private suspend fun refreshSources(entities: List<PluginEntity>) {
+        val sources = entities.flatMap { entity ->
             try {
                 val manifest = json.decodeFromString(PluginManifest.serializer(), entity.manifestJson)
                 applyPlugin(manifest)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                android.util.Log.w("PluginRepository", "Failed to apply plugin ${entity.pluginId}: ${e.message}")
                 emptyList()
             }
         }
+        val uniqueSources = sources.distinct()
+        val oldQuickJs = previousSources.filterIsInstance<QuickJsMediaSource>() - uniqueSources.filterIsInstance<QuickJsMediaSource>().toSet()
+        mutex.withLock {
+            previousSources = uniqueSources
+            _activeSources.value = uniqueSources
+        }
+        oldQuickJs.forEach { it.dispose() }
     }
 
     private fun applyPlugin(manifest: PluginManifest): List<MediaSource> {
@@ -152,31 +179,4 @@ class PluginRepository @Inject constructor(
             null
         }
     }
-}
-
-@Singleton
-class PluginMediaSource @Inject constructor(
-    private val repository: PluginRepository
-) : MediaSource {
-
-    override val id: String = "plugin"
-    override val name: String = "Plugins"
-    override val isConfigurable: Boolean = true
-
-    override suspend fun isAvailable(): Boolean = repository.loadAll().isNotEmpty()
-
-    override suspend fun featured(): List<MediaItem> =
-        repository.loadAll().flatMap { it.featured() }
-
-    override suspend fun categories(): List<Category> =
-        repository.loadAll().flatMap { it.categories() }
-
-    override suspend fun search(query: String): List<MediaItem> =
-        repository.loadAll().flatMap { it.search(query) }
-
-    override suspend fun byId(id: String): MediaItem? =
-        repository.loadAll().firstNotNullOfOrNull { it.byId(id) }
-
-    override suspend fun resolve(mediaItem: MediaItem): String? =
-        repository.loadAll().firstNotNullOfOrNull { it.resolve(mediaItem) }
 }

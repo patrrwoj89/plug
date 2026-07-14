@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.activity.compose.LocalActivity
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -35,6 +37,11 @@ fun TVApp(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController()
 ) {
+    val activity = LocalActivity.current
+    LaunchedEffect(Unit) {
+        activity?.intent?.let { navController.handleDeepLink(it) }
+    }
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val currentScreen = currentRoute?.let { route ->
@@ -117,7 +124,10 @@ fun TVApp(
             composable(Screen.CustomLists.route) {
                 CustomListsScreen(modifier = Modifier.fillMaxSize())
             }
-            composable(Screen.Settings.route) {
+            composable(
+                route = Screen.Settings.route,
+                deepLinks = listOf(navDeepLink { uriPattern = "polishmediahub://settings" })
+            ) {
                 SettingsScreen(onNavigate = { navController.navigate(it.route) })
             }
             composable(Screen.Admin.route) {

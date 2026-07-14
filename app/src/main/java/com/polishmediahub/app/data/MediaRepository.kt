@@ -8,4 +8,5 @@ interface MediaRepository {
     suspend fun categories(): List<Category>
     suspend fun search(query: String): List<MediaItem>
     suspend fun byId(id: String): MediaItem?
+    suspend fun resolve(mediaItem: MediaItem): String? = mediaItem.videoUrl
 }

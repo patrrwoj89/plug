@@ -14,7 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.AdminPanelSettings
@@ -84,44 +85,45 @@ fun Sidebar(
         label = "sidebar-width"
     )
 
-    Column(
+    LazyColumn(
         modifier = modifier
             .fillMaxHeight()
             .width(width)
             .background(AppColor.Surface)
-            .padding(vertical = Spacing.md)
-            .selectableGroup(),
+            .padding(vertical = Spacing.md),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.xs)
     ) {
-        // Logo area
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-                .padding(horizontal = Spacing.md),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            if (expanded) {
-                Text(
-                    text = stringResource(id = R.string.app_name),
-                    style = AppTypography.titleLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Default.VideoLibrary,
-                    contentDescription = stringResource(id = R.string.app_name),
-                    tint = AppColor.Accent,
-                    modifier = Modifier.size(32.dp)
-                )
+        item {
+            // Logo area
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .padding(horizontal = Spacing.md),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                if (expanded) {
+                    Text(
+                        text = stringResource(id = R.string.app_name),
+                        style = AppTypography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.VideoLibrary,
+                        contentDescription = stringResource(id = R.string.app_name),
+                        tint = AppColor.Accent,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(Spacing.md))
+        item { Spacer(modifier = Modifier.height(Spacing.md)) }
 
-        sidebarItems.forEachIndexed { index, item ->
+        itemsIndexed(sidebarItems) { index, item ->
             val isFirst = index == 0
             SidebarRow(
                 item = item,

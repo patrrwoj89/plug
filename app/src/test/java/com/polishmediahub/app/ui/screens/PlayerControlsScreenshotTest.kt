@@ -14,6 +14,28 @@ class PlayerControlsScreenshotTest {
     )
 
     @Test
+    fun playerControlsEnglishLabels() {
+        paparazzi.snapshot {
+            TVHubTheme {
+                PlayerControls(
+                    title = "English movie",
+                    isPlaying = false,
+                    currentPosition = 5_000L,
+                    duration = 120_000L,
+                    audioLabel = "EN",
+                    subtitleLabel = "PL",
+                    onBack = {},
+                    onPlayPause = {},
+                    onSeek = {},
+                    onEnterPip = {},
+                    onCycleAudio = {},
+                    onCycleSubtitle = {}
+                )
+            }
+        }
+    }
+
+    @Test
     fun playerControlsPolishLabels() {
         paparazzi.snapshot {
             TVHubTheme {

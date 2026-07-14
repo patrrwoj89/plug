@@ -1,5 +1,6 @@
 package com.polishmediahub.app.data
 
+import android.util.Log
 import com.polishmediahub.app.data.remote.anilist.AniListMediaRepository
 import com.polishmediahub.app.data.remote.iptv.IptvRepository
 import com.polishmediahub.app.data.remote.stremio.StremioRepository
@@ -34,14 +35,23 @@ class CompositeMediaRepository @Inject constructor(
     )
 
     override suspend fun featured(): List<MediaItem> =
-        repositories.flatMap { it.featured() }
+        repositories.flatMap { repo -> repo.safeCall { featured() } ?: emptyList() }
 
     override suspend fun categories(): List<Category> =
-        repositories.flatMap { it.categories() }
+        repositories.flatMap { repo -> repo.safeCall { categories() } ?: emptyList() }
 
     override suspend fun search(query: String): List<MediaItem> =
-        repositories.flatMap { it.search(query) }
+        repositories.flatMap { repo -> repo.safeCall { search(query) } ?: emptyList() }
 
     override suspend fun byId(id: String): MediaItem? =
-        repositories.firstNotNullOfOrNull { it.byId(id) }
+        repositories.firstNotNullOfOrNull { repo -> repo.safeCall { byId(id) } }
+
+    private suspend inline fun <T> MediaRepository.safeCall(block: suspend MediaRepository.() -> T): T? {
+        return try {
+            block()
+        } catch (e: Exception) {
+            Log.w("CompositeRepo", "${this::class.java.simpleName} failed: ${e.message}")
+            null
+        }
+    }
 }

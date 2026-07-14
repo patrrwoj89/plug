@@ -132,8 +132,16 @@ data class TraktWatchlistItem(
 data class TraktScrobbleBody(
     val progress: Float,
     val movie: TraktMovieMinimal? = null,
+    val show: TraktShowMinimal? = null,
     val episode: TraktEpisodeMinimal? = null,
     @SerialName("sharing") val sharing: TraktSharing = TraktSharing()
+)
+
+@Serializable
+data class TraktShowMinimal(
+    val title: String,
+    val year: Int? = null,
+    val ids: TraktIds
 )
 
 @Serializable

@@ -48,6 +48,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="polishmediahub" android:host="play" />
                 <data android:scheme="polishmediahub" android:host="detail" />
+                <data android:scheme="polishmediahub" android:host="settings" />
             </intent-filter>
         </activity>
 

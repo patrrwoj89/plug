@@ -1,8 +1,13 @@
 package com.polishmediahub.app
 
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.pressKey
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -11,8 +16,9 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
+@OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
-class HomeScreenInstrumentedTest {
+class DpadHomeToDetailComposeTest {
 
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
@@ -28,11 +34,17 @@ class HomeScreenInstrumentedTest {
     }
 
     @Test
-    fun homeScreenRendersFeaturedMovieFromFakeRepository() {
+    fun dpadNavigatesFromHomeToDetail() {
         hiltRule.inject()
         composeTestRule.waitUntil(timeoutMillis = 5000) {
             composeTestRule.onAllNodesWithText("Test Movie").fetchSemanticsNodes().isNotEmpty()
         }
-        composeTestRule.onNodeWithText("Test Movie", substring = true, ignoreCase = true).assertExists()
+        composeTestRule.onRoot().performKeyInput {
+            pressKey(Key.Enter)
+        }
+        composeTestRule.waitUntil(timeoutMillis = 5000) {
+            composeTestRule.onAllNodesWithText("Test description").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Test description").assertExists()
     }
 }
