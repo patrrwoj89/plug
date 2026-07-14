@@ -9,13 +9,15 @@ import androidx.room.RoomDatabase
         WatchedEntity::class,
         CustomListEntity::class,
         CustomListItemEntity::class,
-        PluginEntity::class
+        PluginEntity::class,
+        DownloadEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class MediaDatabase : RoomDatabase() {
     abstract fun savedMediaDao(): SavedMediaDao
     abstract fun historyDao(): HistoryDao
     abstract fun pluginDao(): PluginDao
+    abstract fun downloadDao(): DownloadDao
 }

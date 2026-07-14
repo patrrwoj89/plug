@@ -8,6 +8,7 @@ sealed class Screen(val route: String) {
     data object Anime : Screen("anime")
     data object Settings : Screen("settings")
     data object Admin : Screen("admin")
+    data object Downloads : Screen("downloads")
 
     data class Detail(val id: String) : Screen("detail/$id")
     data class Player(val id: String) : Screen("player/$id")

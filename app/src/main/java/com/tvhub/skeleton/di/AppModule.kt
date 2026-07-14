@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.tvhub.skeleton.data.MockDataSource
 import com.tvhub.skeleton.data.local.HistoryDao
 import com.tvhub.skeleton.data.local.MediaDatabase
+import com.tvhub.skeleton.data.local.DownloadDao
 import com.tvhub.skeleton.data.local.PluginDao
 import com.tvhub.skeleton.data.local.SavedMediaDao
 import dagger.Module
@@ -43,4 +44,8 @@ object AppModule {
     @Provides
     fun providePluginDao(database: MediaDatabase): PluginDao =
         database.pluginDao()
+
+    @Provides
+    fun provideDownloadDao(database: MediaDatabase): DownloadDao =
+        database.downloadDao()
 }

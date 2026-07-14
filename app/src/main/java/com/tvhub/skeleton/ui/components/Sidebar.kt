@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Animation
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -57,6 +58,7 @@ private val sidebarItems = listOf(
     SidebarItem(Screen.Library, R.string.library, Icons.AutoMirrored.Filled.LibraryBooks),
     SidebarItem(Screen.Watchlist, R.string.watchlist, Icons.Default.WatchLater),
     SidebarItem(Screen.Anime, R.string.anime, Icons.Default.Animation),
+    SidebarItem(Screen.Downloads, R.string.downloads, Icons.Default.Download),
     SidebarItem(Screen.Settings, R.string.settings, Icons.Default.Settings),
     SidebarItem(Screen.Admin, R.string.sources, Icons.Default.AdminPanelSettings)
 )

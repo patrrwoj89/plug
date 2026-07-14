@@ -108,6 +108,10 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
 
     // TV launcher recommendations / WatchNext use framework TvContract.
+    // Offline downloads
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.hilt.androidx.work)
+    ksp(libs.hilt.androidx.compiler)
 
     // Testing
     testImplementation(libs.junit)

@@ -10,6 +10,7 @@
     <string name="anime">Anime</string>
     <string name="settings">Ustawienia</string>
     <string name="sources">Źródła</string>
+    <string name="downloads">Pobrane</string>
     <string name="admin">Admin</string>
 
     <string name="play">Odtwórz</string>
@@ -65,6 +66,9 @@
     <string name="admin_plugin_add">Dodaj plugin</string>
     <string name="admin_plugin_remove">Usuń</string>
     <string name="admin_plugin_show_qr">Pokaż QR konfiguracji</string>
+    <string name="downloads_title">Pobrane</string>
+    <string name="downloads_empty">Brak pobranych materiałów</string>
+    <string name="downloads_delete">Usuń</string>
     <string name="admin_error">Błąd: %1$s</string>
 
     <string name="loading">Ładowanie…</string>

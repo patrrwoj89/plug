@@ -17,6 +17,7 @@ import com.tvhub.skeleton.ui.components.Sidebar
 import com.tvhub.skeleton.ui.screens.AdminScreen
 import com.tvhub.skeleton.ui.screens.AnimeScreen
 import com.tvhub.skeleton.ui.screens.DetailScreen
+import com.tvhub.skeleton.ui.screens.DownloadsScreen
 import com.tvhub.skeleton.ui.screens.HomeScreen
 import com.tvhub.skeleton.ui.screens.LibraryScreen
 import com.tvhub.skeleton.ui.screens.PlayerScreen
@@ -38,6 +39,7 @@ fun TVApp(
             route.startsWith(Screen.Library.route) -> Screen.Library
             route.startsWith(Screen.Watchlist.route) -> Screen.Watchlist
             route.startsWith(Screen.Anime.route) -> Screen.Anime
+            route.startsWith(Screen.Downloads.route) -> Screen.Downloads
             route.startsWith(Screen.Settings.route) -> Screen.Settings
             route.startsWith(Screen.Admin.route) -> Screen.Admin
             route.startsWith("detail/") -> Screen.Detail(
@@ -82,6 +84,9 @@ fun TVApp(
             }
             composable(Screen.Anime.route) {
                 AnimeScreen(onNavigate = { navController.navigate(it.route) })
+            }
+            composable(Screen.Downloads.route) {
+                DownloadsScreen(modifier = Modifier.fillMaxSize())
             }
             composable(Screen.Settings.route) {
                 SettingsScreen(onNavigate = { navController.navigate(it.route) })
