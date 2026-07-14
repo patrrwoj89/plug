@@ -114,6 +114,16 @@ dependencies {
     implementation(libs.hilt.androidx.work)
     ksp(libs.hilt.androidx.compiler)
 
+    // BitTorrent engine (jlibtorrent) - use only for legal content/magnets you own or have rights to
+    implementation(libs.jlibtorrent)
+    implementation(libs.jlibtorrent.android.arm)
+    implementation(libs.jlibtorrent.android.arm64)
+    implementation(libs.jlibtorrent.android.x86)
+    implementation("com.frostwire:jlibtorrent-android-x86_64:${libs.versions.jlibtorrent.get()}")
+
+    // QuickJS JavaScript engine for plugin scripts
+    implementation(libs.quickjs.wrapper)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

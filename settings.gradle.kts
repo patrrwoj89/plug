@@ -16,8 +16,14 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url = uri("https://dl.frostwire.com/maven")
+            content {
+                includeGroup("com.frostwire")
+            }
+        }
     }
 }
 
-rootProject.name = "TVHubSkeleton"
+rootProject.name = "PolishMediaHub"
 include(":app")

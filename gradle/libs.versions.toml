@@ -23,6 +23,8 @@ room = "2.8.4"
 datastore = "1.2.1"
 splashscreen = "1.2.0"
 work = "2.11.2"
+jlibtorrent = "2.0.12.9"
+quickjs = "3.2.3"
 junit = "4.13.2"
 coroutinesTest = "1.10.1"
 jsoup = "1.22.2"
@@ -86,6 +88,13 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+
+jlibtorrent = { group = "com.frostwire", name = "jlibtorrent", version.ref = "jlibtorrent" }
+jlibtorrent-android-arm = { group = "com.frostwire", name = "jlibtorrent-android-arm", version.ref = "jlibtorrent" }
+jlibtorrent-android-arm64 = { group = "com.frostwire", name = "jlibtorrent-android-arm64", version.ref = "jlibtorrent" }
+jlibtorrent-android-x86 = { group = "com.frostwire", name = "jlibtorrent-android-x86", version.ref = "jlibtorrent" }
+jlibtorrent-android-x86_64 = { group = "com.frostwire", name = "jlibtorrent-android-x86_64", version.ref = "jlibtorrent" }
+quickjs-wrapper = { group = "wang.harlon.quickjs", name = "wrapper-android", version.ref = "quickjs" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
