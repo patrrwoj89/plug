@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
+    id("app.cash.paparazzi") version "2.0.0-alpha05"
 }
 
 android {
@@ -135,4 +136,6 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    testImplementation(libs.androidx.compose.ui.test.junit4)
 }

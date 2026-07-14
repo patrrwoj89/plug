@@ -172,6 +172,8 @@ private fun PlayerContent(
     var isPlaying by remember { mutableStateOf(exoPlayer.isPlaying) }
     var currentPosition by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
+    var audioLabel by remember { mutableStateOf("") }
+    var subtitleLabel by remember { mutableStateOf("") }
 
     LaunchedEffect(exoPlayer) {
         val listener = object : Player.Listener {
@@ -181,8 +183,12 @@ private fun PlayerContent(
                     duration = exoPlayer.duration.coerceAtLeast(0L)
                 }
             }
+            override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
+                updateTrackLabels(tracks, onAudio = { audioLabel = it }, onSubtitle = { subtitleLabel = it })
+            }
         }
         exoPlayer.addListener(listener)
+        updateTrackLabels(exoPlayer.currentTracks, onAudio = { audioLabel = it }, onSubtitle = { subtitleLabel = it })
 
         while (true) {
             currentPosition = exoPlayer.currentPosition.coerceAtLeast(0L)
@@ -258,6 +264,8 @@ private fun PlayerContent(
                 isPlaying = isPlaying,
                 currentPosition = currentPosition,
                 duration = duration,
+                audioLabel = audioLabel,
+                subtitleLabel = subtitleLabel,
                 onBack = onBack,
                 onPlayPause = { exoPlayer.playPause() },
                 onSeek = { position -> exoPlayer.seekTo(position.toLong()) },
@@ -270,11 +278,13 @@ private fun PlayerContent(
 }
 
 @Composable
-private fun PlayerControls(
+internal fun PlayerControls(
     title: String,
     isPlaying: Boolean,
     currentPosition: Long,
     duration: Long,
+    audioLabel: String,
+    subtitleLabel: String,
     onBack: () -> Unit,
     onPlayPause: () -> Unit,
     onSeek: (Float) -> Unit,
@@ -324,17 +334,23 @@ private fun PlayerControls(
                 IconButton(onClick = onCycleAudio) {
                     Icon(
                         imageVector = Icons.Default.Audiotrack,
-                        contentDescription = "Audio track",
+                        contentDescription = "Audio: $audioLabel",
                         tint = AppColor.OnSurface
                     )
+                }
+                if (audioLabel.isNotBlank()) {
+                    Text(audioLabel, style = AppTypography.caption, modifier = Modifier.padding(start = Spacing.xs))
                 }
 
                 IconButton(onClick = onCycleSubtitle) {
                     Icon(
                         imageVector = Icons.Default.ClosedCaption,
-                        contentDescription = "Subtitle track",
+                        contentDescription = "Subtitles: $subtitleLabel",
                         tint = AppColor.OnSurface
                     )
+                }
+                if (subtitleLabel.isNotBlank()) {
+                    Text(subtitleLabel, style = AppTypography.caption, modifier = Modifier.padding(start = Spacing.xs))
                 }
 
                 Slider(
@@ -419,6 +435,28 @@ private fun cycleSubtitleTrack(player: ExoPlayer) {
         builder.clearOverridesOfType(androidx.media3.common.C.TRACK_TYPE_TEXT)
     }
     player.trackSelectionParameters = builder.build()
+}
+
+private fun updateTrackLabels(
+    tracks: androidx.media3.common.Tracks,
+    onAudio: (String) -> Unit,
+    onSubtitle: (String) -> Unit
+) {
+    val audioGroup = tracks.groups.find { it.type == androidx.media3.common.C.TRACK_TYPE_AUDIO && it.isSelected }
+    val audioFormat = audioGroup?.let { group ->
+        (0 until group.length).find { group.isTrackSelected(it) }?.let { index ->
+            group.getTrackFormat(index).language?.uppercase() ?: ""
+        }
+    } ?: ""
+    onAudio(audioFormat)
+
+    val textGroup = tracks.groups.find { it.type == androidx.media3.common.C.TRACK_TYPE_TEXT && it.isSelected }
+    val textFormat = textGroup?.let { group ->
+        (0 until group.length).find { group.isTrackSelected(it) }?.let { index ->
+            group.getTrackFormat(index).language?.uppercase() ?: ""
+        }
+    } ?: "Off"
+    onSubtitle(textFormat)
 }
 
 private fun formatMs(ms: Long): String {

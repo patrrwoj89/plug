@@ -1,0 +1,37 @@
+package com.polishmediahub.app.ui.screens
+
+import app.cash.paparazzi.DeviceConfig
+import app.cash.paparazzi.Paparazzi
+import com.polishmediahub.app.ui.theme.TVHubTheme
+import org.junit.Rule
+import org.junit.Test
+
+class PlayerControlsScreenshotTest {
+
+    @get:Rule
+    val paparazzi = Paparazzi(
+        deviceConfig = DeviceConfig.NEXUS_5.copy(screenWidth = 1920, screenHeight = 1080)
+    )
+
+    @Test
+    fun playerControlsPolishLabels() {
+        paparazzi.snapshot {
+            TVHubTheme {
+                PlayerControls(
+                    title = "Polski film",
+                    isPlaying = true,
+                    currentPosition = 10_000L,
+                    duration = 60_000L,
+                    audioLabel = "PL",
+                    subtitleLabel = "PL",
+                    onBack = {},
+                    onPlayPause = {},
+                    onSeek = {},
+                    onEnterPip = {},
+                    onCycleAudio = {},
+                    onCycleSubtitle = {}
+                )
+            }
+        }
+    }
+}
