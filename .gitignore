@@ -28,3 +28,6 @@ output.json
 
 # OS
 Thumbs.db
+
+# Raw branding assets (process and output into res/)
+branding_source/

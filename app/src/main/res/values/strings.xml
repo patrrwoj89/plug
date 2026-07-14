@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">TV Hub Skeleton</string>
+    <string name="app_name">PolishMediaHub</string>
     <string name="home">Home</string>
     <string name="search">Search</string>
     <string name="settings">Settings</string>
@@ -8,5 +8,5 @@
     <string name="watchlist">Watchlist</string>
     <string name="play">Play</string>
     <string name="more_info">More info</string>
-    <string name="app_description">Android TV skeleton with D-Pad focus and modern UI</string>
+    <string name="app_description">Android TV skeleton with D-Pad focus, modern UI and PolishMediaHub branding</string>
 </resources>
