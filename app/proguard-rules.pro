@@ -28,9 +28,9 @@
 -keep @kotlinx.serialization.Serializable class * { *; }
 
 # Retrofit / OkHttp / Reflective models
--keep class com.tvhub.skeleton.data.remote.** { *; }
--keep class com.tvhub.skeleton.data.local.** { *; }
--keep class com.tvhub.skeleton.model.** { *; }
+-keep class com.polishmediahub.app.data.remote.** { *; }
+-keep class com.polishmediahub.app.data.local.** { *; }
+-keep class com.polishmediahub.app.model.** { *; }
 -keep class retrofit2.** { *; }
 -keepclassmembers class retrofit2.** { *; }
 -dontwarn retrofit2.**
@@ -73,4 +73,4 @@
 -dontwarn androidx.work.**
 
 # Keep application class
--keep class com.tvhub.skeleton.TVHubApplication { *; }
+-keep class com.polishmediahub.app.TVHubApplication { *; }

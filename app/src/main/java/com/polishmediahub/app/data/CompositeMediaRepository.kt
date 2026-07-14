@@ -1,0 +1,44 @@
+package com.polishmediahub.app.data
+
+import com.polishmediahub.app.data.remote.anilist.AniListMediaRepository
+import com.polishmediahub.app.data.remote.iptv.IptvRepository
+import com.polishmediahub.app.data.remote.stremio.StremioRepository
+import com.polishmediahub.app.data.remote.tmdb.TmdbMediaRepository
+import com.polishmediahub.app.data.remote.trakt.TraktMediaRepository
+import com.polishmediahub.app.data.source.FederatedMediaRepository
+import com.polishmediahub.app.model.Category
+import com.polishmediahub.app.model.MediaItem
+import javax.inject.Inject
+
+class CompositeMediaRepository @Inject constructor(
+    private val mockMediaRepository: MockMediaRepository,
+    private val tmdbMediaRepository: TmdbMediaRepository,
+    private val aniListMediaRepository: AniListMediaRepository,
+    private val traktMediaRepository: TraktMediaRepository,
+    private val iptvRepository: IptvRepository,
+    private val stremioRepository: StremioRepository,
+    private val federatedMediaRepository: FederatedMediaRepository
+) : MediaRepository {
+
+    private val repositories: List<MediaRepository> = listOf(
+        mockMediaRepository,
+        tmdbMediaRepository,
+        aniListMediaRepository,
+        traktMediaRepository,
+        iptvRepository,
+        stremioRepository,
+        federatedMediaRepository
+    )
+
+    override suspend fun featured(): List<MediaItem> =
+        repositories.flatMap { it.featured() }
+
+    override suspend fun categories(): List<Category> =
+        repositories.flatMap { it.categories() }
+
+    override suspend fun search(query: String): List<MediaItem> =
+        repositories.flatMap { it.search(query) }
+
+    override suspend fun byId(id: String): MediaItem? =
+        repositories.firstNotNullOfOrNull { it.byId(id) }
+}

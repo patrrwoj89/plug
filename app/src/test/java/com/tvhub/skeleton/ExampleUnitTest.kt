@@ -1,4 +1,4 @@
-package com.tvhub.skeleton
+package com.polishmediahub.app
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

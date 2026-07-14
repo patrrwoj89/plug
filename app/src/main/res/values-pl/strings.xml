@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PolishMediaHub</string>
-    <string name="app_description">Szkielet Android TV z obsługą D-Pad, nowoczesnym UI i brandingu PolishMediaHub</string>
+    <string name="app_name">Polish Media Hub</string>
+    <string name="app_description">Android TV hub dla wideo, audio i źródeł multimediów</string>
 
     <string name="home">Strona główna</string>
     <string name="search">Szukaj</string>

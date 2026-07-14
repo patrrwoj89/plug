@@ -1,10 +1,10 @@
-package com.tvhub.skeleton
+package com.polishmediahub.app
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.tvhub.skeleton.ui.components.FocusableSurface
-import com.tvhub.skeleton.ui.theme.TVHubTheme
+import com.polishmediahub.app.ui.components.FocusableSurface
+import com.polishmediahub.app.ui.theme.TVHubTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

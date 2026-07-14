@@ -1,6 +1,6 @@
-package com.tvhub.skeleton
+package com.polishmediahub.app
 
-import com.tvhub.skeleton.data.MockDataSource
+import com.polishmediahub.app.data.MockDataSource
 import org.junit.Assert.assertTrue
 import org.junit.Test
 

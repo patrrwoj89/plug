@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PolishMediaHub</string>
-    <string name="app_description">Android TV skeleton with D-Pad focus, modern UI and PolishMediaHub branding</string>
+    <string name="app_name">Polish Media Hub</string>
+    <string name="app_description">Android TV hub for video, audio and media sources</string>
 
     <string name="home">Home</string>
     <string name="search">Search</string>
