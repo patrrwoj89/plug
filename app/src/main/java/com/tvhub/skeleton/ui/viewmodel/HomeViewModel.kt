@@ -3,6 +3,7 @@ package com.tvhub.skeleton.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tvhub.skeleton.data.MediaRepository
+import com.tvhub.skeleton.data.WatchHistoryRepository
 import com.tvhub.skeleton.model.Category
 import com.tvhub.skeleton.model.MediaItem
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val mediaRepository: MediaRepository
+    private val mediaRepository: MediaRepository,
+    private val watchHistoryRepository: WatchHistoryRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -23,6 +25,7 @@ class HomeViewModel @Inject constructor(
 
     init {
         loadHome()
+        observeContinueWatching()
     }
 
     private fun loadHome() {
@@ -43,11 +46,24 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+
+    private fun observeContinueWatching() {
+        viewModelScope.launch {
+            watchHistoryRepository.observeHistory().collect { history ->
+                val items = history
+                    .filter { it.second.positionMs > 10_000 }
+                    .map { it.first }
+                    .take(10)
+                _uiState.update { it.copy(continueWatching = items) }
+            }
+        }
+    }
 }
 
 data class HomeUiState(
     val isLoading: Boolean = false,
     val featured: List<MediaItem> = emptyList(),
+    val continueWatching: List<MediaItem> = emptyList(),
     val categories: List<Category> = emptyList(),
     val error: String? = null
 )

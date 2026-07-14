@@ -16,7 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.tvhub.skeleton.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tvhub.skeleton.navigation.Screen
 import com.tvhub.skeleton.ui.components.FocusableSurface
@@ -44,31 +46,31 @@ fun SettingsScreen(
             .padding(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
-        Text("Settings", style = AppTypography.headline)
+        Text(stringResource(id = R.string.settings), style = AppTypography.headline)
 
         SettingsToggle(
-            title = "Dark theme",
-            subtitle = "Use the dark colour scheme for the TV interface",
+            title = stringResource(id = R.string.settings_dark_theme),
+            subtitle = stringResource(id = R.string.settings_dark_theme_subtitle),
             checked = darkTheme,
             onCheckedChange = viewModel::setDarkTheme
         )
 
         SettingsToggle(
-            title = "Autoplay trailers",
-            subtitle = "Preview trailers automatically on the detail screen",
+            title = stringResource(id = R.string.settings_autoplay_trailers),
+            subtitle = stringResource(id = R.string.settings_autoplay_trailers_subtitle),
             checked = autoplayTrailers,
             onCheckedChange = viewModel::setAutoplayTrailers
         )
 
         SettingsToggle(
-            title = "Save search history",
-            subtitle = "Remember recent searches and show suggestions",
+            title = stringResource(id = R.string.settings_save_search_history),
+            subtitle = stringResource(id = R.string.settings_save_search_history_subtitle),
             checked = saveSearchHistory,
             onCheckedChange = viewModel::setSaveSearchHistory
         )
 
         SettingsSelector(
-            title = "Preferred stream quality",
+            title = stringResource(id = R.string.settings_preferred_quality),
             value = preferredQuality,
             options = listOf("Auto", "1080p", "720p", "480p"),
             onSelect = viewModel::setPreferredQuality
@@ -77,7 +79,7 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(Spacing.lg))
 
         Text(
-            text = "PolishMediaHub Skeleton v0.2.0",
+            text = stringResource(id = R.string.version_info),
             style = AppTypography.caption,
             color = AppColor.OnSurfaceVariant
         )

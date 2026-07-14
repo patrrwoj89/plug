@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.res.stringResource
+import com.tvhub.skeleton.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tvhub.skeleton.ui.theme.AppColor
 import com.tvhub.skeleton.ui.theme.AppTypography
@@ -39,12 +41,12 @@ fun AdminScreen(
             .padding(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
-        Text("Admin / Sources", style = AppTypography.headline)
+        Text(stringResource(id = R.string.admin_title), style = AppTypography.headline)
 
         OutlinedTextField(
             value = state.tmdbApiKey,
             onValueChange = viewModel::setTmdbApiKey,
-            label = { Text("TMDB API key") },
+            label = { Text(stringResource(id = R.string.admin_tmdb_key)) },
             modifier = Modifier.fillMaxWidth(0.5f),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
@@ -52,7 +54,7 @@ fun AdminScreen(
         OutlinedTextField(
             value = state.aniListToken,
             onValueChange = viewModel::setAniListToken,
-            label = { Text("AniList access token (optional)") },
+            label = { Text(stringResource(id = R.string.admin_anilist_token)) },
             modifier = Modifier.fillMaxWidth(0.5f),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
@@ -60,7 +62,7 @@ fun AdminScreen(
         OutlinedTextField(
             value = state.traktClientId,
             onValueChange = viewModel::setTraktClientId,
-            label = { Text("Trakt client ID") },
+            label = { Text(stringResource(id = R.string.admin_trakt_id)) },
             modifier = Modifier.fillMaxWidth(0.5f),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
@@ -68,36 +70,36 @@ fun AdminScreen(
         OutlinedTextField(
             value = state.iptvSourceUrls,
             onValueChange = viewModel::setIptvSourceUrls,
-            label = { Text("IPTV M3U URLs (comma or newline separated)") },
+            label = { Text(stringResource(id = R.string.admin_iptv_urls)) },
             modifier = Modifier.fillMaxWidth(0.5f),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
 
         Spacer(modifier = Modifier.height(Spacing.lg))
 
-        Text("Debrid (OAuth / QR)", style = AppTypography.titleLarge)
+        Text(stringResource(id = R.string.admin_debrid_title), style = AppTypography.titleLarge)
 
         if (state.debridAccessToken.isNotBlank()) {
-            Text("Debrid authorized: ${state.debridProvider}", color = AppColor.Accent)
+            Text(stringResource(id = R.string.admin_debrid_authorized, state.debridProvider), color = AppColor.Accent)
         } else {
-            Text("No Debrid account linked.", color = AppColor.OnSurfaceVariant)
+            Text(stringResource(id = R.string.admin_debrid_missing), color = AppColor.OnSurfaceVariant)
         }
 
         Button(onClick = viewModel::startDebridOAuth) {
-            Text("Link Debrid account (OAuth)")
+            Text(stringResource(id = R.string.admin_debrid_link))
         }
 
         state.debridDeviceCode?.let { code ->
             Spacer(modifier = Modifier.height(Spacing.md))
-            Text("Go to:", style = AppTypography.title)
+            Text(stringResource(id = R.string.admin_debrid_go_to), style = AppTypography.title)
             Text(code.verificationUri, style = AppTypography.body)
-            Text("Enter code:", style = AppTypography.title)
+            Text(stringResource(id = R.string.admin_debrid_enter_code), style = AppTypography.title)
             Text(code.userCode, style = AppTypography.hero)
         }
 
         state.error?.let { error ->
             Spacer(modifier = Modifier.height(Spacing.md))
-            Text("Error: $error", color = AppColor.Error)
+            Text(stringResource(id = R.string.admin_error, error), color = AppColor.Error)
         }
     }
 }

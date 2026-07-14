@@ -16,11 +16,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Animation
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.WatchLater
@@ -34,13 +34,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.tv.material3.MaterialTheme
+import com.tvhub.skeleton.R
 import com.tvhub.skeleton.navigation.Screen
-import androidx.compose.ui.graphics.Color
 import com.tvhub.skeleton.ui.theme.AppColor
 import com.tvhub.skeleton.ui.theme.AppTypography
 import com.tvhub.skeleton.ui.theme.Motion
@@ -48,18 +47,18 @@ import com.tvhub.skeleton.ui.theme.Spacing
 
 data class SidebarItem(
     val screen: Screen,
-    val label: String,
+    val labelRes: Int,
     val icon: ImageVector
 )
 
 private val sidebarItems = listOf(
-    SidebarItem(Screen.Home, "Home", Icons.Default.Home),
-    SidebarItem(Screen.Search, "Search", Icons.Default.Search),
-    SidebarItem(Screen.Library, "Library", Icons.AutoMirrored.Filled.LibraryBooks),
-    SidebarItem(Screen.Watchlist, "Watchlist", Icons.Default.WatchLater),
-    SidebarItem(Screen.Anime, "Anime", Icons.Default.Animation),
-    SidebarItem(Screen.Settings, "Settings", Icons.Default.Settings),
-    SidebarItem(Screen.Admin, "Sources", Icons.Default.AdminPanelSettings)
+    SidebarItem(Screen.Home, R.string.home, Icons.Default.Home),
+    SidebarItem(Screen.Search, R.string.search, Icons.Default.Search),
+    SidebarItem(Screen.Library, R.string.library, Icons.AutoMirrored.Filled.LibraryBooks),
+    SidebarItem(Screen.Watchlist, R.string.watchlist, Icons.Default.WatchLater),
+    SidebarItem(Screen.Anime, R.string.anime, Icons.Default.Animation),
+    SidebarItem(Screen.Settings, R.string.settings, Icons.Default.Settings),
+    SidebarItem(Screen.Admin, R.string.sources, Icons.Default.AdminPanelSettings)
 )
 
 @Composable
@@ -96,7 +95,7 @@ fun Sidebar(
         ) {
             if (expanded) {
                 Text(
-                    text = "TV Hub",
+                    text = stringResource(id = R.string.app_name),
                     style = AppTypography.titleLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -104,7 +103,7 @@ fun Sidebar(
             } else {
                 Icon(
                     imageVector = Icons.Default.VideoLibrary,
-                    contentDescription = "TV Hub",
+                    contentDescription = stringResource(id = R.string.app_name),
                     tint = AppColor.Accent,
                     modifier = Modifier.size(32.dp)
                 )
@@ -137,8 +136,9 @@ private fun SidebarRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val containerColor = if (selected) AppColor.Accent.copy(alpha = 0.2f) else Color.Transparent
+    val containerColor = if (selected) AppColor.Accent.copy(alpha = 0.2f) else androidx.compose.ui.graphics.Color.Transparent
     val contentColor = if (selected) AppColor.Accent else AppColor.OnSurfaceVariant
+    val label = stringResource(id = item.labelRes)
 
     FocusableSurface(
         onClick = onClick,
@@ -157,13 +157,13 @@ private fun SidebarRow(
         ) {
             Icon(
                 imageVector = item.icon,
-                contentDescription = item.label,
+                contentDescription = label,
                 tint = contentColor,
                 modifier = Modifier.size(24.dp)
             )
             if (expanded) {
                 Text(
-                    text = item.label,
+                    text = label,
                     style = AppTypography.button,
                     color = contentColor,
                     maxLines = 1,

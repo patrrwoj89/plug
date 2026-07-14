@@ -26,9 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.tvhub.skeleton.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.tvhub.skeleton.model.MediaItem
@@ -52,7 +54,7 @@ fun DetailScreen(
 
     if (item == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Item not found", style = AppTypography.body)
+            Text(stringResource(id = R.string.item_not_found), style = AppTypography.body)
         }
         return
     }
@@ -128,11 +130,11 @@ private fun DetailContent(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.PlayArrow,
-                                contentDescription = "Play",
+                                contentDescription = stringResource(id = R.string.play),
                                 tint = AppColor.Black
                             )
                             Spacer(modifier = Modifier.width(Spacing.sm))
-                            Text("Play", style = AppTypography.button, color = AppColor.Black)
+                            Text(stringResource(id = R.string.play), style = AppTypography.button, color = AppColor.Black)
                         }
                     }
 
@@ -141,7 +143,11 @@ private fun DetailContent(
                         modifier = Modifier.height(48.dp),
                         colors = ButtonDefaults.textButtonColors(contentColor = AppColor.OnSurface)
                     ) {
-                        Text(if (isInLibrary) "Remove from Library" else "Add to Library")
+                        Text(
+                            stringResource(
+                                id = if (isInLibrary) R.string.remove_from_library else R.string.add_to_library
+                            )
+                        )
                     }
 
                     TextButton(
@@ -149,7 +155,11 @@ private fun DetailContent(
                         modifier = Modifier.height(48.dp),
                         colors = ButtonDefaults.textButtonColors(contentColor = AppColor.OnSurface)
                     ) {
-                        Text(if (isInWatchlist) "Remove from Watchlist" else "Add to Watchlist")
+                        Text(
+                            stringResource(
+                                id = if (isInWatchlist) R.string.remove_from_watchlist else R.string.add_to_watchlist
+                            )
+                        )
                     }
                 }
             }
@@ -159,10 +169,13 @@ private fun DetailContent(
             modifier = Modifier.padding(Spacing.xl),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
-            Text("Overview", style = AppTypography.titleLarge)
+            Text(stringResource(id = R.string.overview), style = AppTypography.titleLarge)
             Text(item.description, style = AppTypography.body)
-            Text("Genres: ${item.genres.joinToString(", ")}", style = AppTypography.caption)
-            Text("Year: ${item.year}  •  Duration: ${item.duration}  •  Rating: ${item.rating}", style = AppTypography.caption)
+            Text("${stringResource(id = R.string.genres)}: ${item.genres.joinToString(", ")}", style = AppTypography.caption)
+            Text(
+                "${stringResource(id = R.string.year)}: ${item.year}  •  ${stringResource(id = R.string.duration)}: ${item.duration}  •  ${stringResource(id = R.string.rating)}: ${item.rating}",
+                style = AppTypography.caption
+            )
         }
     }
 }

@@ -40,15 +40,28 @@ class SearchViewModel @Inject constructor(
         _query
             .debounce(300)
             .onEach { query ->
-                val results = try { mediaRepository.search(query) } catch (_: Exception) { emptyList() }
-                _uiState.update { it.copy(query = query, results = results, isLoading = false) }
+                if (query.isBlank()) {
+                    _uiState.update { it.copy(query = query, results = emptyList(), isLoading = false, error = null) }
+                    return@onEach
+                }
+                _uiState.update { it.copy(query = query, isLoading = true, error = null) }
+                try {
+                    val results = mediaRepository.search(query)
+                    _uiState.update { it.copy(results = results, isLoading = false, error = null) }
+                } catch (e: Exception) {
+                    _uiState.update { it.copy(results = emptyList(), isLoading = false, error = e.message) }
+                }
             }
             .launchIn(viewModelScope)
     }
 
     fun onQueryChange(query: String) {
-        _uiState.update { it.copy(isLoading = query.isNotBlank()) }
         _query.value = query
+        if (query.isBlank()) {
+            _uiState.update { it.copy(query = query, results = emptyList(), isLoading = false, error = null) }
+        } else {
+            _uiState.update { it.copy(query = query, isLoading = true, error = null) }
+        }
     }
 
     fun submitSearch(query: String) {
@@ -64,5 +77,6 @@ class SearchViewModel @Inject constructor(
 data class SearchUiState(
     val query: String = "",
     val isLoading: Boolean = false,
+    val error: String? = null,
     val results: List<MediaItem> = emptyList()
 )

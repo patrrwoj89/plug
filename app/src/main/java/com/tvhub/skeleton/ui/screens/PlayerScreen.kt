@@ -38,6 +38,7 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -49,6 +50,7 @@ import androidx.media3.common.MediaItem as ExoMediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import com.tvhub.skeleton.R
 import com.tvhub.skeleton.navigation.Screen
 import com.tvhub.skeleton.ui.theme.AppColor
 import com.tvhub.skeleton.ui.theme.AppTypography
@@ -63,6 +65,7 @@ fun PlayerScreen(
     viewModel: PlayerViewModel = hiltViewModel()
 ) {
     val item by viewModel.item.collectAsStateWithLifecycle()
+    val resumePosition by viewModel.resumePosition.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -77,9 +80,11 @@ fun PlayerScreen(
         if (!videoUrl.isNullOrBlank()) {
             exoPlayer.setMediaItem(ExoMediaItem.fromUri(videoUrl))
             exoPlayer.prepare()
+            exoPlayer.seekTo(resumePosition)
         }
 
         onDispose {
+            viewModel.saveProgress(exoPlayer.currentPosition, exoPlayer.duration.coerceAtLeast(0L))
             exoPlayer.release()
         }
     }
@@ -100,8 +105,11 @@ fun PlayerScreen(
 
     PlayerContent(
         exoPlayer = exoPlayer,
-        title = item?.title ?: "Player",
+        title = item?.title ?: stringResource(id = R.string.app_name),
         onBack = { onNavigate(Screen.Home) },
+        onSaveProgress = { position, duration ->
+            viewModel.saveProgress(position, duration)
+        },
         modifier = modifier
     )
 }
@@ -111,6 +119,7 @@ private fun PlayerContent(
     exoPlayer: ExoPlayer,
     title: String,
     onBack: () -> Unit,
+    onSaveProgress: (Long, Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var controlsVisible by remember { mutableStateOf(true) }
@@ -133,6 +142,13 @@ private fun PlayerContent(
             currentPosition = exoPlayer.currentPosition.coerceAtLeast(0L)
             duration = exoPlayer.duration.coerceAtLeast(0L)
             delay(500)
+        }
+    }
+
+    LaunchedEffect(exoPlayer) {
+        while (true) {
+            delay(5_000)
+            onSaveProgress(exoPlayer.currentPosition.coerceAtLeast(0L), exoPlayer.duration.coerceAtLeast(0L))
         }
     }
 
@@ -214,7 +230,7 @@ private fun PlayerControls(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = AppColor.OnSurface)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back), tint = AppColor.OnSurface)
             }
             Text(
                 text = title,
@@ -231,7 +247,7 @@ private fun PlayerControls(
                 IconButton(onClick = onPlayPause) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        contentDescription = stringResource(id = if (isPlaying) R.string.pause else R.string.play),
                         tint = AppColor.OnSurface
                     )
                 }

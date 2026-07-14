@@ -1,7 +1,6 @@
 package com.tvhub.skeleton.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,11 +10,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.tvhub.skeleton.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tvhub.skeleton.navigation.Screen
+import com.tvhub.skeleton.ui.components.EmptyState
 import com.tvhub.skeleton.ui.components.MediaCard
 import com.tvhub.skeleton.ui.theme.AppTypography
 import com.tvhub.skeleton.ui.theme.Spacing
@@ -34,20 +35,14 @@ fun WatchlistScreen(
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
         contentPadding = PaddingValues(vertical = Spacing.md)
     ) {
-        item { Text("Watchlist", style = AppTypography.headline, modifier = Modifier.padding(bottom = Spacing.md)) }
+        item { Text(stringResource(id = R.string.watchlist), style = AppTypography.headline, modifier = Modifier.padding(bottom = Spacing.md)) }
 
         if (savedItems.isEmpty()) {
             item {
-                Box(
-                    modifier = Modifier.fillParentMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Your watchlist is empty.\nAdd items from the home screen.",
-                        style = AppTypography.body,
-                        modifier = Modifier.fillMaxWidth(0.6f)
-                    )
-                }
+                EmptyState(
+                    message = stringResource(id = R.string.watchlist_empty),
+                    modifier = Modifier.fillParentMaxSize()
+                )
             }
         } else {
             items(savedItems, key = { it.id }) { item ->

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PolishMediaHub</string>
+    <string name="app_description">Szkielet Android TV z obsługą D-Pad, nowoczesnym UI i brandingu PolishMediaHub</string>
+
+    <string name="home">Strona główna</string>
+    <string name="search">Szukaj</string>
+    <string name="library">Biblioteka</string>
+    <string name="watchlist">Do obejrzenia</string>
+    <string name="anime">Anime</string>
+    <string name="settings">Ustawienia</string>
+    <string name="sources">Źródła</string>
+    <string name="admin">Admin</string>
+
+    <string name="play">Odtwórz</string>
+    <string name="pause">Pauza</string>
+    <string name="back">Wstecz</string>
+    <string name="more_info">Więcej informacji</string>
+    <string name="overview">Opis</string>
+    <string name="genres">Gatunki</string>
+    <string name="year">Rok</string>
+    <string name="duration">Czas trwania</string>
+    <string name="rating">Ocena</string>
+
+    <string name="add_to_library">Dodaj do biblioteki</string>
+    <string name="remove_from_library">Usuń z biblioteki</string>
+    <string name="add_to_watchlist">Dodaj do obejrzenia</string>
+    <string name="remove_from_watchlist">Usuń z listy do obejrzenia</string>
+
+    <string name="library_empty">Twoja biblioteka jest pusta.\nDodaj pozycje z ekranu głównego.</string>
+    <string name="watchlist_empty">Twoja lista do obejrzenia jest pusta.\nDodaj pozycje z ekranu głównego.</string>
+    <string name="search_placeholder">Wpisz tytuł lub gatunek…</string>
+    <string name="recent_searches">Ostatnie wyszukiwania</string>
+    <string name="clear_history">Wyczyść historię</string>
+    <string name="results_count">%1$d wyników</string>
+    <string name="searching">Wyszukiwanie…</string>
+    <string name="continue_watching">Kontynuuj oglądanie</string>
+
+    <string name="settings_dark_theme">Ciemny motyw</string>
+    <string name="settings_dark_theme_subtitle">Użyj ciemnej palety dla interfejsu TV</string>
+    <string name="settings_autoplay_trailers">Autoodtwarzanie trailerów</string>
+    <string name="settings_autoplay_trailers_subtitle">Automatycznie podglądaj trailery na ekranie szczegółów</string>
+    <string name="settings_save_search_history">Zapisuj historię wyszukiwania</string>
+    <string name="settings_save_search_history_subtitle">Zapamiętuj ostatnie wyszukiwania i pokazuj podpowiedzi</string>
+    <string name="settings_preferred_quality">Preferowana jakość strumienia</string>
+    <string name="version_info">PolishMediaHub Skeleton v0.2.0</string>
+
+    <string name="admin_title">Admin / Źródła</string>
+    <string name="admin_tmdb_key">Klucz API TMDB</string>
+    <string name="admin_anilist_token">Token AniList (opcjonalny)</string>
+    <string name="admin_trakt_id">Trakt client ID</string>
+    <string name="admin_iptv_urls">Adresy M3U IPTV (oddzielone przecinkiem lub enterem)</string>
+    <string name="admin_debrid_title">Debrid (OAuth / QR)</string>
+    <string name="admin_debrid_authorized">Debrid autoryzowany: %1$s</string>
+    <string name="admin_debrid_missing">Brak połączonego konta Debrid.</string>
+    <string name="admin_debrid_link">Połącz konto Debrid (OAuth)</string>
+    <string name="admin_debrid_go_to">Otwórz:</string>
+    <string name="admin_debrid_enter_code">Wpisz kod:</string>
+    <string name="admin_error">Błąd: %1$s</string>
+
+    <string name="loading">Ładowanie…</string>
+    <string name="retry">Spróbuj ponownie</string>
+    <string name="no_featured_content">Brak wyróżnionych treści</string>
+    <string name="item_not_found">Nie znaleziono pozycji</string>
+</resources>

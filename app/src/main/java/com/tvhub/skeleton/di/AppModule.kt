@@ -3,6 +3,7 @@ package com.tvhub.skeleton.di
 import android.content.Context
 import androidx.room.Room
 import com.tvhub.skeleton.data.MockDataSource
+import com.tvhub.skeleton.data.local.HistoryDao
 import com.tvhub.skeleton.data.local.MediaDatabase
 import com.tvhub.skeleton.data.local.SavedMediaDao
 import dagger.Module
@@ -27,9 +28,14 @@ object AppModule {
             context,
             MediaDatabase::class.java,
             "media.db"
-        ).build()
+        ).fallbackToDestructiveMigration(true)
+            .build()
 
     @Provides
     fun provideSavedMediaDao(database: MediaDatabase): SavedMediaDao =
         database.savedMediaDao()
+
+    @Provides
+    fun provideHistoryDao(database: MediaDatabase): HistoryDao =
+        database.historyDao()
 }
