@@ -108,7 +108,10 @@ fun TVApp(
                 SettingsScreen(onNavigate = { navController.navigate(it.route) })
             }
             composable(Screen.Admin.route) {
-                AdminScreen(modifier = Modifier.fillMaxSize())
+                AdminScreen(
+                    onNavigate = { navController.navigate(it.route) },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
             composable(
                 route = "detail/{id}",

@@ -20,7 +20,12 @@ class DownloadRepository @Inject constructor(
     val downloads: Flow<List<DownloadEntity>> = downloadDao.observeAll()
 
     fun startDownload(mediaId: String, title: String, url: String) {
-        val request = DownloadWorker.enqueueData(mediaId, title, url)
+        val request = DownloadWorker.enqueueData(mediaId, title, url, "mp4")
+        workManager.enqueue(request)
+    }
+
+    fun startAudioDownload(mediaId: String, title: String, url: String) {
+        val request = DownloadWorker.enqueueData(mediaId, title, url, "mp3")
         workManager.enqueue(request)
     }
 

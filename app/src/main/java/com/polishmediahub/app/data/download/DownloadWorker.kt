@@ -27,14 +27,16 @@ class DownloadWorker @AssistedInject constructor(
         const val KEY_URL = "url"
         const val KEY_TITLE = "title"
         const val KEY_MEDIA_ID = "media_id"
+        const val KEY_EXTENSION = "extension"
 
-        fun enqueueData(mediaId: String, title: String, url: String) = androidx.work.OneTimeWorkRequestBuilder<DownloadWorker>()
+        fun enqueueData(mediaId: String, title: String, url: String, extension: String = "mp4") = androidx.work.OneTimeWorkRequestBuilder<DownloadWorker>()
             .setInputData(
                 workDataOf(
                     KEY_DOWNLOAD_ID to UUID.randomUUID().toString(),
                     KEY_MEDIA_ID to mediaId,
                     KEY_TITLE to title,
-                    KEY_URL to url
+                    KEY_URL to url,
+                    KEY_EXTENSION to extension
                 )
             )
             .build()
@@ -45,8 +47,9 @@ class DownloadWorker @AssistedInject constructor(
         val mediaId = inputData.getString(KEY_MEDIA_ID) ?: return Result.failure()
         val title = inputData.getString(KEY_TITLE) ?: ""
         val url = inputData.getString(KEY_URL) ?: return Result.failure()
+        val extension = inputData.getString(KEY_EXTENSION) ?: "mp4"
 
-        val localFile = File(applicationContext.filesDir, "downloads/$downloadId.mp4").apply { parentFile?.mkdirs() }
+        val localFile = File(applicationContext.filesDir, "downloads/$downloadId.$extension").apply { parentFile?.mkdirs() }
 
         downloadDao.upsert(
             DownloadEntity(

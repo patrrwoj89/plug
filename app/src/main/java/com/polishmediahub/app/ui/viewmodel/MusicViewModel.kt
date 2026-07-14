@@ -3,6 +3,7 @@ package com.polishmediahub.app.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.polishmediahub.app.data.audio.AudioRepository
+import com.polishmediahub.app.data.download.DownloadRepository
 import com.polishmediahub.app.model.AudioTrack
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MusicViewModel @Inject constructor(
-    private val audioRepository: AudioRepository
+    private val audioRepository: AudioRepository,
+    private val downloadRepository: DownloadRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MusicUiState())
@@ -32,6 +34,12 @@ class MusicViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message, isLoading = false)
             }
+        }
+    }
+
+    fun downloadTrack(track: AudioTrack) {
+        track.streamUrl?.let { url ->
+            downloadRepository.startAudioDownload(track.id, track.title, url)
         }
     }
 

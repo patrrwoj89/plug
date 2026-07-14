@@ -37,14 +37,31 @@ import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Radius
 import com.polishmediahub.app.ui.theme.Spacing
 import com.polishmediahub.app.ui.viewmodel.AdminViewModel
+import com.polishmediahub.app.ui.viewmodel.PinViewModel
+import com.polishmediahub.app.navigation.Screen
 
 @Composable
 fun AdminScreen(
+    onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: AdminViewModel = hiltViewModel()
+    viewModel: AdminViewModel = hiltViewModel(),
+    pinViewModel: PinViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val currentProvider = DebridProvider.entries.find { it.id == state.debridProvider } ?: DebridProvider.TORBOX
+    val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
+    val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
+    var pinVerified by remember { mutableStateOf(false) }
+
+    if (pinEnabled && pinCode.isNotBlank() && !pinVerified) {
+        PinScreen(
+            onPinEntered = { entered ->
+                if (entered == pinCode) pinVerified = true
+            },
+            onCancel = { onNavigate(Screen.Home) }
+        )
+        return
+    }
 
     Column(
         modifier = modifier

@@ -103,4 +103,5 @@
     <string name="settings_pin">Parental PIN</string>
     <string name="settings_pin_subtitle">4-digit code to lock Settings and Admin</string>
     <string name="settings_pin_enabled">PIN enabled</string>
+    <string name="download_audio">Download audio</string>
 </resources>

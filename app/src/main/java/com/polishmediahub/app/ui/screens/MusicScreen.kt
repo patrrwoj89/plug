@@ -3,6 +3,7 @@ package com.polishmediahub.app.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -89,7 +90,11 @@ fun MusicScreen(
                     contentPadding = PaddingValues(vertical = Spacing.md)
                 ) {
                     items(uiState.tracks, key = { it.id }) { track ->
-                        TrackRow(track = track, onClick = { onPlay(track) })
+                        TrackRow(
+                            track = track,
+                            onClick = { onPlay(track) },
+                            onDownload = { viewModel.downloadTrack(track) }
+                        )
                     }
                 }
             }
@@ -98,15 +103,26 @@ fun MusicScreen(
 }
 
 @Composable
-private fun TrackRow(track: AudioTrack, onClick: () -> Unit) {
+private fun TrackRow(track: AudioTrack, onClick: () -> Unit, onDownload: () -> Unit) {
     FocusableSurface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(Spacing.md)) {
-            Text(track.title, style = AppTypography.title)
-            if (track.artist.isNotBlank()) {
-                Text(track.artist, style = AppTypography.body)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(Spacing.md),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(track.title, style = AppTypography.title)
+                if (track.artist.isNotBlank()) {
+                    Text(track.artist, style = AppTypography.body)
+                }
+            }
+            FocusableSurface(
+                onClick = onDownload,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+            ) {
+                Text(stringResource(id = R.string.download_audio), modifier = Modifier.padding(Spacing.sm))
             }
         }
     }

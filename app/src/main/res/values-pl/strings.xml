@@ -103,4 +103,5 @@
     <string name="settings_pin">Kontrola rodzicielska PIN</string>
     <string name="settings_pin_subtitle">4-cyfrowy kod blokujący Ustawienia i Admin</string>
     <string name="settings_pin_enabled">PIN włączony</string>
+    <string name="download_audio">Pobierz audio</string>
 </resources>

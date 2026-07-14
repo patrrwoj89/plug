@@ -16,6 +16,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -44,6 +48,28 @@ fun SettingsScreen(
     val preferredQuality by viewModel.preferredQuality.collectAsStateWithLifecycle()
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
     val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    var pinVerified by remember { mutableStateOf(false) }
+    var pinError by remember { mutableStateOf(false) }
+
+    if (pinEnabled && pinCode.isNotBlank() && !pinVerified) {
+        PinScreen(
+            onPinEntered = { entered ->
+                if (entered == pinCode) {
+                    pinVerified = true
+                    pinError = false
+                } else {
+                    pinError = true
+                }
+            },
+            onCancel = { onNavigate(Screen.Home) }
+        )
+        return
+    }
+
+    if (pinError) {
+        pinError = false
+    }
 
     Column(
         modifier = modifier
