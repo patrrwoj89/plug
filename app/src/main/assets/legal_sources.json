@@ -1,0 +1,65 @@
+{
+  "iptv": [
+    {
+      "name": "Public global channels (verify locally)",
+      "url": "https://iptv-org.github.io/iptv/index.m3u",
+      "license": "Unlicense / public links"
+    },
+    {
+      "name": "LegalStream curated legal IPTV",
+      "url": "https://github.com/JeremyPlease/LegalStream/raw/master/packages/all.m3u",
+      "license": "free legal streams"
+    },
+    {
+      "name": "RW1986 Pluto/Plex/STIRR",
+      "url": "https://github.com/RW1986/IPTV/raw/main/lineup.m3u8",
+      "license": "free legal streams"
+    }
+  ],
+  "epg": [
+    {
+      "name": "EPG for LegalStream",
+      "url": "https://raw.githubusercontent.com/JeremyPlease/LegalStream/master/epg.xml",
+      "license": "free legal streams"
+    }
+  ],
+  "torrentExamples": [
+    {
+      "name": "Ubuntu 24.04 LTS Desktop (legal open-source)",
+      "magnet": "magnet:?xt=urn:btih:9fc20b9e98ea98b4a35e6223041a5ef9440f6d3&dn=ubuntu-24.04-desktop-amd64.iso&tr=https%3A%2F%2Ftorrent.ubuntu.com%2Fannounce",
+      "license": "GPL / open-source"
+    },
+    {
+      "name": "Internet Archive public domain (example)",
+      "magnet": "magnet:?xt=urn:btih:EXAMPLE&dn=archive.org-public-domain-example",
+      "license": "public domain / CC"
+    }
+  ],
+  "stremioAddons": [
+    {
+      "name": "YouTube (official)",
+      "url": "https://addon.youtube.com/stremio/",
+      "license": "official"
+    },
+    {
+      "name": "TED (official)",
+      "url": "https://addon.ted.com/stremio/",
+      "license": "official"
+    }
+  ],
+  "music": [
+    {
+      "name": "Jamendo",
+      "url": "https://api.jamendo.com/v3.0",
+      "license": "CC music / API key required"
+    },
+    {
+      "name": "Radio Paradise",
+      "url": "http://www.radioparadise.com/m3u/mp3-192.m3u",
+      "license": "free internet radio"
+    }
+  ],
+  "polish": {
+    "note": "Polish audio tracks and subtitles are selected automatically when available. Polish legal sources include TVP Info, Ninateka and Player.pl (subscription)."
+  }
+}

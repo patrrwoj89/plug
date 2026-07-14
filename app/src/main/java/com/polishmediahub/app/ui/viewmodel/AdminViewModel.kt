@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.local.PluginEntity
+import com.polishmediahub.app.data.legal.LegalSourcesRepository
 import com.polishmediahub.app.data.plugin.PluginRepository
 import com.polishmediahub.app.data.remote.debrid.DebridOAuthManager
 import com.polishmediahub.app.data.remote.debrid.DebridProvider
@@ -20,7 +21,8 @@ import javax.inject.Inject
 class AdminViewModel @Inject constructor(
     private val apiConfigRepository: ApiConfigRepository,
     private val debridOAuthManager: DebridOAuthManager,
-    private val pluginRepository: PluginRepository
+    private val pluginRepository: PluginRepository,
+    private val legalSourcesRepository: LegalSourcesRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminUiState())
@@ -162,6 +164,16 @@ class AdminViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(error = "Updated $updated plugin(s)")
         } catch (e: Exception) {
             _uiState.value = _uiState.value.copy(error = e.message)
+        }
+    }
+
+    fun loadLegalSamples() {
+        viewModelScope.launch {
+            val sources = legalSourcesRepository.load() ?: return@launch
+            sources.iptv.firstOrNull()?.url?.let { apiConfigRepository.setIptvSourceUrls(it) }
+            sources.epg.firstOrNull()?.url?.let { apiConfigRepository.setEpgUrl(it) }
+            sources.stremioAddons.firstOrNull()?.url?.let { apiConfigRepository.setStremioAddons(it) }
+            _uiState.value = _uiState.value.copy(error = "Loaded legal sample sources")
         }
     }
 }

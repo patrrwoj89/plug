@@ -104,6 +104,7 @@
     <string name="epg_empty">Brak danych EPG. Dodaj URL w panelu Admin.</string>
     <string name="add">Dodaj</string>
     <string name="check_updates">Sprawdź aktualizacje</string>
+    <string name="load_legal_samples">Załaduj przykładowe legalne źródła</string>
     <string name="enter_pin">Wprowadź PIN</string>
     <string name="pin_incorrect">Nieprawidłowy PIN</string>
     <string name="clear">Wyczyść</string>

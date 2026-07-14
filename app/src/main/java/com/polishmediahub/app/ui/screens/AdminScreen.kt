@@ -273,6 +273,9 @@ fun AdminScreen(
             Button(onClick = { viewModel.checkPluginUpdates() }) {
                 Text(stringResource(id = R.string.check_updates))
             }
+            Button(onClick = { viewModel.loadLegalSamples() }) {
+                Text(stringResource(id = R.string.load_legal_samples))
+            }
         }
 
         state.plugins.forEachIndexed { index, plugin ->

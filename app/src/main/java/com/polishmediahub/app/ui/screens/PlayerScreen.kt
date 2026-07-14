@@ -60,10 +60,11 @@ import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManagerProvider
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.session.MediaSession
 import androidx.media3.ui.PlayerView
 import com.polishmediahub.app.R
@@ -92,8 +93,16 @@ fun PlayerScreen(
         val mediaSourceFactory = DefaultMediaSourceFactory(context)
             .setDataSourceFactory(dataSourceFactory)
             .setDrmSessionManagerProvider(drmSessionManagerProvider)
+        val trackSelector = DefaultTrackSelector(context).apply {
+            parameters = DefaultTrackSelector.Parameters.Builder(context)
+                .setPreferredAudioLanguage("pl")
+                .setPreferredTextLanguage("pl")
+                .setSelectUndeterminedTextLanguage(true)
+                .build()
+        }
         ExoPlayer.Builder(context)
             .setMediaSourceFactory(mediaSourceFactory)
+            .setTrackSelector(trackSelector)
             .setRenderersFactory(DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON))
             .build()
             .apply { playWhenReady = true }
