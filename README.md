@@ -14,14 +14,15 @@ A clean, modern Android TV application skeleton built with Jetpack Compose for T
 
 ## Tech stack
 
-- Android Gradle Plugin 8.7.2
-- Gradle 8.9
-- Kotlin 1.9.24
-- Compose BOM 2024.11.00
+- Android Gradle Plugin 9.0.0
+- Gradle 9.1.0
+- Kotlin 2.3.0
+- Compose BOM 2026.06.01
 - Jetpack Compose for TV (`tv-foundation`, `tv-material`)
-- Hilt 2.51.1
-- ExoPlayer / Media3 1.4.1
+- Hilt 2.60.1
+- ExoPlayer / Media3 1.10.1
 - Coil 2.7.0
+- `minSdk = 23` (Android 6.0) — keeps support for older Android TV devices
 
 ## Build
 
