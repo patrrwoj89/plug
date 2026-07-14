@@ -6,6 +6,7 @@ import com.polishmediahub.app.data.source.CloudstreamSource
 import com.polishmediahub.app.data.source.KodiMediaSource
 import com.polishmediahub.app.data.source.MediaSource
 import com.polishmediahub.app.data.source.WebMediaSource
+import javax.inject.Provider
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
 import kotlinx.coroutines.flow.Flow
@@ -22,7 +23,8 @@ class PluginRepository @Inject constructor(
     private val client: OkHttpClient,
     private val kodiMediaSource: KodiMediaSource,
     private val webMediaSource: WebMediaSource,
-    private val cloudstreamSource: CloudstreamSource
+    private val cloudstreamSource: CloudstreamSource,
+    private val quickJsMediaSourceProvider: Provider<QuickJsMediaSource>
 ) {
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -132,6 +134,11 @@ class PluginRepository @Inject constructor(
                 "iptv" -> {
                     // Applied via ApiConfigRepository
                     null
+                }
+                "quickjs" -> {
+                    val quickSource = quickJsMediaSourceProvider.get()
+                    quickSource.configure(source.config["script"] ?: "")
+                    quickSource
                 }
                 else -> null
             }
