@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.polishmediahub.app.ui.components.Sidebar
 import com.polishmediahub.app.ui.screens.AdminScreen
 import com.polishmediahub.app.ui.screens.AnimeScreen
@@ -120,7 +121,8 @@ fun TVApp(
             }
             composable(
                 route = "player/{id}",
-                arguments = listOf(navArgument("id") { type = NavType.StringType })
+                arguments = listOf(navArgument("id") { type = NavType.StringType }),
+                deepLinks = listOf(navDeepLink { uriPattern = "polishmediahub://play/{id}" })
             ) {
                 PlayerScreen(
                     onNavigate = { navController.navigate(it.route) },
