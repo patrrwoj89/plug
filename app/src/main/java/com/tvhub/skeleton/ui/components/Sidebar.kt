@@ -19,6 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.Animation
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.WatchLater
@@ -55,7 +57,9 @@ private val sidebarItems = listOf(
     SidebarItem(Screen.Search, "Search", Icons.Default.Search),
     SidebarItem(Screen.Library, "Library", Icons.AutoMirrored.Filled.LibraryBooks),
     SidebarItem(Screen.Watchlist, "Watchlist", Icons.Default.WatchLater),
-    SidebarItem(Screen.Settings, "Settings", Icons.Default.Settings)
+    SidebarItem(Screen.Anime, "Anime", Icons.Default.Animation),
+    SidebarItem(Screen.Settings, "Settings", Icons.Default.Settings),
+    SidebarItem(Screen.Admin, "Sources", Icons.Default.AdminPanelSettings)
 )
 
 @Composable

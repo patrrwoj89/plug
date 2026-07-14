@@ -14,6 +14,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.tvhub.skeleton.ui.components.Sidebar
+import com.tvhub.skeleton.ui.screens.AdminScreen
+import com.tvhub.skeleton.ui.screens.AnimeScreen
 import com.tvhub.skeleton.ui.screens.DetailScreen
 import com.tvhub.skeleton.ui.screens.HomeScreen
 import com.tvhub.skeleton.ui.screens.LibraryScreen
@@ -35,7 +37,9 @@ fun TVApp(
             route.startsWith(Screen.Search.route) -> Screen.Search
             route.startsWith(Screen.Library.route) -> Screen.Library
             route.startsWith(Screen.Watchlist.route) -> Screen.Watchlist
+            route.startsWith(Screen.Anime.route) -> Screen.Anime
             route.startsWith(Screen.Settings.route) -> Screen.Settings
+            route.startsWith(Screen.Admin.route) -> Screen.Admin
             route.startsWith("detail/") -> Screen.Detail(
                 navBackStackEntry?.arguments?.getString("id") ?: ""
             )
@@ -76,8 +80,14 @@ fun TVApp(
             composable(Screen.Watchlist.route) {
                 WatchlistScreen(onNavigate = { navController.navigate(it.route) })
             }
+            composable(Screen.Anime.route) {
+                AnimeScreen(onNavigate = { navController.navigate(it.route) })
+            }
             composable(Screen.Settings.route) {
                 SettingsScreen(onNavigate = { navController.navigate(it.route) })
+            }
+            composable(Screen.Admin.route) {
+                AdminScreen(modifier = Modifier.fillMaxSize())
             }
             composable(
                 route = "detail/{id}",

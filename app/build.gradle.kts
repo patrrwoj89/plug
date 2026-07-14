@@ -84,6 +84,12 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
 
+    // Networking
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.kotlinx.serialization)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+
     // Persistence
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

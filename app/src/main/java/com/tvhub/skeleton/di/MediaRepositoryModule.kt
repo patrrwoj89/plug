@@ -1,7 +1,7 @@
 package com.tvhub.skeleton.di
 
+import com.tvhub.skeleton.data.CompositeMediaRepository
 import com.tvhub.skeleton.data.MediaRepository
-import com.tvhub.skeleton.data.MockMediaRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -15,6 +15,6 @@ abstract class MediaRepositoryModule {
     @Binds
     @Singleton
     abstract fun bindMediaRepository(
-        repository: MockMediaRepository
+        repository: CompositeMediaRepository
     ): MediaRepository
 }

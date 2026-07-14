@@ -5,7 +5,9 @@ sealed class Screen(val route: String) {
     data object Search : Screen("search")
     data object Library : Screen("library")
     data object Watchlist : Screen("watchlist")
+    data object Anime : Screen("anime")
     data object Settings : Screen("settings")
+    data object Admin : Screen("admin")
 
     data class Detail(val id: String) : Screen("detail/$id")
     data class Player(val id: String) : Screen("player/$id")
