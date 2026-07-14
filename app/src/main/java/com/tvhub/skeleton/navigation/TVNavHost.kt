@@ -1,0 +1,102 @@
+package com.tvhub.skeleton.navigation
+
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.tvhub.skeleton.ui.components.Sidebar
+import com.tvhub.skeleton.ui.screens.DetailScreen
+import com.tvhub.skeleton.ui.screens.HomeScreen
+import com.tvhub.skeleton.ui.screens.LibraryScreen
+import com.tvhub.skeleton.ui.screens.PlayerScreen
+import com.tvhub.skeleton.ui.screens.SearchScreen
+import com.tvhub.skeleton.ui.screens.SettingsScreen
+import com.tvhub.skeleton.ui.screens.WatchlistScreen
+
+@Composable
+fun TVApp(
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController()
+) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    val currentScreen = currentRoute?.let { route ->
+        when {
+            route.startsWith(Screen.Home.route) -> Screen.Home
+            route.startsWith(Screen.Search.route) -> Screen.Search
+            route.startsWith(Screen.Library.route) -> Screen.Library
+            route.startsWith(Screen.Watchlist.route) -> Screen.Watchlist
+            route.startsWith(Screen.Settings.route) -> Screen.Settings
+            route.startsWith("detail/") -> Screen.Detail(
+                navBackStackEntry?.arguments?.getString("id") ?: ""
+            )
+            route.startsWith("player/") -> Screen.Player(
+                navBackStackEntry?.arguments?.getString("id") ?: ""
+            )
+            else -> Screen.Home
+        }
+    } ?: Screen.Home
+
+    Row(modifier = modifier.fillMaxSize()) {
+        Sidebar(
+            current = currentScreen,
+            onNavigate = { screen ->
+                navController.navigate(screen.route) {
+                    popUpTo(Screen.Home.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            modifier = Modifier.fillMaxHeight()
+        )
+
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Home.route,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            composable(Screen.Home.route) {
+                HomeScreen(onNavigate = { navController.navigate(it.route) })
+            }
+            composable(Screen.Search.route) {
+                SearchScreen(onNavigate = { navController.navigate(it.route) })
+            }
+            composable(Screen.Library.route) {
+                LibraryScreen(onNavigate = { navController.navigate(it.route) })
+            }
+            composable(Screen.Watchlist.route) {
+                WatchlistScreen(onNavigate = { navController.navigate(it.route) })
+            }
+            composable(Screen.Settings.route) {
+                SettingsScreen(onNavigate = { navController.navigate(it.route) })
+            }
+            composable(
+                route = "detail/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.StringType })
+            ) {
+                DetailScreen(
+                    onNavigate = { navController.navigate(it.route) },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            composable(
+                route = "player/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.StringType })
+            ) {
+                PlayerScreen(
+                    onNavigate = { navController.navigate(it.route) },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+    }
+}
