@@ -46,6 +46,9 @@ class AdminViewModel @Inject constructor(
                 apiConfigRepository.plexToken,
                 apiConfigRepository.embyUrl,
                 apiConfigRepository.embyToken,
+                apiConfigRepository.subsonicUrl,
+                apiConfigRepository.subsonicUser,
+                apiConfigRepository.subsonicPassword,
                 pluginRepository.plugins
             ) { values ->
                 AdminUiState(
@@ -66,7 +69,10 @@ class AdminViewModel @Inject constructor(
                     plexToken = values[14] as String,
                     embyUrl = values[15] as String,
                     embyToken = values[16] as String,
-                    plugins = values[17] as? List<PluginEntity> ?: emptyList()
+                    subsonicUrl = values[17] as String,
+                    subsonicUser = values[18] as String,
+                    subsonicPassword = values[19] as String,
+                    plugins = values[20] as? List<PluginEntity> ?: emptyList()
                 )
             }.collect { state -> _uiState.value = state }
         }
@@ -88,6 +94,9 @@ class AdminViewModel @Inject constructor(
     fun setPlexToken(value: String) = viewModelScope.launch { apiConfigRepository.setPlexToken(value) }
     fun setEmbyUrl(value: String) = viewModelScope.launch { apiConfigRepository.setEmbyUrl(value) }
     fun setEmbyToken(value: String) = viewModelScope.launch { apiConfigRepository.setEmbyToken(value) }
+    fun setSubsonicUrl(value: String) = viewModelScope.launch { apiConfigRepository.setSubsonicUrl(value) }
+    fun setSubsonicUser(value: String) = viewModelScope.launch { apiConfigRepository.setSubsonicUser(value) }
+    fun setSubsonicPassword(value: String) = viewModelScope.launch { apiConfigRepository.setSubsonicPassword(value) }
 
     fun startDebridOAuth() {
         viewModelScope.launch {
@@ -163,6 +172,9 @@ data class AdminUiState(
     val plexToken: String = "",
     val embyUrl: String = "",
     val embyToken: String = "",
+    val subsonicUrl: String = "",
+    val subsonicUser: String = "",
+    val subsonicPassword: String = "",
     val plugins: List<PluginEntity> = emptyList(),
     val debridDeviceCode: DeviceCodeResponse? = null,
     val isLoading: Boolean = false,

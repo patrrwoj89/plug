@@ -20,6 +20,7 @@ import com.tvhub.skeleton.ui.screens.DetailScreen
 import com.tvhub.skeleton.ui.screens.DownloadsScreen
 import com.tvhub.skeleton.ui.screens.HomeScreen
 import com.tvhub.skeleton.ui.screens.LibraryScreen
+import com.tvhub.skeleton.ui.screens.MusicScreen
 import com.tvhub.skeleton.ui.screens.PlayerScreen
 import com.tvhub.skeleton.ui.screens.SearchScreen
 import com.tvhub.skeleton.ui.screens.SettingsScreen
@@ -39,6 +40,7 @@ fun TVApp(
             route.startsWith(Screen.Library.route) -> Screen.Library
             route.startsWith(Screen.Watchlist.route) -> Screen.Watchlist
             route.startsWith(Screen.Anime.route) -> Screen.Anime
+            route.startsWith(Screen.Music.route) -> Screen.Music
             route.startsWith(Screen.Downloads.route) -> Screen.Downloads
             route.startsWith(Screen.Settings.route) -> Screen.Settings
             route.startsWith(Screen.Admin.route) -> Screen.Admin
@@ -84,6 +86,14 @@ fun TVApp(
             }
             composable(Screen.Anime.route) {
                 AnimeScreen(onNavigate = { navController.navigate(it.route) })
+            }
+            composable(Screen.Music.route) {
+                MusicScreen(
+                    onPlay = { track ->
+                        track.streamUrl?.let { navController.navigate(Screen.Player(track.id).route) }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
             composable(Screen.Downloads.route) {
                 DownloadsScreen(modifier = Modifier.fillMaxSize())

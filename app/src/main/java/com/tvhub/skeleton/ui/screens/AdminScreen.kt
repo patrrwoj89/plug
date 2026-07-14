@@ -205,6 +205,33 @@ fun AdminScreen(
         )
 
         Spacer(modifier = Modifier.height(Spacing.lg))
+        Text(stringResource(id = R.string.music_title), style = AppTypography.titleLarge)
+
+        OutlinedTextField(
+            value = state.subsonicUrl,
+            onValueChange = viewModel::setSubsonicUrl,
+            label = { Text(stringResource(id = R.string.admin_subsonic_url)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            OutlinedTextField(
+                value = state.subsonicUser,
+                onValueChange = viewModel::setSubsonicUser,
+                label = { Text(stringResource(id = R.string.admin_subsonic_user)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+            )
+            OutlinedTextField(
+                value = state.subsonicPassword,
+                onValueChange = viewModel::setSubsonicPassword,
+                label = { Text(stringResource(id = R.string.admin_subsonic_password)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(Spacing.lg))
         Text(stringResource(id = R.string.admin_plugins_title), style = AppTypography.titleLarge)
 
         var pluginUrl by remember { mutableStateOf("") }

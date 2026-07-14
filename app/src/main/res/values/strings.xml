@@ -77,6 +77,15 @@
     <string name="admin_emby_url">Emby server URL</string>
     <string name="admin_emby_token">Emby API token</string>
     <string name="admin_error">Error: %1$s</string>
+    <string name="music_title">Music</string>
+    <string name="music_search_placeholder">Search music / radio</string>
+    <string name="music_empty">No music sources configured. Add local files or a radio playlist in Admin.</string>
+    <string name="music_source_local">Local music</string>
+    <string name="music_source_radio">Internet radio</string>
+    <string name="music_source_subsonic">Subsonic / Airsonic</string>
+    <string name="admin_subsonic_url">Subsonic server URL</string>
+    <string name="admin_subsonic_user">Subsonic username</string>
+    <string name="admin_subsonic_password">Subsonic password</string>
 
     <string name="loading">Loading…</string>
     <string name="retry">Retry</string>
