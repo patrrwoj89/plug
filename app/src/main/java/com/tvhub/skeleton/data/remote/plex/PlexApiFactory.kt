@@ -22,9 +22,17 @@ class PlexApiFactory @Inject constructor(
     suspend fun create(): PlexApi {
         val baseUrl = serverUrl()
         val normalized = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
+        val plexClient = client.newBuilder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .header("Accept", "application/json")
+                    .build()
+                chain.proceed(request)
+            }
+            .build()
         return Retrofit.Builder()
             .baseUrl(normalized)
-            .client(client)
+            .client(plexClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
             .create(PlexApi::class.java)

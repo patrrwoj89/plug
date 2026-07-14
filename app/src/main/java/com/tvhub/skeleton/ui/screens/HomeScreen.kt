@@ -16,6 +16,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tvhub.skeleton.R
@@ -24,6 +27,7 @@ import com.tvhub.skeleton.navigation.Screen
 import com.tvhub.skeleton.ui.components.CategoryRow
 import com.tvhub.skeleton.ui.components.EmptyState
 import com.tvhub.skeleton.ui.components.ErrorState
+import com.tvhub.skeleton.ui.components.ShimmerBox
 import com.tvhub.skeleton.ui.components.WideCard
 import com.tvhub.skeleton.ui.theme.Spacing
 import com.tvhub.skeleton.ui.viewmodel.HomeViewModel
@@ -44,10 +48,7 @@ fun HomeScreen(
 
     when {
         uiState.isLoading -> {
-            EmptyState(
-                message = stringResource(id = R.string.loading),
-                modifier = modifier
-            )
+            HomeLoading(modifier = modifier)
         }
         uiState.error != null -> {
             ErrorState(
@@ -120,4 +121,22 @@ private fun HeroSection(
         onClick = { onClick(item) },
         modifier = modifier
     )
+}
+
+@Composable
+private fun HomeLoading(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(Spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(Spacing.lg)
+    ) {
+        ShimmerBox(modifier = Modifier.fillMaxWidth().height(360.dp))
+        ShimmerBox(modifier = Modifier.fillMaxWidth().height(32.dp))
+        ShimmerBox(modifier = Modifier.fillMaxWidth(0.6f).height(32.dp))
+        Spacer(modifier = Modifier.height(Spacing.md))
+        repeat(3) {
+            ShimmerBox(modifier = Modifier.fillMaxWidth().height(180.dp))
+        }
+    }
 }
