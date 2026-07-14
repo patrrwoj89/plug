@@ -128,7 +128,8 @@ fun TVApp(
             }
             composable(
                 route = "detail/{id}",
-                arguments = listOf(navArgument("id") { type = NavType.StringType })
+                arguments = listOf(navArgument("id") { type = NavType.StringType }),
+                deepLinks = listOf(navDeepLink { uriPattern = "polishmediahub://detail/{id}" })
             ) {
                 DetailScreen(
                     onNavigate = { navController.navigate(it.route) },

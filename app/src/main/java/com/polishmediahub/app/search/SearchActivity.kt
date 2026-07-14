@@ -62,8 +62,8 @@ class SearchActivity : ComponentActivity() {
             TVHubTheme {
                 SearchResultsScreen(
                     query = query,
-                    onPlay = { item ->
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("polishmediahub://play/${item.id}"))
+                    onResult = { item ->
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("polishmediahub://detail/${item.id}"))
                             .setClass(this, com.polishmediahub.app.MainActivity::class.java)
                             .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                         startActivity(intent)
@@ -79,7 +79,7 @@ class SearchActivity : ComponentActivity() {
 @Composable
 private fun SearchResultsScreen(
     query: String,
-    onPlay: (MediaItem) -> Unit,
+    onResult: (MediaItem) -> Unit,
     onBack: () -> Unit,
     viewModel: SearchResultsViewModel = hiltViewModel()
 ) {
@@ -112,7 +112,7 @@ private fun SearchResultsScreen(
                 ) {
                     items(uiState.results, key = { it.id }) { item ->
                         FocusableSurface(
-                            onClick = { onPlay(item) },
+                            onClick = { onResult(item) },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(Spacing.md)) {
