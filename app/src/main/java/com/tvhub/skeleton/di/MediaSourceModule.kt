@@ -1,5 +1,6 @@
 package com.tvhub.skeleton.di
 
+import com.tvhub.skeleton.data.plugin.PluginMediaSource
 import com.tvhub.skeleton.data.source.CloudstreamSource
 import com.tvhub.skeleton.data.source.KodiMediaSource
 import com.tvhub.skeleton.data.source.MediaSource
@@ -25,4 +26,8 @@ abstract class MediaSourceModule {
     @Binds
     @IntoSet
     abstract fun bindCloudstreamSource(source: CloudstreamSource): MediaSource
+
+    @Binds
+    @IntoSet
+    abstract fun bindPluginMediaSource(source: PluginMediaSource): MediaSource
 }

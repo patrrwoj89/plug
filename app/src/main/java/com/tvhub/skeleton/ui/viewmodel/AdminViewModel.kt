@@ -3,6 +3,8 @@ package com.tvhub.skeleton.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tvhub.skeleton.data.ApiConfigRepository
+import com.tvhub.skeleton.data.local.PluginEntity
+import com.tvhub.skeleton.data.plugin.PluginRepository
 import com.tvhub.skeleton.data.remote.debrid.DebridOAuthManager
 import com.tvhub.skeleton.data.remote.debrid.DebridProvider
 import com.tvhub.skeleton.data.remote.debrid.DeviceCodeResponse
@@ -17,7 +19,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AdminViewModel @Inject constructor(
     private val apiConfigRepository: ApiConfigRepository,
-    private val debridOAuthManager: DebridOAuthManager
+    private val debridOAuthManager: DebridOAuthManager,
+    private val pluginRepository: PluginRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminUiState())
@@ -36,20 +39,22 @@ class AdminViewModel @Inject constructor(
                 apiConfigRepository.stremioAddons,
                 apiConfigRepository.kodiUrl,
                 apiConfigRepository.webSourceConfig,
-                apiConfigRepository.cloudstreamRepoUrls
+                apiConfigRepository.cloudstreamRepoUrls,
+                pluginRepository.plugins
             ) { values ->
                 AdminUiState(
-                    tmdbApiKey = values[0],
-                    aniListToken = values[1],
-                    traktClientId = values[2],
-                    debridApiKey = values[3],
-                    debridAccessToken = values[4],
-                    debridProvider = values[5],
-                    iptvSourceUrls = values[6],
-                    stremioAddons = values[7],
-                    kodiUrl = values[8],
-                    webSourceConfig = values[9],
-                    cloudstreamRepoUrls = values[10]
+                    tmdbApiKey = values[0] as String,
+                    aniListToken = values[1] as String,
+                    traktClientId = values[2] as String,
+                    debridApiKey = values[3] as String,
+                    debridAccessToken = values[4] as String,
+                    debridProvider = values[5] as String,
+                    iptvSourceUrls = values[6] as String,
+                    stremioAddons = values[7] as String,
+                    kodiUrl = values[8] as String,
+                    webSourceConfig = values[9] as String,
+                    cloudstreamRepoUrls = values[10] as String,
+                    plugins = values[11] as? List<PluginEntity> ?: emptyList()
                 )
             }.collect { state -> _uiState.value = state }
         }
@@ -100,6 +105,26 @@ class AdminViewModel @Inject constructor(
             )
         )
     }
+
+    fun addPlugin(url: String) {
+        viewModelScope.launch {
+            try {
+                pluginRepository.addPluginFromUrl(url)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message)
+            }
+        }
+    }
+
+    fun removePlugin(id: String) = viewModelScope.launch { pluginRepository.removePlugin(id) }
+
+    fun setPluginEnabled(id: String, enabled: Boolean) = viewModelScope.launch {
+        pluginRepository.setEnabled(id, enabled)
+    }
+
+    fun reorderPlugins(orderedIds: List<String>) = viewModelScope.launch {
+        pluginRepository.reorder(orderedIds)
+    }
 }
 
 data class AdminUiState(
@@ -114,6 +139,7 @@ data class AdminUiState(
     val kodiUrl: String = "",
     val webSourceConfig: String = "",
     val cloudstreamRepoUrls: String = "",
+    val plugins: List<PluginEntity> = emptyList(),
     val debridDeviceCode: DeviceCodeResponse? = null,
     val isLoading: Boolean = false,
     val error: String? = null

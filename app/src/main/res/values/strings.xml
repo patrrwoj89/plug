@@ -60,6 +60,11 @@
     <string name="admin_debrid_link">Link Debrid account (OAuth)</string>
     <string name="admin_debrid_go_to">Go to:</string>
     <string name="admin_debrid_enter_code">Enter code:</string>
+    <string name="admin_plugins_title">Plugin sources</string>
+    <string name="admin_plugin_url">Plugin manifest URL</string>
+    <string name="admin_plugin_add">Add plugin</string>
+    <string name="admin_plugin_remove">Remove</string>
+    <string name="admin_plugin_show_qr">Show config QR</string>
     <string name="admin_error">Error: %1$s</string>
 
     <string name="loading">Loading…</string>

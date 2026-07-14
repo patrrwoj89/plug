@@ -60,6 +60,11 @@
     <string name="admin_debrid_link">Połącz konto Debrid (OAuth)</string>
     <string name="admin_debrid_go_to">Otwórz:</string>
     <string name="admin_debrid_enter_code">Wpisz kod:</string>
+    <string name="admin_plugins_title">Źródła pluginów</string>
+    <string name="admin_plugin_url">URL manifestu pluginu</string>
+    <string name="admin_plugin_add">Dodaj plugin</string>
+    <string name="admin_plugin_remove">Usuń</string>
+    <string name="admin_plugin_show_qr">Pokaż QR konfiguracji</string>
     <string name="admin_error">Błąd: %1$s</string>
 
     <string name="loading">Ładowanie…</string>

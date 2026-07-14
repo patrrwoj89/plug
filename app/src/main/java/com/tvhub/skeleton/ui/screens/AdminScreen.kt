@@ -18,6 +18,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.stringResource
@@ -168,11 +171,62 @@ fun AdminScreen(
             )
         }
 
+        Spacer(modifier = Modifier.height(Spacing.lg))
+        Text(stringResource(id = R.string.admin_plugins_title), style = AppTypography.titleLarge)
+
+        var pluginUrl by remember { mutableStateOf("") }
+        OutlinedTextField(
+            value = pluginUrl,
+            onValueChange = { pluginUrl = it },
+            label = { Text(stringResource(id = R.string.admin_plugin_url)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+        )
+        Button(onClick = { viewModel.addPlugin(pluginUrl); pluginUrl = "" }) {
+            Text(stringResource(id = R.string.admin_plugin_add))
+        }
+
+        state.plugins.forEach { plugin ->
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                modifier = Modifier.padding(vertical = Spacing.sm)
+            ) {
+                Text(plugin.name, style = AppTypography.body, modifier = Modifier.weight(1f))
+                FocusableSurface(
+                    onClick = { viewModel.removePlugin(plugin.pluginId) },
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(Radius.md)
+                ) {
+                    Text(stringResource(id = R.string.admin_plugin_remove), modifier = Modifier.padding(Spacing.sm))
+                }
+            }
+        }
+
+        Button(onClick = {
+            viewModel.showQrForApiKey(buildPluginConfigQr(state))
+        }) {
+            Text(stringResource(id = R.string.admin_plugin_show_qr))
+        }
+
         state.error?.let { error ->
             Spacer(modifier = Modifier.height(Spacing.md))
             Text(stringResource(id = R.string.admin_error, error), color = AppColor.Error)
         }
     }
+}
+
+private fun buildPluginConfigQr(state: com.tvhub.skeleton.ui.viewmodel.AdminUiState): String {
+    val sources = buildString {
+        appendLine("""{ "type": "stremio", "id": "stremio", "name": "Stremio", "config": { "urls": "${state.stremioAddons}" } },""")
+        appendLine("""{ "type": "iptv", "id": "iptv", "name": "IPTV", "config": { "urls": "${state.iptvSourceUrls}" } },""")
+        appendLine("""{ "type": "kodi", "id": "kodi", "name": "Kodi", "config": { "url": "${state.kodiUrl}" } },""")
+        appendLine("""{ "type": "cloudstream", "id": "cloudstream", "name": "Cloudstream", "config": { "repos": "${state.cloudstreamRepoUrls}" } }""")
+    }
+    return """{
+        "id": "shared-config",
+        "name": "Shared config",
+        "version": "1.0",
+        "sources": [ $sources ]
+    }""".trimIndent()
 }
 
 @Composable
