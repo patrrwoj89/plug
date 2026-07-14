@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.tvhub.skeleton.model.Category
 import com.tvhub.skeleton.model.MediaItem
 import com.tvhub.skeleton.ui.theme.AppTypography
@@ -25,7 +27,9 @@ fun CategoryRow(
         Text(
             text = category.name,
             style = AppTypography.titleLarge,
-            modifier = Modifier.padding(start = Spacing.lg, bottom = Spacing.sm)
+            modifier = Modifier
+                .padding(start = Spacing.lg, bottom = Spacing.sm)
+                .semantics { contentDescription = "Category: ${category.name}" }
         )
 
         LazyRow(

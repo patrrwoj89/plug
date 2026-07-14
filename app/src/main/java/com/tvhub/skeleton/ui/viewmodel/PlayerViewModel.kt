@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tvhub.skeleton.data.MediaRepository
 import com.tvhub.skeleton.data.WatchHistoryRepository
+import com.tvhub.skeleton.data.tv.WatchNextHelper
 import com.tvhub.skeleton.model.MediaItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -18,7 +19,8 @@ import javax.inject.Inject
 class PlayerViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val mediaRepository: MediaRepository,
-    private val watchHistoryRepository: WatchHistoryRepository
+    private val watchHistoryRepository: WatchHistoryRepository,
+    private val watchNextHelper: WatchNextHelper
 ) : ViewModel() {
 
     private val _item = MutableStateFlow<MediaItem?>(null)
@@ -42,6 +44,7 @@ class PlayerViewModel @Inject constructor(
         val id = item.value?.id ?: return
         viewModelScope.launch {
             watchHistoryRepository.updatePosition(id, positionMs, durationMs)
+            item.value?.let { watchNextHelper.addToWatchNext(it, positionMs, durationMs) }
         }
     }
 }

@@ -107,6 +107,8 @@ dependencies {
     // Splash screen
     implementation(libs.androidx.core.splashscreen)
 
+    // TV launcher recommendations / WatchNext use framework TvContract.
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
