@@ -63,6 +63,7 @@ private val sidebarItems = listOf(
     SidebarItem(Screen.Anime, R.string.anime, Icons.Default.Animation),
     SidebarItem(Screen.Music, R.string.music_title, Icons.Default.MusicNote),
     SidebarItem(Screen.Epg, R.string.epg_title, Icons.Default.LiveTv),
+    SidebarItem(Screen.Torrents, R.string.torrents_title, Icons.Default.Download),
     SidebarItem(Screen.Downloads, R.string.downloads, Icons.Default.Download),
     SidebarItem(Screen.CustomLists, R.string.custom_lists_title, Icons.AutoMirrored.Filled.PlaylistPlay),
     SidebarItem(Screen.Settings, R.string.settings, Icons.Default.Settings),

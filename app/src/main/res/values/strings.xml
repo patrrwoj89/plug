@@ -95,6 +95,10 @@
     <string name="custom_lists_title">Custom lists</string>
     <string name="new_list_name">New list name</string>
     <string name="epg_title">TV Guide</string>
+    <string name="torrents_title">Torrents</string>
+    <string name="torrents_magnet">Magnet URI or .torrent URL</string>
+    <string name="torrents_add">Add torrent</string>
+    <string name="torrents_empty">No active torrents. Add a legal magnet/torrent you own.</string>
     <string name="epg_url">XMLTV EPG URL</string>
     <string name="epg_load">Load EPG</string>
     <string name="epg_empty">No EPG data. Add a URL in Admin.</string>

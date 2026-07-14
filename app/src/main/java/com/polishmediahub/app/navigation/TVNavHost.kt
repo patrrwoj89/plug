@@ -27,6 +27,7 @@ import com.polishmediahub.app.ui.screens.MusicScreen
 import com.polishmediahub.app.ui.screens.PlayerScreen
 import com.polishmediahub.app.ui.screens.SearchScreen
 import com.polishmediahub.app.ui.screens.SettingsScreen
+import com.polishmediahub.app.ui.screens.TorrentsScreen
 import com.polishmediahub.app.ui.screens.WatchlistScreen
 
 @Composable
@@ -45,6 +46,7 @@ fun TVApp(
             route.startsWith(Screen.Anime.route) -> Screen.Anime
             route.startsWith(Screen.Music.route) -> Screen.Music
             route.startsWith(Screen.Epg.route) -> Screen.Epg
+            route.startsWith(Screen.Torrents.route) -> Screen.Torrents
             route.startsWith(Screen.Downloads.route) -> Screen.Downloads
             route.startsWith(Screen.CustomLists.route) -> Screen.CustomLists
             route.startsWith(Screen.Settings.route) -> Screen.Settings
@@ -102,6 +104,12 @@ fun TVApp(
             }
             composable(Screen.Epg.route) {
                 EpgScreen(modifier = Modifier.fillMaxSize())
+            }
+            composable(Screen.Torrents.route) {
+                TorrentsScreen(
+                    onPlay = { navController.navigate(Screen.Player(it.id).route) },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
             composable(Screen.Downloads.route) {
                 DownloadsScreen(modifier = Modifier.fillMaxSize())

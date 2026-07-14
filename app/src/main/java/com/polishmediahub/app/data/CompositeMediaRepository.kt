@@ -5,6 +5,7 @@ import com.polishmediahub.app.data.remote.iptv.IptvRepository
 import com.polishmediahub.app.data.remote.stremio.StremioRepository
 import com.polishmediahub.app.data.remote.tmdb.TmdbMediaRepository
 import com.polishmediahub.app.data.remote.trakt.TraktMediaRepository
+import com.polishmediahub.app.data.torrent.TorrentMediaSource
 import com.polishmediahub.app.data.source.FederatedMediaRepository
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
@@ -17,6 +18,7 @@ class CompositeMediaRepository @Inject constructor(
     private val traktMediaRepository: TraktMediaRepository,
     private val iptvRepository: IptvRepository,
     private val stremioRepository: StremioRepository,
+    private val torrentMediaSource: TorrentMediaSource,
     private val federatedMediaRepository: FederatedMediaRepository
 ) : MediaRepository {
 
@@ -27,6 +29,7 @@ class CompositeMediaRepository @Inject constructor(
         traktMediaRepository,
         iptvRepository,
         stremioRepository,
+        torrentMediaSource,
         federatedMediaRepository
     )
 
