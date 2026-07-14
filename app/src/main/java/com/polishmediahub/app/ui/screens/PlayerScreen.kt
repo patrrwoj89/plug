@@ -150,6 +150,8 @@ fun PlayerScreen(
         onSaveProgress = { position, duration ->
             viewModel.saveProgress(position, duration)
         },
+        onScrobbleStart = { position, duration -> viewModel.scrobbleStart(position, duration) },
+        onScrobbleStop = { position, duration -> viewModel.scrobbleStop(position, duration) },
         onEnterPip = { activity?.enterPipMode() },
         onCycleAudio = onCycleAudio,
         onCycleSubtitle = onCycleSubtitle,
@@ -166,6 +168,8 @@ private fun PlayerContent(
     onCycleAudio: () -> Unit,
     onCycleSubtitle: () -> Unit,
     onSaveProgress: (Long, Long) -> Unit,
+    onScrobbleStart: (Long, Long) -> Unit,
+    onScrobbleStop: (Long, Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var controlsVisible by remember { mutableStateOf(true) }
@@ -177,7 +181,12 @@ private fun PlayerContent(
 
     LaunchedEffect(exoPlayer) {
         val listener = object : Player.Listener {
-            override fun onIsPlayingChanged(playing: Boolean) { isPlaying = playing }
+            override fun onIsPlayingChanged(playing: Boolean) {
+                isPlaying = playing
+                val pos = exoPlayer.currentPosition.coerceAtLeast(0L)
+                val dur = exoPlayer.duration.coerceAtLeast(0L)
+                if (playing) onScrobbleStart(pos, dur) else onScrobbleStop(pos, dur)
+            }
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_READY) {
                     duration = exoPlayer.duration.coerceAtLeast(0L)
