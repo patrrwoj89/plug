@@ -196,20 +196,29 @@ private fun PlayerContent(
             .onPreviewKeyEvent { event ->
                 if (event.nativeKeyEvent.action != KeyEvent.ACTION_DOWN) return@onPreviewKeyEvent false
                 when (event.nativeKeyEvent.keyCode) {
-                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_SPACE -> {
+                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_SPACE,
+                    KeyEvent.KEYCODE_BUTTON_A -> {
                         exoPlayer.playPause()
                         true
                     }
-                    KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                    KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_BUTTON_R1 -> {
                         exoPlayer.seekBy(10_000)
                         true
                     }
-                    KeyEvent.KEYCODE_DPAD_LEFT -> {
+                    KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_BUTTON_L1 -> {
                         exoPlayer.seekBy(-10_000)
                         true
                     }
                     KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
                         controlsVisible = !controlsVisible
+                        true
+                    }
+                    KeyEvent.KEYCODE_BUTTON_X -> {
+                        onCycleAudio()
+                        true
+                    }
+                    KeyEvent.KEYCODE_BUTTON_Y -> {
+                        onCycleSubtitle()
                         true
                     }
                     KeyEvent.KEYCODE_BACK -> {
