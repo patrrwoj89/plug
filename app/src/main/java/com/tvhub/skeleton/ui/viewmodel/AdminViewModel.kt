@@ -73,12 +73,32 @@ class AdminViewModel @Inject constructor(
                 val provider = DebridProvider.entries.find { it.id == _uiState.value.debridProvider } ?: DebridProvider.REAL_DEBRID
                 val deviceCode = debridOAuthManager.authorize(provider)
                 _uiState.value = _uiState.value.copy(debridDeviceCode = deviceCode, isLoading = false)
-                debridOAuthManager.finishAuthorization(deviceCode.deviceCode, provider)
-                _uiState.value = _uiState.value.copy(debridDeviceCode = null)
+
+                // Poll in background so the QR code stays visible.
+                viewModelScope.launch {
+                    try {
+                        debridOAuthManager.finishAuthorization(deviceCode.deviceCode, provider)
+                        _uiState.value = _uiState.value.copy(debridDeviceCode = null)
+                    } catch (e: Exception) {
+                        _uiState.value = _uiState.value.copy(error = e.message)
+                    }
+                }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
             }
         }
+    }
+
+    fun showQrForApiKey(apiKey: String) {
+        _uiState.value = _uiState.value.copy(
+            debridDeviceCode = DeviceCodeResponse(
+                deviceCode = apiKey,
+                userCode = apiKey,
+                verificationUri = apiKey,
+                interval = 0,
+                expiresIn = 0
+            )
+        )
     }
 }
 

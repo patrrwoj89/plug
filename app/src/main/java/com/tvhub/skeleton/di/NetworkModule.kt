@@ -1,7 +1,8 @@
 package com.tvhub.skeleton.di
 
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import android.content.Context
 import com.tvhub.skeleton.BuildConfig
+import com.tvhub.skeleton.data.remote.RetryInterceptor
 import com.tvhub.skeleton.data.remote.anilist.AniListApi
 import com.tvhub.skeleton.data.remote.stremio.StremioApi
 import com.tvhub.skeleton.data.remote.tmdb.TmdbApi
@@ -9,12 +10,16 @@ import com.tvhub.skeleton.data.remote.trakt.TraktApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import okhttp3.Cache
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -26,13 +31,18 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(HttpLoggingInterceptor().apply {
-            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
-        })
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
+    fun provideOkHttpClient(@ApplicationContext context: Context): OkHttpClient {
+        val cacheDir = File(context.cacheDir, "http_cache").apply { mkdirs() }
+        return OkHttpClient.Builder()
+            .cache(Cache(cacheDir, 50 * 1024 * 1024))
+            .addInterceptor(RetryInterceptor(maxRetries = 3))
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
+            })
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
 
     @Provides
     @Singleton

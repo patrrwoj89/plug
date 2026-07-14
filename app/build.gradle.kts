@@ -87,6 +87,9 @@ dependencies {
     // HTML scraping for configured legal web sources
     implementation(libs.jsoup)
 
+    // QR code generation for OAuth/API keys
+    implementation(libs.zxing.core)
+
     // Networking
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)

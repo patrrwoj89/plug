@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -17,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -25,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tvhub.skeleton.R
 import com.tvhub.skeleton.data.remote.debrid.DebridProvider
 import com.tvhub.skeleton.ui.components.FocusableSurface
+import com.tvhub.skeleton.ui.components.QrCodeGenerator
 import com.tvhub.skeleton.ui.theme.AppColor
 import com.tvhub.skeleton.ui.theme.AppTypography
 import com.tvhub.skeleton.ui.theme.Radius
@@ -129,6 +133,11 @@ fun AdminScreen(
                 modifier = Modifier.fillMaxWidth(0.5f),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
             )
+            if (state.debridApiKey.isNotBlank()) {
+                Button(onClick = { viewModel.showQrForApiKey(state.debridApiKey) }) {
+                    Text("Show API key QR")
+                }
+            }
         }
 
         if (state.debridAccessToken.isNotBlank()) {
@@ -147,10 +156,16 @@ fun AdminScreen(
 
         state.debridDeviceCode?.let { code ->
             Spacer(modifier = Modifier.height(Spacing.md))
+            val qrContent = if (code.verificationUri.startsWith("http")) "${code.verificationUri}?code=${code.userCode}" else code.verificationUri
             Text(stringResource(id = R.string.admin_debrid_go_to), style = AppTypography.title)
             Text(code.verificationUri, style = AppTypography.body)
             Text(stringResource(id = R.string.admin_debrid_enter_code), style = AppTypography.title)
             Text(code.userCode, style = AppTypography.hero)
+            Image(
+                bitmap = QrCodeGenerator.generate(qrContent, 256).asImageBitmap(),
+                contentDescription = "QR code",
+                modifier = Modifier.size(256.dp)
+            )
         }
 
         state.error?.let { error ->
