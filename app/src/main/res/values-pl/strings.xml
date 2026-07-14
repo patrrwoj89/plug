@@ -96,4 +96,11 @@
     <string name="new_list_name">Nazwa nowej listy</string>
     <string name="add">Dodaj</string>
     <string name="check_updates">Sprawdź aktualizacje</string>
+    <string name="enter_pin">Wprowadź PIN</string>
+    <string name="pin_incorrect">Nieprawidłowy PIN</string>
+    <string name="clear">Wyczyść</string>
+    <string name="cancel">Anuluj</string>
+    <string name="settings_pin">Kontrola rodzicielska PIN</string>
+    <string name="settings_pin_subtitle">4-cyfrowy kod blokujący Ustawienia i Admin</string>
+    <string name="settings_pin_enabled">PIN włączony</string>
 </resources>

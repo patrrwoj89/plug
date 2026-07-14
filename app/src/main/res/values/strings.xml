@@ -96,4 +96,11 @@
     <string name="new_list_name">New list name</string>
     <string name="add">Add</string>
     <string name="check_updates">Check for updates</string>
+    <string name="enter_pin">Enter PIN</string>
+    <string name="pin_incorrect">Incorrect PIN</string>
+    <string name="clear">Clear</string>
+    <string name="cancel">Cancel</string>
+    <string name="settings_pin">Parental PIN</string>
+    <string name="settings_pin_subtitle">4-digit code to lock Settings and Admin</string>
+    <string name="settings_pin_enabled">PIN enabled</string>
 </resources>

@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,18 +28,22 @@ import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Radius
 import com.polishmediahub.app.ui.theme.Spacing
+import com.polishmediahub.app.ui.viewmodel.PinViewModel
 import com.polishmediahub.app.ui.viewmodel.SettingsViewModel
 
 @Composable
 fun SettingsScreen(
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel(),
+    pinViewModel: PinViewModel = hiltViewModel()
 ) {
     val darkTheme by viewModel.darkTheme.collectAsStateWithLifecycle()
     val autoplayTrailers by viewModel.autoplayTrailers.collectAsStateWithLifecycle()
     val saveSearchHistory by viewModel.saveSearchHistory.collectAsStateWithLifecycle()
     val preferredQuality by viewModel.preferredQuality.collectAsStateWithLifecycle()
+    val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
+    val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
 
     Column(
         modifier = modifier
@@ -74,6 +80,23 @@ fun SettingsScreen(
             value = preferredQuality,
             options = listOf("Auto", "1080p", "720p", "480p"),
             onSelect = viewModel::setPreferredQuality
+        )
+
+        SettingsToggle(
+            title = stringResource(id = R.string.settings_pin_enabled),
+            subtitle = stringResource(id = R.string.settings_pin),
+            checked = pinEnabled,
+            onCheckedChange = { enabled ->
+                if (!enabled) pinViewModel.setPin("", false)
+            }
+        )
+
+        OutlinedTextField(
+            value = pinCode,
+            onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) pinViewModel.setPin(it, pinEnabled) },
+            label = { Text(stringResource(id = R.string.settings_pin)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            keyboardOptions = KeyboardOptions.Default
         )
 
         Spacer(modifier = Modifier.height(Spacing.lg))
