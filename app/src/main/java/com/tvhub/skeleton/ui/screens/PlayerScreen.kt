@@ -1,5 +1,9 @@
 package com.tvhub.skeleton.ui.screens
 
+import android.app.Activity
+import android.app.PictureInPictureParams
+import android.os.Build
+import android.util.Rational
 import android.view.KeyEvent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -18,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
@@ -103,6 +108,7 @@ fun PlayerScreen(
 
     BackHandler { onNavigate(Screen.Home) }
 
+    val activity = context.findActivity()
     PlayerContent(
         exoPlayer = exoPlayer,
         title = item?.title ?: stringResource(id = R.string.app_name),
@@ -110,6 +116,7 @@ fun PlayerScreen(
         onSaveProgress = { position, duration ->
             viewModel.saveProgress(position, duration)
         },
+        onEnterPip = { activity?.enterPipMode() },
         modifier = modifier
     )
 }
@@ -119,6 +126,7 @@ private fun PlayerContent(
     exoPlayer: ExoPlayer,
     title: String,
     onBack: () -> Unit,
+    onEnterPip: () -> Unit,
     onSaveProgress: (Long, Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -205,7 +213,8 @@ private fun PlayerContent(
                 duration = duration,
                 onBack = onBack,
                 onPlayPause = { exoPlayer.playPause() },
-                onSeek = { position -> exoPlayer.seekTo(position.toLong()) }
+                onSeek = { position -> exoPlayer.seekTo(position.toLong()) },
+                onEnterPip = onEnterPip
             )
         }
     }
@@ -219,7 +228,8 @@ private fun PlayerControls(
     duration: Long,
     onBack: () -> Unit,
     onPlayPause: () -> Unit,
-    onSeek: (Float) -> Unit
+    onSeek: (Float) -> Unit,
+    onEnterPip: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -252,6 +262,14 @@ private fun PlayerControls(
                     )
                 }
 
+                IconButton(onClick = onEnterPip) {
+                    Icon(
+                        imageVector = Icons.Default.OpenInFull,
+                        contentDescription = "Picture in picture",
+                        tint = AppColor.OnSurface
+                    )
+                }
+
                 Slider(
                     value = if (duration > 0) currentPosition.toFloat() / duration else 0f,
                     onValueChange = onSeek,
@@ -268,6 +286,25 @@ private fun PlayerControls(
             }
         }
     }
+}
+
+private fun Activity.enterPipMode() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        try {
+            val params = PictureInPictureParams.Builder()
+                .setAspectRatio(Rational(16, 9))
+                .build()
+            enterPictureInPictureMode(params)
+        } catch (_: Exception) {
+            // PIP may not be supported on this device.
+        }
+    }
+}
+
+private tailrec fun android.content.Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is android.content.ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 private fun ExoPlayer.playPause() {

@@ -31,7 +31,9 @@
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.TVHubSkeleton"
-            android:screenOrientation="landscape">
+            android:screenOrientation="landscape"
+            android:supportsPictureInPicture="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
