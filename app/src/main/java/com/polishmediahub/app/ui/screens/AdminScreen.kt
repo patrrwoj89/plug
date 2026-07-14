@@ -249,8 +249,13 @@ fun AdminScreen(
             modifier = Modifier.fillMaxWidth(0.5f),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
-        Button(onClick = { viewModel.addPlugin(pluginUrl); pluginUrl = "" }) {
-            Text(stringResource(id = R.string.admin_plugin_add))
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            Button(onClick = { viewModel.addPlugin(pluginUrl); pluginUrl = "" }) {
+                Text(stringResource(id = R.string.admin_plugin_add))
+            }
+            Button(onClick = { viewModel.checkPluginUpdates() }) {
+                Text(stringResource(id = R.string.check_updates))
+            }
         }
 
         state.plugins.forEachIndexed { index, plugin ->

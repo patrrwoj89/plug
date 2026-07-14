@@ -155,6 +155,15 @@ class AdminViewModel @Inject constructor(
     fun reorderPlugins(orderedIds: List<String>) = viewModelScope.launch {
         pluginRepository.reorder(orderedIds)
     }
+
+    fun checkPluginUpdates() = viewModelScope.launch {
+        try {
+            val updated = pluginRepository.checkUpdates()
+            _uiState.value = _uiState.value.copy(error = "Updated $updated plugin(s)")
+        } catch (e: Exception) {
+            _uiState.value = _uiState.value.copy(error = e.message)
+        }
+    }
 }
 
 data class AdminUiState(

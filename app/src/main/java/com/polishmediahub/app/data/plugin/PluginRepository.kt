@@ -74,6 +74,30 @@ class PluginRepository @Inject constructor(
         }
     }
 
+    suspend fun checkUpdates(): Int {
+        val plugins = pluginDao.observeAll().first()
+        var updated = 0
+        plugins.forEach { entity ->
+            val url = entity.manifestUrl
+            if (url.isBlank()) return@forEach
+            val body = fetch(url) ?: return@forEach
+            if (body != entity.manifestJson) {
+                try {
+                    val manifest = json.decodeFromString(PluginManifest.serializer(), body)
+                    pluginDao.upsert(
+                        entity.copy(
+                            name = manifest.name,
+                            manifestJson = body
+                        )
+                    )
+                    updated++
+                } catch (_: Exception) {
+                }
+            }
+        }
+        return updated
+    }
+
     suspend fun loadAll(): List<MediaSource> {
         val entities = pluginDao.observeAll().first().filter { it.enabled }
         return entities.flatMap { entity ->
