@@ -84,6 +84,9 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
 
+    // HTML scraping for configured legal web sources
+    implementation(libs.jsoup)
+
     // Networking
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)
