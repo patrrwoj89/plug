@@ -17,7 +17,7 @@ class AniListMediaRepository @Inject constructor(
                 query = """
                     query { Page(page: 1, perPage: 10) { media(type: ANIME, sort: TRENDING_DESC) {
                         id title { english romaji native } description coverImage { large extraLarge }
-                        bannerImage episodes format seasonYear averageScore
+                        bannerImage episodes format seasonYear averageScore genres
                     } } }
                 """.trimIndent()
             )
@@ -35,13 +35,22 @@ class AniListMediaRepository @Inject constructor(
         emptyList()
     }
 
-    override suspend fun search(query: String): List<MediaItem> = try {
+    override suspend fun search(query: String): List<MediaItem> = search(query = query)
+
+    suspend fun search(
+        query: String,
+        page: Int = 1,
+        perPage: Int = 20,
+        sort: String = "TRENDING_DESC",
+        format: String? = null
+    ): List<MediaItem> = try {
+        val formatFilter = format?.let { ", format: $it" }.orEmpty()
         val response = api.query(
             AniListGraphQlRequest(
                 query = """
-                    query(${'$'}search: String) { Page(page: 1, perPage: 20) { media(search: ${'$'}search, type: ANIME) {
+                    query(${'$'}search: String) { Page(page: $page, perPage: $perPage) { media(search: ${'$'}search, type: ANIME$formatFilter, sort: $sort) {
                         id title { english romaji native } description coverImage { large extraLarge }
-                        bannerImage episodes format seasonYear averageScore
+                        bannerImage episodes format seasonYear averageScore genres
                     } } }
                 """.trimIndent(),
                 variables = mapOf("search" to query)
@@ -59,7 +68,7 @@ class AniListMediaRepository @Inject constructor(
                 query = """
                     query { Media(id: $numericId) {
                         id title { english romaji native } description coverImage { large extraLarge }
-                        bannerImage episodes format seasonYear averageScore
+                        bannerImage episodes format seasonYear averageScore genres
                     } }
                 """.trimIndent()
             )
@@ -79,7 +88,7 @@ class AniListMediaRepository @Inject constructor(
         year = seasonYear?.toString().orEmpty(),
         duration = "",
         rating = averageScore?.let { "${it / 10.0}" } ?: "",
-        genres = emptyList(),
+        genres = genres,
         type = MediaItem.Type.SERIES
     )
 }

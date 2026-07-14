@@ -73,12 +73,13 @@ class PlexMediaSource @Inject constructor(
         val server = serverUrl().removeSuffix("/")
         val token = token()
         val poster = metadata.thumb?.let { "$server$it?X-Plex-Token=$token" }
+        val backdrop = metadata.art?.let { "$server$it?X-Plex-Token=$token" }
         return MediaItem(
             id = "plex:${metadata.ratingKey}",
             title = metadata.title,
             description = metadata.summary ?: "",
             posterUrl = poster,
-            backdropUrl = null,
+            backdropUrl = backdrop,
             type = type,
             year = metadata.year?.toString() ?: "",
             videoUrl = null

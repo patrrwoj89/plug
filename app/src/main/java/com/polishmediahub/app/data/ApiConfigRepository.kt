@@ -22,6 +22,7 @@ class ApiConfigRepository @Inject constructor(
     val tmdbApiKey: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_TMDB].orEmpty() }
     val aniListToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_ANILIST].orEmpty() }
     val traktClientId: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_TRAKT_ID].orEmpty() }
+    val traktAccessToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_TRAKT_ACCESS].orEmpty() }
     val debridApiKey: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_DEBRID].orEmpty() }
     val debridAccessToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_DEBRID_ACCESS].orEmpty() }
     val debridRefreshToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_DEBRID_REFRESH].orEmpty() }
@@ -44,6 +45,7 @@ class ApiConfigRepository @Inject constructor(
     suspend fun setTmdbApiKey(value: String) = edit(KEY_TMDB, value)
     suspend fun setAniListToken(value: String) = edit(KEY_ANILIST, value)
     suspend fun setTraktClientId(value: String) = edit(KEY_TRAKT_ID, value)
+    suspend fun setTraktAccessToken(value: String) = edit(KEY_TRAKT_ACCESS, value)
     suspend fun setDebridApiKey(value: String) = edit(KEY_DEBRID, value)
     suspend fun setDebridAccessToken(value: String) = edit(KEY_DEBRID_ACCESS, value)
     suspend fun setDebridRefreshToken(value: String) = edit(KEY_DEBRID_REFRESH, value)
@@ -71,6 +73,7 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_TMDB = stringPreferencesKey("tmdb_api_key")
         private val KEY_ANILIST = stringPreferencesKey("anilist_token")
         private val KEY_TRAKT_ID = stringPreferencesKey("trakt_client_id")
+        private val KEY_TRAKT_ACCESS = stringPreferencesKey("trakt_access_token")
         private val KEY_DEBRID = stringPreferencesKey("debrid_api_key")
         private val KEY_DEBRID_ACCESS = stringPreferencesKey("debrid_access_token")
         private val KEY_DEBRID_REFRESH = stringPreferencesKey("debrid_refresh_token")

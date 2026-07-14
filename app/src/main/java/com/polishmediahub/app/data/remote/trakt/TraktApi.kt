@@ -2,8 +2,10 @@ package com.polishmediahub.app.data.remote.trakt
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.POST
 import retrofit2.http.Query
 
 interface TraktApi {
@@ -29,6 +31,36 @@ interface TraktApi {
         @Query("query") query: String,
         @Query("limit") limit: Int = 20
     ): List<TraktSearchResult>
+
+    @GET("sync/watched/movies")
+    suspend fun watchedMovies(@Header("Authorization") auth: String, @Header("trakt-api-key") clientId: String): List<TraktWatchedItem>
+
+    @GET("sync/watched/shows")
+    suspend fun watchedShows(@Header("Authorization") auth: String, @Header("trakt-api-key") clientId: String): List<TraktWatchedShow>
+
+    @GET("sync/watchlist/movies,shows")
+    suspend fun watchlist(@Header("Authorization") auth: String, @Header("trakt-api-key") clientId: String): List<TraktWatchlistItem>
+
+    @POST("scrobble/start")
+    suspend fun scrobbleStart(
+        @Header("Authorization") auth: String,
+        @Header("trakt-api-key") clientId: String,
+        @Body body: TraktScrobbleBody
+    )
+
+    @POST("scrobble/pause")
+    suspend fun scrobblePause(
+        @Header("Authorization") auth: String,
+        @Header("trakt-api-key") clientId: String,
+        @Body body: TraktScrobbleBody
+    )
+
+    @POST("scrobble/stop")
+    suspend fun scrobbleStop(
+        @Header("Authorization") auth: String,
+        @Header("trakt-api-key") clientId: String,
+        @Body body: TraktScrobbleBody
+    )
 
     companion object {
         const val BASE_URL = "https://api.trakt.tv/"
@@ -63,4 +95,65 @@ data class TraktIds(
     val slug: String? = null,
     val imdb: String? = null,
     val tmdb: Int? = null
+)
+
+@Serializable
+data class TraktWatchedItem(
+    @SerialName("last_watched_at") val lastWatchedAt: String? = null,
+    val movie: TraktMovie? = null
+)
+
+@Serializable
+data class TraktWatchedShow(
+    val show: TraktShow,
+    val seasons: List<TraktWatchedSeason> = emptyList()
+)
+
+@Serializable
+data class TraktWatchedSeason(
+    val number: Int,
+    val episodes: List<TraktWatchedEpisode> = emptyList()
+)
+
+@Serializable
+data class TraktWatchedEpisode(
+    val number: Int,
+    @SerialName("last_watched_at") val lastWatchedAt: String? = null
+)
+
+@Serializable
+data class TraktWatchlistItem(
+    val type: String,
+    val movie: TraktMovie? = null,
+    val show: TraktShow? = null
+)
+
+@Serializable
+data class TraktScrobbleBody(
+    val progress: Float,
+    val movie: TraktMovieMinimal? = null,
+    val episode: TraktEpisodeMinimal? = null,
+    @SerialName("sharing") val sharing: TraktSharing = TraktSharing()
+)
+
+@Serializable
+data class TraktMovieMinimal(
+    val title: String,
+    val year: Int? = null,
+    val ids: TraktIds
+)
+
+@Serializable
+data class TraktEpisodeMinimal(
+    val season: Int,
+    val number: Int,
+    val title: String? = null,
+    val ids: TraktIds? = null
+)
+
+@Serializable
+data class TraktSharing(
+    val twitter: Boolean = false,
+    val tumblr: Boolean = false,
+    val medium: Boolean = false
 )

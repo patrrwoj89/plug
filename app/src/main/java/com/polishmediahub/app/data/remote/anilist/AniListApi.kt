@@ -49,7 +49,8 @@ data class AniListMedia(
     val episodes: Int? = null,
     val format: String? = null,
     val seasonYear: Int? = null,
-    val averageScore: Int? = null
+    val averageScore: Int? = null,
+    val genres: List<String> = emptyList()
 )
 
 @Serializable

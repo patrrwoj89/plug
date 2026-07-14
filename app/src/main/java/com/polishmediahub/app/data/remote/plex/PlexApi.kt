@@ -54,6 +54,7 @@ data class PlexMetadata(
     @SerialName("summary") val summary: String? = null,
     @SerialName("type") val type: String,
     @SerialName("thumb") val thumb: String? = null,
+    @SerialName("art") val art: String? = null,
     @SerialName("year") val year: Int? = null,
     @SerialName("Media") val media: List<PlexMedia>? = null
 )

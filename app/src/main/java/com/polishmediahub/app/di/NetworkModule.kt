@@ -31,6 +31,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    fun provideJson(): Json = json
+
+    @Provides
+    @Singleton
     fun provideOkHttpClient(@ApplicationContext context: Context): OkHttpClient {
         val cacheDir = File(context.cacheDir, "http_cache").apply { mkdirs() }
         return OkHttpClient.Builder()

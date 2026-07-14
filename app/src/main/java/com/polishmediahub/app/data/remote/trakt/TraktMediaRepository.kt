@@ -38,6 +38,60 @@ class TraktMediaRepository @Inject constructor(
 
     override suspend fun byId(id: String): MediaItem? = null
 
+    suspend fun watchedMovies(): List<MediaItem> = try {
+        val auth = authHeader() ?: return emptyList()
+        api.watchedMovies(auth, clientId()).mapNotNull { it.movie?.toMediaItem() }
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    suspend fun watchlist(): List<MediaItem> = try {
+        val auth = authHeader() ?: return emptyList()
+        api.watchlist(auth, clientId()).mapNotNull {
+            when (it.type) {
+                "movie" -> it.movie?.toMediaItem()
+                "show" -> it.show?.toMediaItem()
+                else -> null
+            }
+        }
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    suspend fun scrobbleStart(mediaItem: MediaItem, progress: Float) {
+        val auth = authHeader() ?: return
+        val body = buildScrobbleBody(mediaItem, progress)
+        api.scrobbleStart(auth, clientId(), body)
+    }
+
+    suspend fun scrobblePause(mediaItem: MediaItem, progress: Float) {
+        val auth = authHeader() ?: return
+        val body = buildScrobbleBody(mediaItem, progress)
+        api.scrobblePause(auth, clientId(), body)
+    }
+
+    suspend fun scrobbleStop(mediaItem: MediaItem, progress: Float) {
+        val auth = authHeader() ?: return
+        val body = buildScrobbleBody(mediaItem, progress)
+        api.scrobbleStop(auth, clientId(), body)
+    }
+
+    private suspend fun authHeader(): String? {
+        val token = apiConfigRepository.traktAccessToken.first()
+        return if (token.isNotBlank()) "Bearer $token" else null
+    }
+
+    private fun buildScrobbleBody(mediaItem: MediaItem, progress: Float): TraktScrobbleBody {
+        val year = mediaItem.year.toIntOrNull()
+        val ids = TraktIds(trakt = 0, tmdb = mediaItem.id.removePrefix("tmdb:").toIntOrNull())
+        return TraktScrobbleBody(
+            progress = progress,
+            movie = if (mediaItem.type == MediaItem.Type.MOVIE) {
+                TraktMovieMinimal(title = mediaItem.title, year = year, ids = ids)
+            } else null
+        )
+    }
+
     private fun TraktMovie.toMediaItem() = MediaItem(
         id = "trakt:${ids.trakt}",
         title = title,

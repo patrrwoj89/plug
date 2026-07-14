@@ -50,5 +50,6 @@ data class EmbyItem(
     @SerialName("Overview") val overview: String? = null,
     @SerialName("Type") val type: String,
     @SerialName("PrimaryImageTag") val primaryImageTag: String? = null,
+    @SerialName("BackdropImageTags") val backdropImageTags: List<String>? = null,
     @SerialName("ProductionYear") val productionYear: Int? = null
 )

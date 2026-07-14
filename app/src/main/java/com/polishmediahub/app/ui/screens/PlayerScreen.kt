@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Audiotrack
+import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -53,7 +55,13 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem as ExoMediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.drm.DefaultDrmSessionManagerProvider
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.session.MediaSession
 import androidx.media3.ui.PlayerView
 import com.polishmediahub.app.R
 import com.polishmediahub.app.navigation.Screen
@@ -75,9 +83,17 @@ fun PlayerScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val exoPlayer = remember(context) {
-        ExoPlayer.Builder(context).build().apply {
-            playWhenReady = true
-        }
+        val dataSourceFactory = DefaultHttpDataSource.Factory()
+        val drmSessionManagerProvider = DefaultDrmSessionManagerProvider()
+            .apply { setDrmHttpDataSourceFactory(dataSourceFactory) }
+        val mediaSourceFactory = DefaultMediaSourceFactory(context)
+            .setDataSourceFactory(dataSourceFactory)
+            .setDrmSessionManagerProvider(drmSessionManagerProvider)
+        ExoPlayer.Builder(context)
+            .setMediaSourceFactory(mediaSourceFactory)
+            .setRenderersFactory(DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON))
+            .build()
+            .apply { playWhenReady = true }
     }
 
     DisposableEffect(exoPlayer, item) {
@@ -88,8 +104,11 @@ fun PlayerScreen(
             exoPlayer.seekTo(resumePosition)
         }
 
+        val mediaSession = MediaSession.Builder(context, exoPlayer).build()
+
         onDispose {
             viewModel.saveProgress(exoPlayer.currentPosition, exoPlayer.duration.coerceAtLeast(0L))
+            mediaSession.release()
             exoPlayer.release()
         }
     }
@@ -109,6 +128,9 @@ fun PlayerScreen(
     BackHandler { onNavigate(Screen.Home) }
 
     val activity = context.findActivity()
+    val onCycleAudio = remember(exoPlayer) { { cycleAudioTrack(exoPlayer) } }
+    val onCycleSubtitle = remember(exoPlayer) { { cycleSubtitleTrack(exoPlayer) } }
+
     PlayerContent(
         exoPlayer = exoPlayer,
         title = item?.title ?: stringResource(id = R.string.app_name),
@@ -117,6 +139,8 @@ fun PlayerScreen(
             viewModel.saveProgress(position, duration)
         },
         onEnterPip = { activity?.enterPipMode() },
+        onCycleAudio = onCycleAudio,
+        onCycleSubtitle = onCycleSubtitle,
         modifier = modifier
     )
 }
@@ -127,6 +151,8 @@ private fun PlayerContent(
     title: String,
     onBack: () -> Unit,
     onEnterPip: () -> Unit,
+    onCycleAudio: () -> Unit,
+    onCycleSubtitle: () -> Unit,
     onSaveProgress: (Long, Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -214,7 +240,9 @@ private fun PlayerContent(
                 onBack = onBack,
                 onPlayPause = { exoPlayer.playPause() },
                 onSeek = { position -> exoPlayer.seekTo(position.toLong()) },
-                onEnterPip = onEnterPip
+                onEnterPip = onEnterPip,
+                onCycleAudio = onCycleAudio,
+                onCycleSubtitle = onCycleSubtitle
             )
         }
     }
@@ -229,7 +257,9 @@ private fun PlayerControls(
     onBack: () -> Unit,
     onPlayPause: () -> Unit,
     onSeek: (Float) -> Unit,
-    onEnterPip: () -> Unit
+    onEnterPip: () -> Unit,
+    onCycleAudio: () -> Unit,
+    onCycleSubtitle: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -266,6 +296,22 @@ private fun PlayerControls(
                     Icon(
                         imageVector = Icons.Default.OpenInFull,
                         contentDescription = "Picture in picture",
+                        tint = AppColor.OnSurface
+                    )
+                }
+
+                IconButton(onClick = onCycleAudio) {
+                    Icon(
+                        imageVector = Icons.Default.Audiotrack,
+                        contentDescription = "Audio track",
+                        tint = AppColor.OnSurface
+                    )
+                }
+
+                IconButton(onClick = onCycleSubtitle) {
+                    Icon(
+                        imageVector = Icons.Default.ClosedCaption,
+                        contentDescription = "Subtitle track",
                         tint = AppColor.OnSurface
                     )
                 }
@@ -313,6 +359,47 @@ private fun ExoPlayer.playPause() {
 
 private fun ExoPlayer.seekBy(deltaMs: Long) {
     seekTo((currentPosition + deltaMs).coerceAtLeast(0L))
+}
+
+@UnstableApi
+private fun cycleAudioTrack(player: ExoPlayer) {
+    val audioGroups = player.currentTracks.groups.filter { it.type == androidx.media3.common.C.TRACK_TYPE_AUDIO }
+    if (audioGroups.isEmpty()) return
+    val currentIndex = audioGroups.indexOfFirst { group ->
+        (0 until group.length).any { group.isTrackSelected(it) }
+    }
+    val nextIndex = (currentIndex + 1) % audioGroups.size
+    val builder = player.trackSelectionParameters.buildUpon()
+    for (i in audioGroups.indices) {
+        val group = audioGroups[i]
+        val indices = if (i == nextIndex) listOf(0) else emptyList()
+        builder.setOverrideForType(
+            androidx.media3.common.TrackSelectionOverride(group.mediaTrackGroup, indices)
+        )
+    }
+    player.trackSelectionParameters = builder.build()
+}
+
+@UnstableApi
+private fun cycleSubtitleTrack(player: ExoPlayer) {
+    val textGroups = player.currentTracks.groups.filter { it.type == androidx.media3.common.C.TRACK_TYPE_TEXT }
+    if (textGroups.isEmpty()) return
+    val currentIndex = textGroups.indexOfFirst { group ->
+        (0 until group.length).any { group.isTrackSelected(it) }
+    }
+    val nextIndex = if (currentIndex == -1) 0 else (currentIndex + 1) % (textGroups.size + 1)
+    val builder = player.trackSelectionParameters.buildUpon()
+    for (i in textGroups.indices) {
+        val group = textGroups[i]
+        val indices = if (i == nextIndex) listOf(0) else emptyList()
+        builder.setOverrideForType(
+            androidx.media3.common.TrackSelectionOverride(group.mediaTrackGroup, indices)
+        )
+    }
+    if (nextIndex == textGroups.size) {
+        builder.clearOverridesOfType(androidx.media3.common.C.TRACK_TYPE_TEXT)
+    }
+    player.trackSelectionParameters = builder.build()
 }
 
 private fun formatMs(ms: Long): String {

@@ -81,13 +81,16 @@ class EmbyMediaSource @Inject constructor(
         val poster = item.primaryImageTag?.let { tag ->
             "$server/Items/${item.id}/Images/Primary?tag=$tag&api_key=$token"
         }
+        val backdrop = item.backdropImageTags?.firstOrNull()?.let { tag ->
+            "$server/Items/${item.id}/Images/Backdrop/0?tag=$tag&api_key=$token"
+        }
         val streamUrl = "$server/Videos/${item.id}/stream?static=true&api_key=$token"
         return MediaItem(
             id = "emby:${item.id}",
             title = item.name,
             description = item.overview ?: "",
             posterUrl = poster,
-            backdropUrl = null,
+            backdropUrl = backdrop,
             type = type,
             year = item.productionYear?.toString() ?: "",
             videoUrl = streamUrl

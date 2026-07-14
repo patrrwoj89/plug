@@ -36,11 +36,60 @@ class TmdbMediaRepository @Inject constructor(
         emptyList()
     }
 
+    suspend fun searchPaged(query: String, page: Int): List<MediaItem> = try {
+        api.search(apiKey(), query, page).results.mapNotNull { it.toMediaItem() }
+    } catch (_: Exception) {
+        emptyList()
+    }
+
     override suspend fun byId(id: String): MediaItem? = try {
-        val numericId = id.toIntOrNull() ?: return null
-        api.movieDetails(numericId, apiKey()).toMediaItem()
+        val numericId = id.removePrefix("tmdb:").toIntOrNull() ?: return null
+        val key = apiKey()
+        val item = try {
+            api.movieDetails(numericId, key).toMediaItem()
+        } catch (_: Exception) {
+            api.seriesDetails(numericId, key).toMediaItem()
+        }
+        enrichImages(item, numericId, key)
     } catch (_: Exception) {
         null
+    }
+
+    suspend fun recommendations(mediaItem: MediaItem): List<MediaItem> = try {
+        val numericId = mediaItem.id.removePrefix("tmdb:").toIntOrNull() ?: return emptyList()
+        val key = apiKey()
+        if (mediaItem.type == MediaItem.Type.MOVIE) {
+            api.movieRecommendations(numericId, key).results.map { it.toMediaItem() }
+        } else {
+            api.seriesRecommendations(numericId, key).results.map { it.toMediaItem() }
+        }
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    private suspend fun genreMap(): Map<Int, String> {
+        return try {
+            val key = apiKey()
+            val movieGenres = api.movieGenres(key).genres
+            val tvGenres = api.tvGenres(key).genres
+            (movieGenres + tvGenres).associateBy({ it.id }, { it.name })
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
+
+    private suspend fun enrichImages(item: MediaItem, numericId: Int, key: String): MediaItem {
+        return try {
+            val images = if (item.type == MediaItem.Type.MOVIE) api.movieImages(numericId, key) else api.seriesImages(numericId, key)
+            val bestBackdrop = images.backdrops.firstOrNull()?.filePath
+            val bestPoster = images.posters.firstOrNull()?.filePath
+            item.copy(
+                backdropUrl = bestBackdrop?.let { "$BACKDROP_BASE$it" } ?: item.backdropUrl,
+                posterUrl = bestPoster?.let { "$IMAGE_BASE$it" } ?: item.posterUrl
+            )
+        } catch (_: Exception) {
+            item
+        }
     }
 
     private companion object {
@@ -48,37 +97,44 @@ class TmdbMediaRepository @Inject constructor(
         private const val BACKDROP_BASE = "https://image.tmdb.org/t/p/w1280"
     }
 
-    private fun TmdbMovie.toMediaItem() = MediaItem(
-        id = "tmdb:$id",
-        title = title,
-        subtitle = "Movie • ${releaseDate?.take(4).orEmpty()}",
-        description = overview,
-        posterUrl = posterPath?.let { "$IMAGE_BASE$it" },
-        backdropUrl = backdropPath?.let { "$BACKDROP_BASE$it" },
-        year = releaseDate?.take(4).orEmpty(),
-        duration = "",
-        rating = voteAverage?.toString() ?: "",
-        genres = emptyList(),
-        type = MediaItem.Type.MOVIE
-    )
+    private suspend fun TmdbMovie.toMediaItem(): MediaItem {
+        val genres = genreIds.mapNotNull { genreMap()[it] }
+        return MediaItem(
+            id = "tmdb:$id",
+            title = title,
+            subtitle = "Movie • ${releaseDate?.take(4).orEmpty()}",
+            description = overview,
+            posterUrl = posterPath?.let { "$IMAGE_BASE$it" },
+            backdropUrl = backdropPath?.let { "$BACKDROP_BASE$it" },
+            year = releaseDate?.take(4).orEmpty(),
+            duration = "",
+            rating = voteAverage?.toString() ?: "",
+            genres = genres,
+            type = MediaItem.Type.MOVIE
+        )
+    }
 
-    private fun TmdbSeries.toMediaItem() = MediaItem(
-        id = "tmdb:$id",
-        title = name,
-        subtitle = "Series • ${firstAirDate?.take(4).orEmpty()}",
-        description = overview,
-        posterUrl = posterPath?.let { "$IMAGE_BASE$it" },
-        backdropUrl = backdropPath?.let { "$BACKDROP_BASE$it" },
-        year = firstAirDate?.take(4).orEmpty(),
-        duration = "",
-        rating = voteAverage?.toString() ?: "",
-        genres = emptyList(),
-        type = MediaItem.Type.SERIES
-    )
+    private suspend fun TmdbSeries.toMediaItem(): MediaItem {
+        val genres = genreIds.mapNotNull { genreMap()[it] }
+        return MediaItem(
+            id = "tmdb:$id",
+            title = name,
+            subtitle = "Series • ${firstAirDate?.take(4).orEmpty()}",
+            description = overview,
+            posterUrl = posterPath?.let { "$IMAGE_BASE$it" },
+            backdropUrl = backdropPath?.let { "$BACKDROP_BASE$it" },
+            year = firstAirDate?.take(4).orEmpty(),
+            duration = "",
+            rating = voteAverage?.toString() ?: "",
+            genres = genres,
+            type = MediaItem.Type.SERIES
+        )
+    }
 
-    private fun TmdbSearchResult.toMediaItem(): MediaItem? {
+    private suspend fun TmdbSearchResult.toMediaItem(): MediaItem? {
         val isMovie = mediaType == "movie"
         val title = title ?: name ?: return null
+        val genreNames = (if (isMovie) genreIds else emptyList()).mapNotNull { genreMap()[it] }
         return MediaItem(
             id = "tmdb:$id",
             title = title,
@@ -89,7 +145,7 @@ class TmdbMediaRepository @Inject constructor(
             year = (releaseDate ?: firstAirDate)?.take(4).orEmpty(),
             duration = "",
             rating = voteAverage?.toString() ?: "",
-            genres = emptyList(),
+            genres = genreNames,
             type = if (isMovie) MediaItem.Type.MOVIE else MediaItem.Type.SERIES
         )
     }
