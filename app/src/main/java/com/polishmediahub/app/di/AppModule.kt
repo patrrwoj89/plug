@@ -6,6 +6,7 @@ import com.polishmediahub.app.data.MockDataSource
 import com.polishmediahub.app.data.local.HistoryDao
 import com.polishmediahub.app.data.local.MediaDatabase
 import com.polishmediahub.app.data.local.DownloadDao
+import com.polishmediahub.app.data.local.EpgDao
 import com.polishmediahub.app.data.local.PluginDao
 import com.polishmediahub.app.data.local.SavedMediaDao
 import dagger.Module
@@ -48,4 +49,8 @@ object AppModule {
     @Provides
     fun provideDownloadDao(database: MediaDatabase): DownloadDao =
         database.downloadDao()
+
+    @Provides
+    fun provideEpgDao(database: MediaDatabase): EpgDao =
+        database.epgDao()
 }

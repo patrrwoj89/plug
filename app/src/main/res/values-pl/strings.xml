@@ -94,6 +94,10 @@
     <string name="item_not_found">Nie znaleziono pozycji</string>
     <string name="custom_lists_title">Własne listy</string>
     <string name="new_list_name">Nazwa nowej listy</string>
+    <string name="epg_title">Program TV</string>
+    <string name="epg_url">URL XMLTV EPG</string>
+    <string name="epg_load">Załaduj EPG</string>
+    <string name="epg_empty">Brak danych EPG. Dodaj URL w panelu Admin.</string>
     <string name="add">Dodaj</string>
     <string name="check_updates">Sprawdź aktualizacje</string>
     <string name="enter_pin">Wprowadź PIN</string>

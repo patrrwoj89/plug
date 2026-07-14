@@ -20,6 +20,7 @@ import com.polishmediahub.app.ui.screens.AnimeScreen
 import com.polishmediahub.app.ui.screens.CustomListsScreen
 import com.polishmediahub.app.ui.screens.DetailScreen
 import com.polishmediahub.app.ui.screens.DownloadsScreen
+import com.polishmediahub.app.ui.screens.EpgScreen
 import com.polishmediahub.app.ui.screens.HomeScreen
 import com.polishmediahub.app.ui.screens.LibraryScreen
 import com.polishmediahub.app.ui.screens.MusicScreen
@@ -43,6 +44,7 @@ fun TVApp(
             route.startsWith(Screen.Watchlist.route) -> Screen.Watchlist
             route.startsWith(Screen.Anime.route) -> Screen.Anime
             route.startsWith(Screen.Music.route) -> Screen.Music
+            route.startsWith(Screen.Epg.route) -> Screen.Epg
             route.startsWith(Screen.Downloads.route) -> Screen.Downloads
             route.startsWith(Screen.CustomLists.route) -> Screen.CustomLists
             route.startsWith(Screen.Settings.route) -> Screen.Settings
@@ -97,6 +99,9 @@ fun TVApp(
                     },
                     modifier = Modifier.fillMaxSize()
                 )
+            }
+            composable(Screen.Epg.route) {
+                EpgScreen(modifier = Modifier.fillMaxSize())
             }
             composable(Screen.Downloads.route) {
                 DownloadsScreen(modifier = Modifier.fillMaxSize())

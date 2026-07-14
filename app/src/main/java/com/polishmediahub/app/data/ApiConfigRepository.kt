@@ -28,6 +28,7 @@ class ApiConfigRepository @Inject constructor(
     val debridRefreshToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_DEBRID_REFRESH].orEmpty() }
     val debridProvider: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_DEBRID_PROVIDER].orEmpty() }
     val iptvSourceUrls: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_IPTV].orEmpty() }
+    val epgUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_EPG].orEmpty() }
     val stremioAddons: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_STREMIO].orEmpty() }
     val kodiUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_KODI_URL].orEmpty() }
     val webSourceConfig: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_WEB_SOURCE_CONFIG].orEmpty() }
@@ -52,6 +53,7 @@ class ApiConfigRepository @Inject constructor(
     suspend fun setDebridRefreshToken(value: String) = edit(KEY_DEBRID_REFRESH, value)
     suspend fun setDebridProvider(value: String) = edit(KEY_DEBRID_PROVIDER, value)
     suspend fun setIptvSourceUrls(value: String) = edit(KEY_IPTV, value)
+    suspend fun setEpgUrl(value: String) = edit(KEY_EPG, value)
     suspend fun setStremioAddons(value: String) = edit(KEY_STREMIO, value)
     suspend fun setKodiUrl(value: String) = edit(KEY_KODI_URL, value)
     suspend fun setWebSourceConfig(value: String) = edit(KEY_WEB_SOURCE_CONFIG, value)
@@ -81,6 +83,7 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_DEBRID_REFRESH = stringPreferencesKey("debrid_refresh_token")
         private val KEY_DEBRID_PROVIDER = stringPreferencesKey("debrid_provider")
         private val KEY_IPTV = stringPreferencesKey("iptv_source_urls")
+        private val KEY_EPG = stringPreferencesKey("epg_url")
         private val KEY_STREMIO = stringPreferencesKey("stremio_addons")
         private val KEY_KODI_URL = stringPreferencesKey("kodi_url")
         private val KEY_WEB_SOURCE_CONFIG = stringPreferencesKey("web_source_config")

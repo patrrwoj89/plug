@@ -94,6 +94,10 @@
     <string name="item_not_found">Item not found</string>
     <string name="custom_lists_title">Custom lists</string>
     <string name="new_list_name">New list name</string>
+    <string name="epg_title">TV Guide</string>
+    <string name="epg_url">XMLTV EPG URL</string>
+    <string name="epg_load">Load EPG</string>
+    <string name="epg_empty">No EPG data. Add a URL in Admin.</string>
     <string name="add">Add</string>
     <string name="check_updates">Check for updates</string>
     <string name="enter_pin">Enter PIN</string>
