@@ -172,6 +172,39 @@ fun AdminScreen(
         }
 
         Spacer(modifier = Modifier.height(Spacing.lg))
+        Text(stringResource(id = R.string.admin_media_servers_title), style = AppTypography.titleLarge)
+
+        ServerConfigFields(
+            url = state.jellyfinUrl,
+            token = state.jellyfinToken,
+            urlLabel = stringResource(id = R.string.admin_jellyfin_url),
+            tokenLabel = stringResource(id = R.string.admin_jellyfin_token),
+            onUrlChange = viewModel::setJellyfinUrl,
+            onTokenChange = viewModel::setJellyfinToken,
+            onShowQr = { viewModel.showQrForApiKey(state.jellyfinToken) }
+        )
+
+        ServerConfigFields(
+            url = state.plexUrl,
+            token = state.plexToken,
+            urlLabel = stringResource(id = R.string.admin_plex_url),
+            tokenLabel = stringResource(id = R.string.admin_plex_token),
+            onUrlChange = viewModel::setPlexUrl,
+            onTokenChange = viewModel::setPlexToken,
+            onShowQr = { viewModel.showQrForApiKey(state.plexToken) }
+        )
+
+        ServerConfigFields(
+            url = state.embyUrl,
+            token = state.embyToken,
+            urlLabel = stringResource(id = R.string.admin_emby_url),
+            tokenLabel = stringResource(id = R.string.admin_emby_token),
+            onUrlChange = viewModel::setEmbyUrl,
+            onTokenChange = viewModel::setEmbyToken,
+            onShowQr = { viewModel.showQrForApiKey(state.embyToken) }
+        )
+
+        Spacer(modifier = Modifier.height(Spacing.lg))
         Text(stringResource(id = R.string.admin_plugins_title), style = AppTypography.titleLarge)
 
         var pluginUrl by remember { mutableStateOf("") }
@@ -227,6 +260,41 @@ private fun buildPluginConfigQr(state: com.tvhub.skeleton.ui.viewmodel.AdminUiSt
         "version": "1.0",
         "sources": [ $sources ]
     }""".trimIndent()
+}
+
+@Composable
+private fun ServerConfigFields(
+    url: String,
+    token: String,
+    urlLabel: String,
+    tokenLabel: String,
+    onUrlChange: (String) -> Unit,
+    onTokenChange: (String) -> Unit,
+    onShowQr: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth(0.5f)) {
+        OutlinedTextField(
+            value = url,
+            onValueChange = onUrlChange,
+            label = { Text(urlLabel) },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            OutlinedTextField(
+                value = token,
+                onValueChange = onTokenChange,
+                label = { Text(tokenLabel) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+            )
+            if (token.isNotBlank()) {
+                Button(onClick = onShowQr) {
+                    Text("QR")
+                }
+            }
+        }
+    }
 }
 
 @Composable

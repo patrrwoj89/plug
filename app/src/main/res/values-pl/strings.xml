@@ -69,6 +69,13 @@
     <string name="downloads_title">Pobrane</string>
     <string name="downloads_empty">Brak pobranych materiałów</string>
     <string name="downloads_delete">Usuń</string>
+    <string name="admin_media_servers_title">Serwery multimedialne</string>
+    <string name="admin_jellyfin_url">URL serwera Jellyfin</string>
+    <string name="admin_jellyfin_token">Token API Jellyfin</string>
+    <string name="admin_plex_url">URL serwera Plex</string>
+    <string name="admin_plex_token">Token Plex</string>
+    <string name="admin_emby_url">URL serwera Emby</string>
+    <string name="admin_emby_token">Token API Emby</string>
     <string name="admin_error">Błąd: %1$s</string>
 
     <string name="loading">Ładowanie…</string>

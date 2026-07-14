@@ -31,6 +31,12 @@ class ApiConfigRepository @Inject constructor(
     val kodiUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_KODI_URL].orEmpty() }
     val webSourceConfig: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_WEB_SOURCE_CONFIG].orEmpty() }
     val cloudstreamRepoUrls: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_CLOUDSTREAM_REPOS].orEmpty() }
+    val jellyfinUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_JELLYFIN_URL].orEmpty() }
+    val jellyfinToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_JELLYFIN_TOKEN].orEmpty() }
+    val plexUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_PLEX_URL].orEmpty() }
+    val plexToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_PLEX_TOKEN].orEmpty() }
+    val embyUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_EMBY_URL].orEmpty() }
+    val embyToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_EMBY_TOKEN].orEmpty() }
 
     suspend fun setTmdbApiKey(value: String) = edit(KEY_TMDB, value)
     suspend fun setAniListToken(value: String) = edit(KEY_ANILIST, value)
@@ -44,6 +50,12 @@ class ApiConfigRepository @Inject constructor(
     suspend fun setKodiUrl(value: String) = edit(KEY_KODI_URL, value)
     suspend fun setWebSourceConfig(value: String) = edit(KEY_WEB_SOURCE_CONFIG, value)
     suspend fun setCloudstreamRepoUrls(value: String) = edit(KEY_CLOUDSTREAM_REPOS, value)
+    suspend fun setJellyfinUrl(value: String) = edit(KEY_JELLYFIN_URL, value)
+    suspend fun setJellyfinToken(value: String) = edit(KEY_JELLYFIN_TOKEN, value)
+    suspend fun setPlexUrl(value: String) = edit(KEY_PLEX_URL, value)
+    suspend fun setPlexToken(value: String) = edit(KEY_PLEX_TOKEN, value)
+    suspend fun setEmbyUrl(value: String) = edit(KEY_EMBY_URL, value)
+    suspend fun setEmbyToken(value: String) = edit(KEY_EMBY_TOKEN, value)
 
     private suspend fun edit(key: Preferences.Key<String>, value: String) {
         context.apiConfigDataStore.edit { it[key] = value }
@@ -62,5 +74,11 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_KODI_URL = stringPreferencesKey("kodi_url")
         private val KEY_WEB_SOURCE_CONFIG = stringPreferencesKey("web_source_config")
         private val KEY_CLOUDSTREAM_REPOS = stringPreferencesKey("cloudstream_repo_urls")
+        private val KEY_JELLYFIN_URL = stringPreferencesKey("jellyfin_url")
+        private val KEY_JELLYFIN_TOKEN = stringPreferencesKey("jellyfin_token")
+        private val KEY_PLEX_URL = stringPreferencesKey("plex_url")
+        private val KEY_PLEX_TOKEN = stringPreferencesKey("plex_token")
+        private val KEY_EMBY_URL = stringPreferencesKey("emby_url")
+        private val KEY_EMBY_TOKEN = stringPreferencesKey("emby_token")
     }
 }

@@ -40,6 +40,12 @@ class AdminViewModel @Inject constructor(
                 apiConfigRepository.kodiUrl,
                 apiConfigRepository.webSourceConfig,
                 apiConfigRepository.cloudstreamRepoUrls,
+                apiConfigRepository.jellyfinUrl,
+                apiConfigRepository.jellyfinToken,
+                apiConfigRepository.plexUrl,
+                apiConfigRepository.plexToken,
+                apiConfigRepository.embyUrl,
+                apiConfigRepository.embyToken,
                 pluginRepository.plugins
             ) { values ->
                 AdminUiState(
@@ -54,7 +60,13 @@ class AdminViewModel @Inject constructor(
                     kodiUrl = values[8] as String,
                     webSourceConfig = values[9] as String,
                     cloudstreamRepoUrls = values[10] as String,
-                    plugins = values[11] as? List<PluginEntity> ?: emptyList()
+                    jellyfinUrl = values[11] as String,
+                    jellyfinToken = values[12] as String,
+                    plexUrl = values[13] as String,
+                    plexToken = values[14] as String,
+                    embyUrl = values[15] as String,
+                    embyToken = values[16] as String,
+                    plugins = values[17] as? List<PluginEntity> ?: emptyList()
                 )
             }.collect { state -> _uiState.value = state }
         }
@@ -70,6 +82,12 @@ class AdminViewModel @Inject constructor(
     fun setKodiUrl(value: String) = viewModelScope.launch { apiConfigRepository.setKodiUrl(value) }
     fun setWebSourceConfig(value: String) = viewModelScope.launch { apiConfigRepository.setWebSourceConfig(value) }
     fun setCloudstreamRepoUrls(value: String) = viewModelScope.launch { apiConfigRepository.setCloudstreamRepoUrls(value) }
+    fun setJellyfinUrl(value: String) = viewModelScope.launch { apiConfigRepository.setJellyfinUrl(value) }
+    fun setJellyfinToken(value: String) = viewModelScope.launch { apiConfigRepository.setJellyfinToken(value) }
+    fun setPlexUrl(value: String) = viewModelScope.launch { apiConfigRepository.setPlexUrl(value) }
+    fun setPlexToken(value: String) = viewModelScope.launch { apiConfigRepository.setPlexToken(value) }
+    fun setEmbyUrl(value: String) = viewModelScope.launch { apiConfigRepository.setEmbyUrl(value) }
+    fun setEmbyToken(value: String) = viewModelScope.launch { apiConfigRepository.setEmbyToken(value) }
 
     fun startDebridOAuth() {
         viewModelScope.launch {
@@ -139,6 +157,12 @@ data class AdminUiState(
     val kodiUrl: String = "",
     val webSourceConfig: String = "",
     val cloudstreamRepoUrls: String = "",
+    val jellyfinUrl: String = "",
+    val jellyfinToken: String = "",
+    val plexUrl: String = "",
+    val plexToken: String = "",
+    val embyUrl: String = "",
+    val embyToken: String = "",
     val plugins: List<PluginEntity> = emptyList(),
     val debridDeviceCode: DeviceCodeResponse? = null,
     val isLoading: Boolean = false,
