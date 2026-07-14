@@ -28,6 +28,9 @@ class ApiConfigRepository @Inject constructor(
     val debridProvider: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_DEBRID_PROVIDER].orEmpty() }
     val iptvSourceUrls: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_IPTV].orEmpty() }
     val stremioAddons: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_STREMIO].orEmpty() }
+    val kodiUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_KODI_URL].orEmpty() }
+    val webSourceConfig: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_WEB_SOURCE_CONFIG].orEmpty() }
+    val cloudstreamRepoUrls: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_CLOUDSTREAM_REPOS].orEmpty() }
 
     suspend fun setTmdbApiKey(value: String) = edit(KEY_TMDB, value)
     suspend fun setAniListToken(value: String) = edit(KEY_ANILIST, value)
@@ -38,6 +41,9 @@ class ApiConfigRepository @Inject constructor(
     suspend fun setDebridProvider(value: String) = edit(KEY_DEBRID_PROVIDER, value)
     suspend fun setIptvSourceUrls(value: String) = edit(KEY_IPTV, value)
     suspend fun setStremioAddons(value: String) = edit(KEY_STREMIO, value)
+    suspend fun setKodiUrl(value: String) = edit(KEY_KODI_URL, value)
+    suspend fun setWebSourceConfig(value: String) = edit(KEY_WEB_SOURCE_CONFIG, value)
+    suspend fun setCloudstreamRepoUrls(value: String) = edit(KEY_CLOUDSTREAM_REPOS, value)
 
     private suspend fun edit(key: Preferences.Key<String>, value: String) {
         context.apiConfigDataStore.edit { it[key] = value }
@@ -53,5 +59,8 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_DEBRID_PROVIDER = stringPreferencesKey("debrid_provider")
         private val KEY_IPTV = stringPreferencesKey("iptv_source_urls")
         private val KEY_STREMIO = stringPreferencesKey("stremio_addons")
+        private val KEY_KODI_URL = stringPreferencesKey("kodi_url")
+        private val KEY_WEB_SOURCE_CONFIG = stringPreferencesKey("web_source_config")
+        private val KEY_CLOUDSTREAM_REPOS = stringPreferencesKey("cloudstream_repo_urls")
     }
 }

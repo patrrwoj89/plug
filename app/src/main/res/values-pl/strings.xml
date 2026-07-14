@@ -51,6 +51,9 @@
     <string name="admin_trakt_id">Trakt client ID</string>
     <string name="admin_iptv_urls">Adresy M3U IPTV (oddzielone przecinkiem lub enterem)</string>
     <string name="admin_stremio_addons">Adresy addonów Stremio (oddzielone przecinkiem lub enterem)</string>
+    <string name="admin_kodi_url">URL JSON-RPC Kodi (np. http://192.168.1.10:8080)</string>
+    <string name="admin_web_sources">Konfiguracja źródeł web (JSON)</string>
+    <string name="admin_cloudstream_repos">Adresy repozytoriów Cloudstream</string>
     <string name="admin_debrid_title">Debrid (OAuth / QR)</string>
     <string name="admin_debrid_authorized">Debrid autoryzowany: %1$s</string>
     <string name="admin_debrid_missing">Brak połączonego konta Debrid.</string>

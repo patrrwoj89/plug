@@ -33,7 +33,10 @@ class AdminViewModel @Inject constructor(
                 apiConfigRepository.debridAccessToken,
                 apiConfigRepository.debridProvider,
                 apiConfigRepository.iptvSourceUrls,
-                apiConfigRepository.stremioAddons
+                apiConfigRepository.stremioAddons,
+                apiConfigRepository.kodiUrl,
+                apiConfigRepository.webSourceConfig,
+                apiConfigRepository.cloudstreamRepoUrls
             ) { values ->
                 AdminUiState(
                     tmdbApiKey = values[0],
@@ -43,7 +46,10 @@ class AdminViewModel @Inject constructor(
                     debridAccessToken = values[4],
                     debridProvider = values[5],
                     iptvSourceUrls = values[6],
-                    stremioAddons = values[7]
+                    stremioAddons = values[7],
+                    kodiUrl = values[8],
+                    webSourceConfig = values[9],
+                    cloudstreamRepoUrls = values[10]
                 )
             }.collect { state -> _uiState.value = state }
         }
@@ -56,6 +62,9 @@ class AdminViewModel @Inject constructor(
     fun setDebridProvider(value: String) = viewModelScope.launch { apiConfigRepository.setDebridProvider(value) }
     fun setIptvSourceUrls(value: String) = viewModelScope.launch { apiConfigRepository.setIptvSourceUrls(value) }
     fun setStremioAddons(value: String) = viewModelScope.launch { apiConfigRepository.setStremioAddons(value) }
+    fun setKodiUrl(value: String) = viewModelScope.launch { apiConfigRepository.setKodiUrl(value) }
+    fun setWebSourceConfig(value: String) = viewModelScope.launch { apiConfigRepository.setWebSourceConfig(value) }
+    fun setCloudstreamRepoUrls(value: String) = viewModelScope.launch { apiConfigRepository.setCloudstreamRepoUrls(value) }
 
     fun startDebridOAuth() {
         viewModelScope.launch {
@@ -82,6 +91,9 @@ data class AdminUiState(
     val debridProvider: String = DebridProvider.TORBOX.id,
     val iptvSourceUrls: String = "",
     val stremioAddons: String = "",
+    val kodiUrl: String = "",
+    val webSourceConfig: String = "",
+    val cloudstreamRepoUrls: String = "",
     val debridDeviceCode: DeviceCodeResponse? = null,
     val isLoading: Boolean = false,
     val error: String? = null

@@ -88,6 +88,30 @@ fun AdminScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
 
+        OutlinedTextField(
+            value = state.kodiUrl,
+            onValueChange = viewModel::setKodiUrl,
+            label = { Text(stringResource(id = R.string.admin_kodi_url)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+        )
+
+        OutlinedTextField(
+            value = state.cloudstreamRepoUrls,
+            onValueChange = viewModel::setCloudstreamRepoUrls,
+            label = { Text(stringResource(id = R.string.admin_cloudstream_repos)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+        )
+
+        OutlinedTextField(
+            value = state.webSourceConfig,
+            onValueChange = viewModel::setWebSourceConfig,
+            label = { Text(stringResource(id = R.string.admin_web_sources)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+        )
+
         Spacer(modifier = Modifier.height(Spacing.lg))
 
         Text(stringResource(id = R.string.admin_debrid_title), style = AppTypography.titleLarge)
