@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,11 +15,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -49,6 +47,8 @@ fun DetailScreen(
     viewModel: DetailViewModel = hiltViewModel()
 ) {
     val item by viewModel.item.collectAsStateWithLifecycle()
+    val isInLibrary by viewModel.isInLibrary.collectAsStateWithLifecycle()
+    val isInWatchlist by viewModel.isInWatchlist.collectAsStateWithLifecycle()
 
     if (item == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -59,7 +59,11 @@ fun DetailScreen(
 
     DetailContent(
         item = item!!,
+        isInLibrary = isInLibrary,
+        isInWatchlist = isInWatchlist,
         onPlay = { onNavigate(Screen.Player(item!!.id)) },
+        onToggleLibrary = viewModel::toggleLibrary,
+        onToggleWatchlist = viewModel::toggleWatchlist,
         modifier = modifier
     )
 }
@@ -67,7 +71,11 @@ fun DetailScreen(
 @Composable
 private fun DetailContent(
     item: MediaItem,
+    isInLibrary: Boolean,
+    isInWatchlist: Boolean,
     onPlay: () -> Unit,
+    onToggleLibrary: () -> Unit,
+    onToggleWatchlist: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -126,6 +134,22 @@ private fun DetailContent(
                             Spacer(modifier = Modifier.width(Spacing.sm))
                             Text("Play", style = AppTypography.button, color = AppColor.Black)
                         }
+                    }
+
+                    TextButton(
+                        onClick = onToggleLibrary,
+                        modifier = Modifier.height(48.dp),
+                        colors = ButtonDefaults.textButtonColors(contentColor = AppColor.OnSurface)
+                    ) {
+                        Text(if (isInLibrary) "Remove from Library" else "Add to Library")
+                    }
+
+                    TextButton(
+                        onClick = onToggleWatchlist,
+                        modifier = Modifier.height(48.dp),
+                        colors = ButtonDefaults.textButtonColors(contentColor = AppColor.OnSurface)
+                    ) {
+                        Text(if (isInWatchlist) "Remove from Watchlist" else "Add to Watchlist")
                     }
                 }
             }

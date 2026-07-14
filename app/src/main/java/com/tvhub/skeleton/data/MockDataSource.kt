@@ -13,6 +13,9 @@ class MockDataSource @Inject constructor() {
         "https://picsum.photos/seed/%s/800/450"
     )
 
+    // Sample public-domain / Creative Commons video for player demos.
+    private val sampleVideo = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+
     fun featured(): List<MediaItem> = listOf(
         MediaItem(
             id = "f1",
@@ -24,6 +27,7 @@ class MockDataSource @Inject constructor() {
             year = "2027",
             duration = "2h 14m",
             rating = "8.4",
+            videoUrl = sampleVideo,
             genres = listOf("Akcja", "Sci-Fi"),
             type = MediaItem.Type.MOVIE
         ),
@@ -93,6 +97,7 @@ class MockDataSource @Inject constructor() {
                 year = "202${index % 5 + 4}",
                 duration = "${index % 2 + 1}h ${(index * 7) % 60}m",
                 rating = "${5 + (index % 40) / 10.0f}",
+                videoUrl = if (index % 5 == 0) sampleVideo else null,
                 genres = listOf("Dramat", "Komedia", "Akcja", "Dokument", "Sci-Fi").shuffled().take(2),
                 type = if (index % 3 == 0) MediaItem.Type.SERIES else MediaItem.Type.MOVIE
             )

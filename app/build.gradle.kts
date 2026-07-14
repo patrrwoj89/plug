@@ -83,4 +83,19 @@ dependencies {
     implementation(libs.coil.compose)
 
     implementation(libs.kotlinx.serialization.json)
+
+    // Persistence
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    // Preferences
+    implementation(libs.androidx.datastore.preferences)
+
+    // Splash screen
+    implementation(libs.androidx.core.splashscreen)
+
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

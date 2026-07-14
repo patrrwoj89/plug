@@ -13,6 +13,7 @@ data class MediaItem(
     val year: String = "",
     val duration: String = "",
     val rating: String = "",
+    val videoUrl: String? = null,
     val genres: List<String> = emptyList(),
     val type: Type = Type.MOVIE
 ) {

@@ -2,7 +2,7 @@ package com.tvhub.skeleton.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tvhub.skeleton.data.MockDataSource
+import com.tvhub.skeleton.data.MediaRepository
 import com.tvhub.skeleton.model.Category
 import com.tvhub.skeleton.model.MediaItem
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,7 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val dataSource: MockDataSource
+    private val mediaRepository: MediaRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -28,14 +28,18 @@ class HomeViewModel @Inject constructor(
     private fun loadHome() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            val featured = dataSource.featured()
-            val categories = dataSource.categories()
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    featured = featured,
-                    categories = categories
-                )
+            try {
+                val featured = mediaRepository.featured()
+                val categories = mediaRepository.categories()
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        featured = featured,
+                        categories = categories
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }
