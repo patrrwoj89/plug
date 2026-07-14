@@ -16,6 +16,7 @@ import androidx.navigation.navArgument
 import com.polishmediahub.app.ui.components.Sidebar
 import com.polishmediahub.app.ui.screens.AdminScreen
 import com.polishmediahub.app.ui.screens.AnimeScreen
+import com.polishmediahub.app.ui.screens.CustomListsScreen
 import com.polishmediahub.app.ui.screens.DetailScreen
 import com.polishmediahub.app.ui.screens.DownloadsScreen
 import com.polishmediahub.app.ui.screens.HomeScreen
@@ -42,6 +43,7 @@ fun TVApp(
             route.startsWith(Screen.Anime.route) -> Screen.Anime
             route.startsWith(Screen.Music.route) -> Screen.Music
             route.startsWith(Screen.Downloads.route) -> Screen.Downloads
+            route.startsWith(Screen.CustomLists.route) -> Screen.CustomLists
             route.startsWith(Screen.Settings.route) -> Screen.Settings
             route.startsWith(Screen.Admin.route) -> Screen.Admin
             route.startsWith("detail/") -> Screen.Detail(
@@ -97,6 +99,9 @@ fun TVApp(
             }
             composable(Screen.Downloads.route) {
                 DownloadsScreen(modifier = Modifier.fillMaxSize())
+            }
+            composable(Screen.CustomLists.route) {
+                CustomListsScreen(modifier = Modifier.fillMaxSize())
             }
             composable(Screen.Settings.route) {
                 SettingsScreen(onNavigate = { navController.navigate(it.route) })

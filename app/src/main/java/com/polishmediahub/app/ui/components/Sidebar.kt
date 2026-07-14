@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Animation
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoLibrary
@@ -61,6 +62,7 @@ private val sidebarItems = listOf(
     SidebarItem(Screen.Anime, R.string.anime, Icons.Default.Animation),
     SidebarItem(Screen.Music, R.string.music_title, Icons.Default.MusicNote),
     SidebarItem(Screen.Downloads, R.string.downloads, Icons.Default.Download),
+    SidebarItem(Screen.CustomLists, R.string.custom_lists_title, Icons.AutoMirrored.Filled.PlaylistPlay),
     SidebarItem(Screen.Settings, R.string.settings, Icons.Default.Settings),
     SidebarItem(Screen.Admin, R.string.sources, Icons.Default.AdminPanelSettings)
 )

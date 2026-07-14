@@ -49,6 +49,7 @@ class AdminViewModel @Inject constructor(
                 apiConfigRepository.subsonicUrl,
                 apiConfigRepository.subsonicUser,
                 apiConfigRepository.subsonicPassword,
+                apiConfigRepository.podcastFeeds,
                 pluginRepository.plugins
             ) { values ->
                 AdminUiState(
@@ -72,7 +73,8 @@ class AdminViewModel @Inject constructor(
                     subsonicUrl = values[17] as String,
                     subsonicUser = values[18] as String,
                     subsonicPassword = values[19] as String,
-                    plugins = values[20] as? List<PluginEntity> ?: emptyList()
+                    podcastFeeds = values[20] as String,
+                    plugins = values[21] as? List<PluginEntity> ?: emptyList()
                 )
             }.collect { state -> _uiState.value = state }
         }
@@ -97,6 +99,7 @@ class AdminViewModel @Inject constructor(
     fun setSubsonicUrl(value: String) = viewModelScope.launch { apiConfigRepository.setSubsonicUrl(value) }
     fun setSubsonicUser(value: String) = viewModelScope.launch { apiConfigRepository.setSubsonicUser(value) }
     fun setSubsonicPassword(value: String) = viewModelScope.launch { apiConfigRepository.setSubsonicPassword(value) }
+    fun setPodcastFeeds(value: String) = viewModelScope.launch { apiConfigRepository.setPodcastFeeds(value) }
 
     fun startDebridOAuth() {
         viewModelScope.launch {
@@ -175,6 +178,7 @@ data class AdminUiState(
     val subsonicUrl: String = "",
     val subsonicUser: String = "",
     val subsonicPassword: String = "",
+    val podcastFeeds: String = "",
     val plugins: List<PluginEntity> = emptyList(),
     val debridDeviceCode: DeviceCodeResponse? = null,
     val isLoading: Boolean = false,

@@ -1,3 +1,5 @@
+@file:Suppress("UnsafeOptInUsageError")
+@file:android.annotation.SuppressLint("UnsafeOptInUsageError")
 package com.polishmediahub.app.ui.screens
 
 import android.app.Activity
@@ -55,6 +57,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem as ExoMediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -361,7 +364,6 @@ private fun ExoPlayer.seekBy(deltaMs: Long) {
     seekTo((currentPosition + deltaMs).coerceAtLeast(0L))
 }
 
-@UnstableApi
 private fun cycleAudioTrack(player: ExoPlayer) {
     val audioGroups = player.currentTracks.groups.filter { it.type == androidx.media3.common.C.TRACK_TYPE_AUDIO }
     if (audioGroups.isEmpty()) return
@@ -380,7 +382,6 @@ private fun cycleAudioTrack(player: ExoPlayer) {
     player.trackSelectionParameters = builder.build()
 }
 
-@UnstableApi
 private fun cycleSubtitleTrack(player: ExoPlayer) {
     val textGroups = player.currentTracks.groups.filter { it.type == androidx.media3.common.C.TRACK_TYPE_TEXT }
     if (textGroups.isEmpty()) return

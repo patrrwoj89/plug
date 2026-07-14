@@ -41,6 +41,7 @@ class ApiConfigRepository @Inject constructor(
     val subsonicUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_SUBSONIC_URL].orEmpty() }
     val subsonicUser: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_SUBSONIC_USER].orEmpty() }
     val subsonicPassword: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_SUBSONIC_PASSWORD].orEmpty() }
+    val podcastFeeds: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_PODCAST_FEEDS].orEmpty() }
 
     suspend fun setTmdbApiKey(value: String) = edit(KEY_TMDB, value)
     suspend fun setAniListToken(value: String) = edit(KEY_ANILIST, value)
@@ -64,6 +65,7 @@ class ApiConfigRepository @Inject constructor(
     suspend fun setSubsonicUrl(value: String) = edit(KEY_SUBSONIC_URL, value)
     suspend fun setSubsonicUser(value: String) = edit(KEY_SUBSONIC_USER, value)
     suspend fun setSubsonicPassword(value: String) = edit(KEY_SUBSONIC_PASSWORD, value)
+    suspend fun setPodcastFeeds(value: String) = edit(KEY_PODCAST_FEEDS, value)
 
     private suspend fun edit(key: Preferences.Key<String>, value: String) {
         context.apiConfigDataStore.edit { it[key] = value }
@@ -92,5 +94,6 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_SUBSONIC_URL = stringPreferencesKey("subsonic_url")
         private val KEY_SUBSONIC_USER = stringPreferencesKey("subsonic_user")
         private val KEY_SUBSONIC_PASSWORD = stringPreferencesKey("subsonic_password")
+        private val KEY_PODCAST_FEEDS = stringPreferencesKey("podcast_feeds")
     }
 }

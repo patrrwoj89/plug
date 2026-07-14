@@ -230,6 +230,13 @@ fun AdminScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
             )
         }
+        OutlinedTextField(
+            value = state.podcastFeeds,
+            onValueChange = viewModel::setPodcastFeeds,
+            label = { Text(stringResource(id = R.string.admin_podcast_feeds)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+        )
 
         Spacer(modifier = Modifier.height(Spacing.lg))
         Text(stringResource(id = R.string.admin_plugins_title), style = AppTypography.titleLarge)

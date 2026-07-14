@@ -10,6 +10,7 @@ sealed class Screen(val route: String) {
     data object Settings : Screen("settings")
     data object Admin : Screen("admin")
     data object Downloads : Screen("downloads")
+    data object CustomLists : Screen("custom_lists")
 
     data class Detail(val id: String) : Screen("detail/$id")
     data class Player(val id: String) : Screen("player/$id")
