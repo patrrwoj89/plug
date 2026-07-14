@@ -50,6 +50,7 @@
     <string name="admin_anilist_token">AniList access token (optional)</string>
     <string name="admin_trakt_id">Trakt client ID</string>
     <string name="admin_iptv_urls">IPTV M3U URLs (comma or newline separated)</string>
+    <string name="admin_stremio_addons">Stremio addon URLs (comma or newline separated)</string>
     <string name="admin_debrid_title">Debrid (OAuth / QR)</string>
     <string name="admin_debrid_authorized">Debrid authorized: %1$s</string>
     <string name="admin_debrid_missing">No Debrid account linked.</string>

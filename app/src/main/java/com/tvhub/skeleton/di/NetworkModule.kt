@@ -3,6 +3,7 @@ package com.tvhub.skeleton.di
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.tvhub.skeleton.BuildConfig
 import com.tvhub.skeleton.data.remote.anilist.AniListApi
+import com.tvhub.skeleton.data.remote.stremio.StremioApi
 import com.tvhub.skeleton.data.remote.tmdb.TmdbApi
 import com.tvhub.skeleton.data.remote.trakt.TraktApi
 import dagger.Module
@@ -59,4 +60,13 @@ object NetworkModule {
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
         .create(TraktApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideStremioApi(client: OkHttpClient): StremioApi = Retrofit.Builder()
+        .baseUrl("https://stremio.github.io/")
+        .client(client)
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build()
+        .create(StremioApi::class.java)
 }

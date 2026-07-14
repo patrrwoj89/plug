@@ -7,13 +7,15 @@ import javax.inject.Inject
 /**
  * Debrid services (Real-Debrid, TorBox, AllDebrid, Premiumize, etc.) allow
  * users to cache/stream files hosted elsewhere. This repository exposes a generic
- * abstraction and uses OAuth device flow (QR code) for authentication.
+ * abstraction and uses OAuth device flow (QR code) or API key for authentication.
  */
 interface DebridService {
-    suspend fun getUserInfo(apiKey: String): DebridUserInfo
-    suspend fun unrestrictLink(apiKey: String, url: String): DebridStreamResult
-    suspend fun addMagnet(apiKey: String, magnet: String): DebridTorrentResult
-    suspend fun getTorrentFiles(apiKey: String, id: String): List<DebridFile>
+    val provider: DebridProvider
+    suspend fun isAvailable(): Boolean
+    suspend fun getUserInfo(): DebridUserInfo
+    suspend fun resolve(videoUrl: String): DebridStreamResult?
+    suspend fun addMagnet(magnet: String): DebridTorrentResult
+    suspend fun getTorrentFiles(id: String): List<DebridFile>
 }
 
 data class DebridUserInfo(val username: String, val premium: Boolean)
@@ -22,14 +24,16 @@ data class DebridTorrentResult(val id: String, val uri: String, val status: Stri
 data class DebridFile(val id: String, val path: String, val bytes: Long, val url: String?)
 
 class DebridRepository @Inject constructor(
-    private val realDebridService: RealDebridService,
+    private val services: Set<@JvmSuppressWildcards DebridService>,
     private val apiConfigRepository: ApiConfigRepository
 ) {
-    /**
-     * Returns the currently configured Debrid service if an access token is present.
-     */
-    fun service(): DebridService? = realDebridService
+    private val serviceMap = services.associateBy { it.provider }
 
-    suspend fun accessToken(): String = apiConfigRepository.debridAccessToken.first()
-    suspend fun refreshToken(): String = apiConfigRepository.debridRefreshToken.first()
+    fun service(provider: DebridProvider): DebridService? = serviceMap[provider]
+
+    suspend fun currentService(): DebridService? {
+        val id = apiConfigRepository.debridProvider.first()
+        val provider = DebridProvider.entries.find { it.id == id } ?: return null
+        return serviceMap[provider]
+    }
 }

@@ -2,6 +2,7 @@ package com.tvhub.skeleton.data
 
 import com.tvhub.skeleton.data.remote.anilist.AniListMediaRepository
 import com.tvhub.skeleton.data.remote.iptv.IptvRepository
+import com.tvhub.skeleton.data.remote.stremio.StremioRepository
 import com.tvhub.skeleton.data.remote.tmdb.TmdbMediaRepository
 import com.tvhub.skeleton.data.remote.trakt.TraktMediaRepository
 import com.tvhub.skeleton.model.Category
@@ -13,7 +14,8 @@ class CompositeMediaRepository @Inject constructor(
     private val tmdbMediaRepository: TmdbMediaRepository,
     private val aniListMediaRepository: AniListMediaRepository,
     private val traktMediaRepository: TraktMediaRepository,
-    private val iptvRepository: IptvRepository
+    private val iptvRepository: IptvRepository,
+    private val stremioRepository: StremioRepository
 ) : MediaRepository {
 
     private val repositories: List<MediaRepository> = listOf(
@@ -21,7 +23,8 @@ class CompositeMediaRepository @Inject constructor(
         tmdbMediaRepository,
         aniListMediaRepository,
         traktMediaRepository,
-        iptvRepository
+        iptvRepository,
+        stremioRepository
     )
 
     override suspend fun featured(): List<MediaItem> =

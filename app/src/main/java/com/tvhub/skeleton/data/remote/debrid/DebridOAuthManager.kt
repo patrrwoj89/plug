@@ -12,12 +12,35 @@ import okhttp3.Request
 import java.net.URLEncoder
 import javax.inject.Inject
 
-enum class DebridProvider(val displayName: String, val clientId: String, val deviceCodeUrl: String, val tokenUrl: String) {
+enum class DebridProvider(
+    val id: String,
+    val displayName: String,
+    val clientId: String = "",
+    val deviceCodeUrl: String = "",
+    val tokenUrl: String = "",
+    val apiKeyBased: Boolean = false
+) {
     REAL_DEBRID(
+        id = "real_debrid",
         displayName = "Real-Debrid",
         clientId = "X245A4XAIBGVM",
         deviceCodeUrl = "https://api.real-debrid.com/oauth/v2/device/code?client_id=%s&new_credentials=yes",
         tokenUrl = "https://api.real-debrid.com/oauth/v2/token"
+    ),
+    TORBOX(
+        id = "torbox",
+        displayName = "TorBox",
+        apiKeyBased = true
+    ),
+    ALLDEBRID(
+        id = "alldebrid",
+        displayName = "AllDebrid",
+        apiKeyBased = true
+    ),
+    PREMIUMIZE(
+        id = "premiumize",
+        displayName = "Premiumize",
+        apiKeyBased = true
     )
 }
 
@@ -87,11 +110,15 @@ class DebridOAuthManager @Inject constructor(
     }
 
     suspend fun authorize(provider: DebridProvider = DebridProvider.REAL_DEBRID): DeviceCodeResponse {
-        apiConfigRepository.setDebridProvider(provider.name)
+        apiConfigRepository.setDebridProvider(provider.id)
+        if (provider.apiKeyBased) {
+            throw IllegalStateException("${provider.displayName} requires an API key, not OAuth device flow.")
+        }
         return startDeviceFlow(provider)
     }
 
-    suspend fun finishAuthorization(deviceCode: String) {
+    suspend fun finishAuthorization(deviceCode: String, provider: DebridProvider = DebridProvider.REAL_DEBRID) {
+        if (provider.apiKeyBased) return
         val token = pollForToken(deviceCode = deviceCode)
         apiConfigRepository.setDebridAccessToken(token.accessToken)
         token.refreshToken?.let { apiConfigRepository.setDebridRefreshToken(it) }

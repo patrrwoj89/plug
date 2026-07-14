@@ -27,6 +27,7 @@ class ApiConfigRepository @Inject constructor(
     val debridRefreshToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_DEBRID_REFRESH].orEmpty() }
     val debridProvider: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_DEBRID_PROVIDER].orEmpty() }
     val iptvSourceUrls: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_IPTV].orEmpty() }
+    val stremioAddons: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_STREMIO].orEmpty() }
 
     suspend fun setTmdbApiKey(value: String) = edit(KEY_TMDB, value)
     suspend fun setAniListToken(value: String) = edit(KEY_ANILIST, value)
@@ -36,6 +37,7 @@ class ApiConfigRepository @Inject constructor(
     suspend fun setDebridRefreshToken(value: String) = edit(KEY_DEBRID_REFRESH, value)
     suspend fun setDebridProvider(value: String) = edit(KEY_DEBRID_PROVIDER, value)
     suspend fun setIptvSourceUrls(value: String) = edit(KEY_IPTV, value)
+    suspend fun setStremioAddons(value: String) = edit(KEY_STREMIO, value)
 
     private suspend fun edit(key: Preferences.Key<String>, value: String) {
         context.apiConfigDataStore.edit { it[key] = value }
@@ -50,5 +52,6 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_DEBRID_REFRESH = stringPreferencesKey("debrid_refresh_token")
         private val KEY_DEBRID_PROVIDER = stringPreferencesKey("debrid_provider")
         private val KEY_IPTV = stringPreferencesKey("iptv_source_urls")
+        private val KEY_STREMIO = stringPreferencesKey("stremio_addons")
     }
 }
