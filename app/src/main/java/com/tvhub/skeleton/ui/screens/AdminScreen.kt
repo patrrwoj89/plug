@@ -219,12 +219,36 @@ fun AdminScreen(
             Text(stringResource(id = R.string.admin_plugin_add))
         }
 
-        state.plugins.forEach { plugin ->
+        state.plugins.forEachIndexed { index, plugin ->
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                 modifier = Modifier.padding(vertical = Spacing.sm)
             ) {
                 Text(plugin.name, style = AppTypography.body, modifier = Modifier.weight(1f))
+                FocusableSurface(
+                    onClick = {
+                        val reordered = state.plugins.toMutableList().apply {
+                            val target = (index - 1).coerceAtLeast(0)
+                            if (index != target) add(target, removeAt(index))
+                        }
+                        viewModel.reorderPlugins(reordered.map { it.pluginId })
+                    },
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(Radius.md)
+                ) {
+                    Text("↑", modifier = Modifier.padding(Spacing.sm))
+                }
+                FocusableSurface(
+                    onClick = {
+                        val reordered = state.plugins.toMutableList().apply {
+                            val target = (index + 1).coerceAtMost(lastIndex)
+                            if (index != target) add(target, removeAt(index))
+                        }
+                        viewModel.reorderPlugins(reordered.map { it.pluginId })
+                    },
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(Radius.md)
+                ) {
+                    Text("↓", modifier = Modifier.padding(Spacing.sm))
+                }
                 FocusableSurface(
                     onClick = { viewModel.removePlugin(plugin.pluginId) },
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(Radius.md)
