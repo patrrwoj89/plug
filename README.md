@@ -108,12 +108,12 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - Kotlinx Serialization 1.8.0
 - Coil 2.7.0
 - jlibtorrent 2.0.12.9 (FrostWire Maven)
-- LibVLC 4.0.0-eap17 (`org.videolan.android:libvlc-all`) as an alternative in-process player engine
+- LibVLC 4.0.0-eap23 (`org.videolan.android:libvlc-all`) as an alternative in-process player engine
 - QuickJS wrapper 3.2.3 (`wang.harlon.quickjs:wrapper-android`)
-- ZXing 3.5.3 for QR codes
+- ZXing 3.5.4 for QR codes
 - `androidx.tvprovider:tvprovider:1.1.0` for Android TV channels
 - Paparazzi 2.0.0-alpha05 for snapshot tests
-- `dev.chrisbanes.haze:haze-android` for the frosted-glass sidebar
+- `dev.chrisbanes.haze:haze-android` 1.7.2 for the frosted-glass sidebar
 - `minSdk = 23`, `targetSdk = 36`
 
 ## Build
@@ -167,7 +167,7 @@ app/src/main/java/com/polishmediahub/app/
 
 The first time a profile is created, the app shows the **Essential Setup** screen. Pick the legal starter packages you want:
 
-- **Free Internet TV** — public IPTV M3U playlists + XMLTV EPG.
+- **Free Internet TV** — public IPTV M3U playlists + XMLTV EPG (starter URLs audited and updated on 2026-07-15).
 - **Music & Podcasts** — podcast RSS feeds and Deezer proxy.
 - **Public Web Catalogs** — official Stremio add-ons and configured web source crawlers.
 

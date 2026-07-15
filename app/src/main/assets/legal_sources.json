@@ -6,11 +6,6 @@
       "license": "Unlicense / public links"
     },
     {
-      "name": "LegalStream curated legal IPTV",
-      "url": "https://github.com/JeremyPlease/LegalStream/raw/master/packages/all.m3u",
-      "license": "free legal streams"
-    },
-    {
       "name": "RW1986 Pluto/Plex/STIRR",
       "url": "https://github.com/RW1986/IPTV/raw/main/lineup.m3u8",
       "license": "free legal streams"
@@ -18,9 +13,9 @@
   ],
   "epg": [
     {
-      "name": "EPG for LegalStream",
-      "url": "https://raw.githubusercontent.com/JeremyPlease/LegalStream/master/epg.xml",
-      "license": "free legal streams"
+      "name": "Pluto TV EPG (MJH)",
+      "url": "https://i.mjh.nz/PlutoTV/us.xml",
+      "license": "free EPG"
     }
   ],
   "torrentExamples": [
@@ -37,13 +32,13 @@
   ],
   "stremioAddons": [
     {
-      "name": "YouTube (official)",
-      "url": "https://addon.youtube.com/stremio/",
+      "name": "Cinemeta (official)",
+      "url": "https://v3-cinemeta.strem.io/manifest.json",
       "license": "official"
     },
     {
-      "name": "TED (official)",
-      "url": "https://addon.ted.com/stremio/",
+      "name": "WatchHub (official)",
+      "url": "https://watchhub-us.strem.io/manifest.json",
       "license": "official"
     }
   ],
@@ -61,8 +56,8 @@
   ],
   "podcastFeeds": [
     {
-      "name": "NASACast",
-      "url": "https://www.nasa.gov/rss/dyn/NASAcast_Podcast.rss",
+      "name": "NASA: Houston We Have a Podcast",
+      "url": "https://www.nasa.gov/feeds/podcasts/houston-we-have-a-podcast",
       "license": "public domain / NASA"
     },
     {
@@ -93,6 +88,6 @@
   },
   "webSources": [],
   "polish": {
-    "note": "Polish audio tracks and subtitles are selected automatically when available. Polish legal sources include TVP Info, Ninateka and Player.pl (subscription). Web crawlers should be configured in legal_sources.json or in the Admin panel."
+    "note": "Polish audio tracks and subtitles are selected automatically when available. Polish legal sources include TVP Info, Ninateka and Player.pl (subscription). Web crawlers should be configured in legal_sources.json or in the Admin panel. Starter URLs in this file were verified against current public sources as of 2026-07-15; live stream availability changes frequently and should be verified locally."
   }
 }

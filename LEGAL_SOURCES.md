@@ -22,7 +22,7 @@ Use only for content you have the right to share or download.
 | Source | URL | Type | Notes |
 |--------|-----|------|-------|
 | IPTV-org (public links) | https://iptv-org.github.io/iptv/index.m3u | Global public channels | Verify each channel license locally |
-| LegalStream | https://github.com/JeremyPlease/LegalStream | News / events | Curated legal streams |
+
 | RW1986 IPTV | https://github.com/RW1986/IPTV | Pluto/Plex/STIRR | Curated free legal streams |
 | NASA TV | https://nasa.gov/multimedia/nasatv/index.html | Public domain | Official live streams |
 | TVP Info (Poland) | https://www.tvp.info | Polish public TV | Requires Polish IP / official app |
@@ -35,6 +35,7 @@ The EPG parser supports standard XMLTV files with `<channel>`, `<programme>`, `<
 |--------|-----|-------|
 | XMLTV.org | https://xmltv.org | Open XMLTV format information and sample parsers |
 | IPTV-org EPG | https://github.com/iptv-org/epg | Community EPG listings; verify channel rights locally |
+| Pluto TV EPG (MJH) | https://i.mjh.nz/PlutoTV/us.xml | Community-hosted Pluto TV guide; verify against your M3U |
 | Official broadcaster EPG | e.g. TVP, BBC iPlayer, Pluto TV | Use only official/legal feeds |
 
 For Polish channels, check whether the broadcaster provides a public EPG feed or use a self-hosted XMLTV source.
@@ -43,9 +44,9 @@ For Polish channels, check whether the broadcaster provides a public EPG feed or
 
 | Add-on | Source | Notes |
 |--------|--------|-------|
-| YouTube | official Stremio add-on | Public videos |
-| TED | official | TED talks |
-| OpenSubtitles | official | Subtitles only; account required for some features |
+| Cinemeta | https://v3-cinemeta.strem.io/manifest.json | Official metadata / catalogs |
+| WatchHub | https://watchhub-us.strem.io/manifest.json | Official where-to-watch aggregator |
+| OpenSubtitles | official add-on | Subtitles only; account required for some features |
 | Public Domain Torrents | community (verify) | Public domain films |
 
 ## Kodi sources (official repository)
@@ -87,7 +88,7 @@ Kitsu (https://kitsu.io) is a free, public JSON:API for anime and manga metadata
 | Internet Archive audio | https://archive.org/details/audio | Public domain / CC |
 | SomaFM | https://somafm.com | Free internet radio |
 | Radio Paradise | https://www.radioparadise.com | Free internet radio |
-| NASAcast Podcasts | https://www.nasa.gov/nasa-on-the-hub | Public domain podcasts |
+| NASA: Houston We Have a Podcast | https://www.nasa.gov/feeds/podcasts/houston-we-have-a-podcast | Public domain podcasts |
 | Legal podcast RSS | use source's own feed | Only use feeds you have the right to access |
 
 ### Deezer proxy

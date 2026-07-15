@@ -107,12 +107,12 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - Kotlinx Serialization 1.8.0
 - Coil 2.7.0
 - jlibtorrent 2.0.12.9 (FrostWire Maven)
-- LibVLC 4.0.0-eap17 (`org.videolan.android:libvlc-all`) jako alternatywny silnik odtwarzacza w procesie aplikacji
+- LibVLC 4.0.0-eap23 (`org.videolan.android:libvlc-all`) jako alternatywny silnik odtwarzacza w procesie aplikacji
 - QuickJS wrapper 3.2.3 (`wang.harlon.quickjs:wrapper-android`)
-- ZXing 3.5.3 dla kodów QR
+- ZXing 3.5.4 dla kodów QR
 - `androidx.tvprovider:tvprovider:1.1.0` dla kanałów Android TV
 - Paparazzi 2.0.0-alpha05 dla testów zrzutów ekranu
-- `dev.chrisbanes.haze:haze-android` dla matowego szkła panelu bocznego
+- `dev.chrisbanes.haze:haze-android` 1.7.2 dla matowego szkła panelu bocznego
 - `minSdk = 23`, `targetSdk = 36`
 
 ## Budowanie
@@ -166,7 +166,7 @@ app/src/main/java/com/polishmediahub/app/
 
 Przy pierwszym starcie profilu aplikacja pokazuje ekran **Essential Setup**. Wybierz pakiety startowe:
 
-- **Darmowa Telewizja Internetowa** — publiczne playlisty M3U + XMLTV EPG.
+- **Darmowa Telewizja Internetowa** — publiczne playlisty M3U + XMLTV EPG (przykładowe adresy URL zweryfikowane i zaktualizowane 15.07.2026).
 - **Muzyka i Podcasty** — kanały RSS podcastów i proxy Deezer.
 - **Katalogi Publiczne Web** — oficjalne dodatki Stremio i skonfigurowane crawlery web.
 

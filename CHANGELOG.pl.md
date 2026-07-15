@@ -222,6 +222,10 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 - `MediaItem` rozszerzono o mapę `subtitleHeaders` dla autoryzacyjnych nagłówków napisów.
 - `QuickJsMediaSource` mapuje pole `subtitleHeaders` z wtyczek JS na `MediaItem`.
 - Widoczność `NextEpisodeOverlay` zmieniono z `private` na `internal`, aby mogła być używana przez `UniversalVlcPlayer`.
+- **Audyt zależności (15.07.2026)**
+  - `libvlc` zaktualizowano do `4.0.0-eap23` (najnowszy LibVLC Android EAP na 15.07.2026, https://central.sonatype.com/artifact/org.videolan.android/libvlc-all).
+  - `haze` zaktualizowano do `1.7.2` (najnowsza stabilna wersja, https://github.com/chrisbanes/haze/releases/tag/1.7.2).
+  - `zxing` zaktualizowano do `3.5.4` (najnowsza stabilna wersja, https://github.com/zxing/zxing/releases).
 
 ### Naprawiono
 
@@ -251,6 +255,12 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 - `PlayerViewModel` posiada zaktualizowane override'y `AnalyticsListener` zgodnie z API ExoPlayera.
 - `AnimeRepository.categories()` teraz fallbackuje do Kitsu, gdy AniList zwraca puste kategorie.
 - Logika `ContentFilter` dla wieku/NSFW została uproszczona: `allowNsfw` blokuje pozycje oznaczone jako treści dla dorosłych, a `maxAgeRating` blokuje pozycje o rozpoznanym poziomie wiekowym wyższym od limitu.
+- **Audyt adresów źródeł startowych (15.07.2026)**
+  - Usunięto martwe próbki IPTV/EPG `LegalStream` z `legal_sources.json` (repozytorium zdeprecjonowane, adresy zwracają 404).
+  - Zamieniono przykłady Stremio na działające oficjalne dodatki: `Cinemeta` (`https://v3-cinemeta.strem.io/manifest.json`) i `WatchHub` (`https://watchhub-us.strem.io/manifest.json`).
+  - Zamieniono martwy feed NASA `NASAcast_Podcast.rss` na aktualny podcast NASA `https://www.nasa.gov/feeds/podcasts/houston-we-have-a-podcast`.
+  - Dodano działającą przykładową EPG Pluto TV `https://i.mjh.nz/PlutoTV/us.xml` dla onboarding IPTV/EPG.
+  - Zweryfikowano, że wszystkie pozostałe przykładowe adresy zwracają HTTP 200 na dzień 15.07.2026; dostępność transmisji na żywo nadal zależy od nadawcy i powinna być weryfikowana lokalnie.
 
 ## [1.0.0-alpha] — 2026-07-14
 

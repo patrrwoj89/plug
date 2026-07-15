@@ -22,7 +22,7 @@ Używaj wyłącznie do treści, do których masz prawo je udostępniać lub pobi
 | Źródło | URL | Typ | Uwagi |
 |--------|-----|-----|-------|
 | IPTV-org (public links) | https://iptv-org.github.io/iptv/index.m3u | Globalne kanały publiczne | Zweryfikuj licencję każdego kanału lokalnie |
-| LegalStream | https://github.com/JeremyPlease/LegalStream | Newse / eventy | Wyselekcjonowane legalne strumienie |
+
 | RW1986 IPTV | https://github.com/RW1986/IPTV | Pluto/Plex/STIRR | Wyselekcjonowane darmowe legalne strumienie |
 | NASA TV | https://nasa.gov/multimedia/nasatv/index.html | Domena publiczna | Oficjalne transmisje na żywo |
 | TVP Info (Polska) | https://www.tvp.info | Polska TV publiczna | Wymaga polskiego IP / oficjalna aplikacja |
@@ -35,6 +35,7 @@ Parser EPG obsługuje standardowe pliki XMLTV z tagami `<channel>`, `<programme>
 |--------|-----|-------|
 | XMLTV.org | https://xmltv.org | Informacje o formacie XMLTV i przykładowe parsery |
 | IPTV-org EPG | https://github.com/iptv-org/epg | Społecznościowe listingi EPG; zweryfikuj prawa kanałów lokalnie |
+| Pluto TV EPG (MJH) | https://i.mjh.nz/PlutoTV/us.xml | Społecznościowy przewodnik Pluto TV; zweryfikuj zgodność ze swoim M3U |
 | Oficjalne EPG nadawców | np. TVP, BBC iPlayer, Pluto TV | Używaj tylko oficjalnych / legalnych feedów |
 
 Dla polskich kanałów sprawdź, czy nadawca udostępnia publiczny feed EPG, lub użyj samodzielnie hostowanego źródła XMLTV.
@@ -43,9 +44,9 @@ Dla polskich kanałów sprawdź, czy nadawca udostępnia publiczny feed EPG, lub
 
 | Dodatek | Źródło | Uwagi |
 |---------|--------|-------|
-| YouTube | oficjalny dodatek Stremio | Publiczne filmy |
-| TED | oficjalny | Wykłady TED |
-| OpenSubtitles | oficjalny | Tylko napisy; konto wymagane dla niektórych funkcji |
+| Cinemeta | https://v3-cinemeta.strem.io/manifest.json | Oficjalne metadane / katalogi |
+| WatchHub | https://watchhub-us.strem.io/manifest.json | Oficjalny agregator where-to-watch |
+| OpenSubtitles | oficjalny dodatek | Tylko napisy; konto wymagane dla niektórych funkcji |
 | Public Domain Torrents | społeczność (zweryfikuj) | Filmy w domenie publicznej |
 
 ## Źródła Kodi (oficjalne repozytorium)
@@ -87,7 +88,7 @@ Kitsu (https://kitsu.io) to darmowe, publiczne API JSON:API dla metadanych anime
 | Internet Archive audio | https://archive.org/details/audio | Domena publiczna / CC |
 | SomaFM | https://somafm.com | Darmowe radio internetowe |
 | Radio Paradise | https://www.radioparadise.com | Darmowe radio internetowe |
-| NASAcast Podcasts | https://www.nasa.gov/nasa-on-the-hub | Podcasty w domenie publicznej |
+| NASA: Houston We Have a Podcast | https://www.nasa.gov/feeds/podcasts/houston-we-have-a-podcast | Podcasty w domenie publicznej |
 | Legal podcast RSS | własny feed źródła | Używaj tylko feedów, do których masz prawo |
 
 ### Proxy Deezer

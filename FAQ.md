@@ -119,7 +119,7 @@ Yes. Kodi, Jellyfin, Plex, Emby, Subsonic and plain M3U/XMLTV endpoints on your 
 
 ### Where can I find legal M3U / IPTV playlists?
 
-See the **IPTV / M3U** section of [LEGAL_SOURCES.md](LEGAL_SOURCES.md). The app's `legal_sources.json` also ships curated public starting points that can be loaded during onboarding or from the Admin panel.
+See the **IPTV / M3U** section of [LEGAL_SOURCES.md](LEGAL_SOURCES.md). The app's `legal_sources.json` also ships curated public starting points that are audited against current public sources (last check: 2026-07-15) and can be loaded during onboarding or from the Admin panel. Always verify each stream's license locally.
 
 ### Can the app scrape any website?
 

@@ -222,6 +222,10 @@ All notable changes to Polish Media Hub are documented in this file.
 - `MediaItem` extended with `subtitleHeaders` map for per-subtitle authorization headers.
 - `QuickJsMediaSource` maps the `subtitleHeaders` field from JS plugins to `MediaItem`.
 - `NextEpisodeOverlay` visibility changed from `private` to `internal` so it can be reused by `UniversalVlcPlayer`.
+- **Dependency audit (2026-07-15)**
+  - `libvlc` updated to `4.0.0-eap23` (latest LibVLC Android EAP as of 2026-07-15, https://central.sonatype.com/artifact/org.videolan.android/libvlc-all).
+  - `haze` updated to `1.7.2` (latest stable, https://github.com/chrisbanes/haze/releases/tag/1.7.2).
+  - `zxing` updated to `3.5.4` (latest stable, https://github.com/zxing/zxing/releases).
 
 ### Fixed
 
@@ -251,6 +255,12 @@ All notable changes to Polish Media Hub are documented in this file.
 - `PlayerViewModel` `AnalyticsListener` overrides updated for ExoPlayer API signatures.
 - `AnimeRepository.categories()` now falls back to Kitsu when AniList returns empty categories.
 - `ContentFilter` age/NSFW logic simplified: `allowNsfw` blocks adult-flagged items; `maxAgeRating` blocks items with a recognized rating level above the cap.
+- **Starter source URL audit (2026-07-15)**
+  - Removed dead `LegalStream` IPTV/EPG samples from `legal_sources.json` (repository deprecated, URLs return 404).
+  - Replaced Stremio samples with working official add-ons: `Cinemeta` (`https://v3-cinemeta.strem.io/manifest.json`) and `WatchHub` (`https://watchhub-us.strem.io/manifest.json`).
+  - Replaced dead NASA `NASAcast_Podcast.rss` sample with the current NASA podcast feed `https://www.nasa.gov/feeds/podcasts/houston-we-have-a-podcast`.
+  - Added a working Pluto TV EPG sample `https://i.mjh.nz/PlutoTV/us.xml` for IPTV/EPG onboarding.
+  - Verified all remaining starter URLs return HTTP 200 as of 2026-07-15; live stream availability still depends on the broadcaster and must be verified locally.
 
 ## [1.0.0-alpha] — 2026-07-14
 
