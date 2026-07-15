@@ -25,6 +25,18 @@ Use only for content you have the right to share or download.
 | NASA TV | https://nasa.gov/multimedia/nasatv/index.html | Public domain | Official live streams |
 | TVP Info (Poland) | https://www.tvp.info | Polish public TV | Requires Polish IP / official app |
 
+## EPG / XMLTV (free and legal)
+
+The EPG parser supports standard XMLTV files with `<channel>`, `<programme>`, `<title>`, `<desc>`, `<date>`, `<category>` and `<icon>` tags. Only use EPG data you have the right to access.
+
+| Source | URL | Notes |
+|--------|-----|-------|
+| XMLTV.org | https://xmltv.org | Open XMLTV format information and sample parsers |
+| IPTV-org EPG | https://github.com/iptv-org/epg | Community EPG listings; verify channel rights locally |
+| Official broadcaster EPG | e.g. TVP, BBC iPlayer, Pluto TV | Use only official/legal feeds |
+
+For Polish channels, check whether the broadcaster provides a public EPG feed or use a self-hosted XMLTV source.
+
 ## Stremio (official/legal add-ons)
 
 | Add-on | Source | Notes |
@@ -75,11 +87,35 @@ Using unofficial clients for these services is against their Terms of Service an
 
 ## Polish audio / subtitles
 
-The app prefers Polish audio (`pl`) and Polish subtitles (`pl`) automatically. For custom content you can:
+The app prefers Polish audio (`pl`) and Polish subtitles (`pl`) automatically and exposes full track labels in the player UI (e.g. "Polski (Lektor)", "Polski (Dubbing)"). If multiple Polish audio tracks are present, the Audio Description / accessibility role is deprioritized so it does not auto-select.
+
+For custom content you can:
 
 - Provide multi-language HLS/DASH streams and let ExoPlayer select the Polish track.
-- Load external SRT/VTT subtitle files in the player (feature stub ready for extension).
+- Load external SRT/VTT subtitle files in the player.
 - Use legal Polish dubbing sources such as official VOD services (Netflix/Prime/Player.pl/HBO Max require their own apps/subscriptions).
+- For anime, prefer legal services with Polish subtitles or original audio + Polish subtitles (Crunchyroll, HIDIVE, etc.).
+
+## Android TV / Google TV launcher integration
+
+The app publishes two system channels on supported launchers:
+
+- **Watch Next** — resume unfinished content from `WatchHistoryRepository`.
+- **Preview / Recommendations** — featured content refreshed daily by `WorkManager`.
+
+Only content the user has added through legal sources will appear on the launcher. No content is pushed without the user's configured sources.
+
+## Testing / CI commands
+
+```bash
+./gradlew :app:compileDebugKotlin
+./gradlew :app:testDebugUnitTest
+./gradlew :app:lintDebug
+./gradlew :app:assembleDebug
+./gradlew :app:assembleDebugAndroidTest
+./gradlew :app:connectedDebugAndroidTest   # requires an emulator or Android TV device
+./gradlew :app:recordPaparazziDebug       # generate/update screenshot baselines
+```
 
 ## Web scraping / JSON / JS sources
 
@@ -98,3 +134,6 @@ Only scrape sites that explicitly allow it (check `robots.txt` and ToS) or use p
 - The app does **not** ship pre-configured piracy sources.
 - Adding unauthorized streams, torrents, or scrapers is the user's responsibility and may violate local law.
 - For self-hosted content, use Jellyfin, Plex, Emby, Kodi, Subsonic/Airsonic, or your own M3U/JSON endpoints.
+- BitTorrent support is intended for legally distributable content (e.g. public domain, Creative Commons, Linux ISOs, content you own the rights to).
+- QuickJS plugins and web scraping can only access sources you configure; respect each source's `robots.txt` and Terms of Service.
+- EPG data must be from a legal source you have the right to use.
