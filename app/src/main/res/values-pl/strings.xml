@@ -143,4 +143,9 @@
     <string name="essential_setup_web_title">Katalogi Publiczne Web</string>
     <string name="essential_setup_web_subtitle">Skonfigurowane legalne crawlery stron wideo</string>
     <string name="essential_setup_confirm">Zatwierdź i Uruchom</string>
+    <string name="crash_report_title">Aplikacja napotkała niespodziewany problem</string>
+    <string name="crash_report_hint">Możesz zapoznać się z poniższymi szczegółami lub zrestartować aplikację.</string>
+    <string name="crash_report_restart">Uruchom ponownie aplikację</string>
+    <string name="crash_report_clear_cache">Wyczyść pamięć podręczną i zrestartuj</string>
+    <string name="crash_report_no_details">Brak dostępnych szczegółów błędu.</string>
 </resources>

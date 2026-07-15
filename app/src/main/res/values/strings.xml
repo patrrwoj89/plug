@@ -143,4 +143,9 @@
     <string name="essential_setup_web_title">Public Web Catalogs</string>
     <string name="essential_setup_web_subtitle">Configured legal video site crawlers</string>
     <string name="essential_setup_confirm">Confirm &amp; Launch</string>
+    <string name="crash_report_title">The application encountered an unexpected problem</string>
+    <string name="crash_report_hint">You can report the details below or restart the app.</string>
+    <string name="crash_report_restart">Restart app</string>
+    <string name="crash_report_clear_cache">Clear cache and restart</string>
+    <string name="crash_report_no_details">No crash details available.</string>
 </resources>
