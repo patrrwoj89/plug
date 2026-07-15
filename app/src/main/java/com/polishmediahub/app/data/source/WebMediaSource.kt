@@ -1,5 +1,6 @@
 package com.polishmediahub.app.data.source
 
+import android.util.Log
 import com.polishmediahub.app.data.plugin.QuickJsEngine
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
@@ -10,6 +11,7 @@ import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jsoup.Jsoup
+import java.net.URLDecoder
 import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
@@ -48,8 +50,41 @@ class WebMediaSource @Inject constructor(
     override suspend fun search(query: String): List<MediaItem> =
         configs.flatMap { scrape(it, query) }
 
-    override suspend fun byId(id: String): MediaItem? =
-        search("").find { it.id == id }
+    override suspend fun byId(id: String): MediaItem? {
+        val config = configs.find { id.startsWith("web:${it.id}:") } ?: return null
+        val relativeId = id.removePrefix("web:${config.id}:")
+        val url = try {
+            URLDecoder.decode(relativeId, "UTF-8")
+        } catch (_: Exception) {
+            relativeId
+        }
+        if (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true)) {
+            return null
+        }
+
+        val html = fetch(url, config.headers) ?: return null
+        val doc = Jsoup.parse(html, url)
+        val title = doc.select(config.titleSelector).firstOrNull()?.text()?.takeIf { it.isNotBlank() } ?: return null
+        val description = doc.select(config.descriptionSelector).firstOrNull()?.text() ?: ""
+        val year = doc.select(config.yearSelector).firstOrNull()?.text() ?: ""
+        val rawPoster = doc.select(config.posterSelector).firstOrNull()?.attr(config.posterAttribute)
+        val poster = rawPoster?.let { resolveUrl(config.baseUrl, it) }
+
+        val item = MediaItem(
+            id = id,
+            title = title,
+            subtitle = year,
+            description = description,
+            posterUrl = poster,
+            backdropUrl = poster,
+            year = year,
+            videoUrl = url,
+            headers = config.headers,
+            type = MediaItem.Type.MOVIE
+        )
+        val resolvedVideoUrl = resolve(item) ?: url
+        return item.copy(videoUrl = resolvedVideoUrl)
+    }
 
     override suspend fun resolve(mediaItem: MediaItem): String? {
         val config = configs.find { mediaItem.id.startsWith("web:${it.id}:") } ?: return mediaItem.videoUrl
@@ -76,11 +111,21 @@ class WebMediaSource @Inject constructor(
         }
         val html = fetch(url, config.headers) ?: return emptyList()
         val doc = Jsoup.parse(html, url)
-        return doc.select(config.itemSelector).mapNotNull { element ->
+        val elements = doc.select(config.itemSelector)
+        if (elements.isEmpty()) {
+            Log.w("WebMediaSource", "Selektor ${config.itemSelector} zwrócił 0 wyników. Możliwa zmiana struktury HTML strony.")
+        }
+        return elements.mapNotNull { element ->
             try {
-                val title = element.select(config.titleSelector).firstOrNull()?.text() ?: return@mapNotNull null
+                val rawTitle = element.select(config.titleSelector).firstOrNull()?.text() ?: return@mapNotNull null
+                val title = rawTitle.trim()
+                if (title.isEmpty() || title.contains('<') || title.contains('>')) return@mapNotNull null
+
                 val relativeHref = element.select(config.linkSelector).firstOrNull()?.attr("href") ?: ""
-                val href = if (relativeHref.startsWith("http")) relativeHref else config.baseUrl.removeSuffix("/") + "/" + relativeHref.removePrefix("/")
+                val href = resolveUrl(config.baseUrl, relativeHref)
+                if (!href.startsWith("http://", ignoreCase = true) && !href.startsWith("https://", ignoreCase = true)) {
+                    return@mapNotNull null
+                }
                 val poster = element.select(config.posterSelector).firstOrNull()?.attr(config.posterAttribute)
                     ?.let { resolveUrl(config.baseUrl, it) }
                 MediaItem(
