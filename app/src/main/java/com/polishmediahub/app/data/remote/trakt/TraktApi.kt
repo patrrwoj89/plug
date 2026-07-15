@@ -2,6 +2,7 @@ package com.polishmediahub.app.data.remote.trakt
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -33,13 +34,28 @@ interface TraktApi {
     ): List<TraktSearchResult>
 
     @GET("sync/watched/movies")
-    suspend fun watchedMovies(@Header("Authorization") auth: String, @Header("trakt-api-key") clientId: String): List<TraktWatchedItem>
+    suspend fun watchedMovies(
+        @Header("Authorization") auth: String,
+        @Header("trakt-api-key") clientId: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 250
+    ): Response<List<TraktWatchedItem>>
 
     @GET("sync/watched/shows")
-    suspend fun watchedShows(@Header("Authorization") auth: String, @Header("trakt-api-key") clientId: String): List<TraktWatchedShow>
+    suspend fun watchedShows(
+        @Header("Authorization") auth: String,
+        @Header("trakt-api-key") clientId: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 250
+    ): Response<List<TraktWatchedShow>>
 
     @GET("sync/watchlist/movies,shows")
-    suspend fun watchlist(@Header("Authorization") auth: String, @Header("trakt-api-key") clientId: String): List<TraktWatchlistItem>
+    suspend fun watchlist(
+        @Header("Authorization") auth: String,
+        @Header("trakt-api-key") clientId: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 250
+    ): Response<List<TraktWatchlistItem>>
 
     @POST("sync/history")
     suspend fun syncHistoryAdd(

@@ -241,6 +241,10 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
   - Zlokalizowano teksty w `AdminScreen`, `EpgScreen` i `DownloadsScreen`; dodano brakujące `contentDescription` dla strzałek reorder wtyczek i stanu zaznaczenia w `Sidebar`.
   - Naprawiono ostrzeżenia lint: `IntentFilterUniqueDataAttributes`, `DefaultUncaughtExceptionDelegation`, `UseKtx`, `ModifierParameter`, `PluralsCandidate`, `FrequentlyChangingValue`, `SetJavaScriptEnabled`, `RedundantLabel` i inne.
   - Dodano bazę `app/lint.xml` dla pre-existing ostrzeżeń o wersjach zależności i zasobów ikon; `lintDebug` zwraca teraz `No issues found.`
+- **Audyt Trakt.tv — paginacja `sync/watched` i `sync/watchlist`**
+  - Dodano parametry `page` i `limit` (max 250) do `/sync/watched/movies`, `/sync/watched/shows` oraz `/sync/watchlist/movies,shows`.
+  - `TraktMediaRepository` odczytuje nagłówki `X-Pagination-Page-Count` i przechodzi przez wszystkie strony, dzięki czemu dwukierunkowa synchronizacja działa po wymuszeniu paginacji 30 czerwca 2026 r.
+  - Zaktualizowano odniesienia do aktualnej dokumentacji Trakt pod `https://docs.trakt.tv` (stara dokumentacja Apiary jest zdeprecjonowana od czerwca 2026).
 - `WebMediaSource.byId()` pobiera teraz pojedynczą stronę bezparsując całego katalogu.
 - `CloudstreamSource.categories()` ładuje zdalne indeksy zamiast zwracać pustą listę.
 - `QuickJsEngine` nie używa już `runBlocking` w `httpFetch`.

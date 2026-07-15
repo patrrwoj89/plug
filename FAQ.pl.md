@@ -284,7 +284,7 @@ Nie, nakładka jest uruchamiana tylko dla `MediaItem.Type.SERIES` / odcinków.
 
 ### Jak działa dwukierunkowa synchronizacja z Trakt?
 
-`TraktSyncWorker` uruchamia się co 6 godzin (a także ręcznie z **Ustawień** lub panelu admina). Pobiera z Trakt historię obejrzanych pozycji i listę do obejrzenia, zapisując je w tabelach Room aktywnego profilu. Pozycje obejrzane lub dodane do listy do obejrzenia lokalnie w trybie offline są wysyłane z powrotem do Trakt. Konflikty są rozwiązywane na podstawie timestampu — nowszy rekord wygrywa.
+`TraktSyncWorker` uruchamia się co 6 godzin (a także ręcznie z **Ustawień** lub panelu admina). Pobiera z Trakt historię obejrzanych pozycji i listę do obejrzenia, zapisując je w tabelach Room aktywnego profilu. Pozycje obejrzane lub dodane do listy do obejrzenia lokalnie w trybie offline są wysyłane z powrotem do Trakt. Konflikty są rozwiązywane na podstawie timestampu — nowszy rekord wygrywa. Od czerwca 2026 r. Trakt paginuje `sync/watched` i `sync/watchlist`; aplikacja odczytuje `X-Pagination-Page-Count` i ładuje wszystkie strony, więc duże historie pozostają zsynchronizowane.
 
 ### Gdzie wpisać dane logowania do Trakt?
 

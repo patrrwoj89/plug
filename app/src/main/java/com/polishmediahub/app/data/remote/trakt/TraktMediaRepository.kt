@@ -6,6 +6,7 @@ import com.polishmediahub.app.data.MediaRepository
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
 import kotlinx.coroutines.flow.first
+import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
@@ -44,14 +45,14 @@ class TraktMediaRepository @Inject constructor(
 
     suspend fun watchedMovies(): List<MediaItem> = try {
         val auth = authHeader() ?: return emptyList()
-        api.watchedMovies(auth, clientId()).mapNotNull { it.movie?.toMediaItem() }
+        fetchAllWatchedMovies(auth, clientId()).mapNotNull { it.movie?.toMediaItem() }
     } catch (_: Exception) {
         emptyList()
     }
 
     suspend fun watchlist(): List<MediaItem> = try {
         val auth = authHeader() ?: return emptyList()
-        api.watchlist(auth, clientId()).mapNotNull {
+        fetchAllWatchlist(auth, clientId()).mapNotNull {
             when (it.type) {
                 "movie" -> it.movie?.toMediaItem()
                 "show" -> it.show?.toMediaItem()
@@ -70,12 +71,12 @@ class TraktMediaRepository @Inject constructor(
     suspend fun watchedItemsWithTimestamps(): List<Pair<MediaItem, Long>> = try {
         val auth = authHeader() ?: return emptyList()
         val client = clientId()
-        val movies = api.watchedMovies(auth, client).mapNotNull { watched ->
+        val movies = fetchAllWatchedMovies(auth, client).mapNotNull { watched ->
             val item = watched.movie?.toMediaItem() ?: return@mapNotNull null
             val ts = parseIsoTimestamp(watched.lastWatchedAt)
             item to ts
         }
-        val shows = api.watchedShows(auth, client).flatMap { watchedShow ->
+        val shows = fetchAllWatchedShows(auth, client).flatMap { watchedShow ->
             val show = watchedShow.show
             watchedShow.seasons.flatMap { season ->
                 season.episodes.map { episode ->
@@ -109,7 +110,7 @@ class TraktMediaRepository @Inject constructor(
      */
     suspend fun watchlistWithTimestamps(): List<Pair<MediaItem, Long>> = try {
         val auth = authHeader() ?: return emptyList()
-        api.watchlist(auth, clientId()).mapNotNull { item ->
+        fetchAllWatchlist(auth, clientId()).mapNotNull { item ->
             val media = when (item.type) {
                 "movie" -> item.movie?.toMediaItem()
                 "show" -> item.show?.toMediaItem()?.copy(type = MediaItem.Type.SERIES)
@@ -209,6 +210,63 @@ class TraktMediaRepository @Inject constructor(
     private suspend fun authHeader(): String? {
         val token = apiConfigRepository.traktAccessToken.first()
         return if (token.isNotBlank()) "Bearer $token" else null
+    }
+
+    private tailrec suspend fun fetchAllWatchedMovies(
+        auth: String,
+        clientId: String,
+        page: Int = 1,
+        accumulator: List<TraktWatchedItem> = emptyList()
+    ): List<TraktWatchedItem> {
+        val response = api.watchedMovies(auth, clientId, page = page, limit = 250)
+        val pageCount = response.paginationPageCount()
+        val body = response.body() ?: emptyList()
+        val merged = accumulator + body
+        return if (body.isEmpty() || page >= (pageCount ?: page)) {
+            merged
+        } else {
+            fetchAllWatchedMovies(auth, clientId, page + 1, merged)
+        }
+    }
+
+    private tailrec suspend fun fetchAllWatchedShows(
+        auth: String,
+        clientId: String,
+        page: Int = 1,
+        accumulator: List<TraktWatchedShow> = emptyList()
+    ): List<TraktWatchedShow> {
+        val response = api.watchedShows(auth, clientId, page = page, limit = 250)
+        val pageCount = response.paginationPageCount()
+        val body = response.body() ?: emptyList()
+        val merged = accumulator + body
+        return if (body.isEmpty() || page >= (pageCount ?: page)) {
+            merged
+        } else {
+            fetchAllWatchedShows(auth, clientId, page + 1, merged)
+        }
+    }
+
+    private tailrec suspend fun fetchAllWatchlist(
+        auth: String,
+        clientId: String,
+        page: Int = 1,
+        accumulator: List<TraktWatchlistItem> = emptyList()
+    ): List<TraktWatchlistItem> {
+        val response = api.watchlist(auth, clientId, page = page, limit = 250)
+        val pageCount = response.paginationPageCount()
+        val body = response.body() ?: emptyList()
+        val merged = accumulator + body
+        return if (body.isEmpty() || page >= (pageCount ?: page)) {
+            merged
+        } else {
+            fetchAllWatchlist(auth, clientId, page + 1, merged)
+        }
+    }
+
+    private fun <T> Response<List<T>>.paginationPageCount(): Int? {
+        val raw = headers()["X-Pagination-Page-Count"]
+            ?: headers()["x-pagination-page-count"]
+        return raw?.toIntOrNull()
     }
 
     private fun buildScrobbleBody(mediaItem: MediaItem, progress: Float): TraktScrobbleBody {

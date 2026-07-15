@@ -237,6 +237,10 @@ All notable changes to Polish Media Hub are documented in this file.
   - `CustomListsScreen` list tiles now navigate to a new `CustomListDetailScreen` (5-column grid + `CustomListDetailViewModel`).
   - All 22 silent empty `catch` blocks in critical files (`PlayerViewModel`, `AdminHttpServer`, `TorrentHttpServer`, `MediaDatabase`, `DynamicPluginLoader`, `PluginRepository`, `TvLauncherManager`, `WatchNextHelper`) now log warnings with `Log.w(...)`.
   - Removed dead `androidx.tv.material` and `androidx.tv.foundation` dependencies from `app/build.gradle.kts` and `libs.versions.toml`; corrected README claims about Jetpack Compose TV material3.
+- **Trakt.tv API audit — pagination for `sync/watched` and `sync/watchlist`**
+  - Added `page` and `limit` query parameters (max 250) to `/sync/watched/movies`, `/sync/watched/shows` and `/sync/watchlist/movies,shows`.
+  - `TraktMediaRepository` now reads `X-Pagination-Page-Count` response headers and loops through all pages, so Trakt two-way sync works after the June 30, 2026 pagination enforcement.
+  - Updated code references to the current Trakt documentation home at `https://docs.trakt.tv` (the old Apiary docs are deprecated as of June 2026).
   - Added `Modifier.focusGroup()` and `focusRestorer()` to `CategoryRow` horizontal `LazyRow`s so D-Pad focus returns to the last viewed item when moving up/down between rows.
   - Localized hard-coded strings in `AdminScreen`, `EpgScreen` and `DownloadsScreen`; added missing `contentDescription` for plugin reorder arrows and Sidebar selection state.
   - Fixed `IntentFilterUniqueDataAttributes`, `DefaultUncaughtExceptionDelegation`, `UseKtx`, `ModifierParameter`, `PluralsCandidate`, `FrequentlyChangingValue`, `SetJavaScriptEnabled`, `RedundantLabel` and other lint warnings.

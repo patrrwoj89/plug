@@ -284,7 +284,7 @@ No, the overlay is only triggered for `MediaItem.Type.SERIES` / episodes.
 
 ### How does two-way Trakt sync work?
 
-`TraktSyncWorker` runs every 6 hours (and can be triggered manually from **Settings** or the admin panel). It pulls your watched history and watchlist from Trakt and writes them to the active profile's Room tables. Any items watched or added to the watchlist locally while offline are pushed back to Trakt. Conflicts are resolved by timestamp: the newer record wins.
+`TraktSyncWorker` runs every 6 hours (and can be triggered manually from **Settings** or the admin panel). It pulls your watched history and watchlist from Trakt and writes them to the active profile's Room tables. Any items watched or added to the watchlist locally while offline are pushed back to Trakt. Conflicts are resolved by timestamp: the newer record wins. Trakt paginates `sync/watched` and `sync/watchlist` since June 2026; the app follows `X-Pagination-Page-Count` and loads every page so large watch histories stay in sync.
 
 ### Where do I enter my Trakt credentials?
 
