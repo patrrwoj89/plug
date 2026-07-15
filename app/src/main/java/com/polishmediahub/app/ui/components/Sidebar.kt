@@ -1,31 +1,33 @@
 package com.polishmediahub.app.ui.components
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
+import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Animation
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.LiveTv
-import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoLibrary
@@ -34,7 +36,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,13 +46,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.polishmediahub.app.R
 import com.polishmediahub.app.data.local.ProfileEntity
@@ -56,17 +57,18 @@ import com.polishmediahub.app.navigation.Screen
 import com.polishmediahub.app.ui.screens.PinScreen
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
-import com.polishmediahub.app.ui.theme.Motion
+import com.polishmediahub.app.ui.theme.Radius
 import com.polishmediahub.app.ui.theme.Spacing
-import com.polishmediahub.app.ui.viewmodel.ProfileViewModel
+import dev.chrisbanes.haze.HazeState
+import kotlinx.coroutines.delay
 
-data class SidebarItem(
+internal data class SidebarItem(
     val screen: Screen,
     val labelRes: Int,
     val icon: ImageVector
 )
 
-private val sidebarItems = listOf(
+internal val sidebarItems = listOf(
     SidebarItem(Screen.Home, R.string.home, Icons.Default.Home),
     SidebarItem(Screen.Search, R.string.search, Icons.Default.Search),
     SidebarItem(Screen.Library, R.string.library, Icons.AutoMirrored.Filled.LibraryBooks),
@@ -84,85 +86,76 @@ private val sidebarItems = listOf(
 @Composable
 fun Sidebar(
     current: Screen,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    hazeState: HazeState,
     onNavigate: (Screen) -> Unit,
-    modifier: Modifier = Modifier,
-    focusRequester: FocusRequester = remember { FocusRequester() },
-    showProfileHeader: Boolean = true
+    profile: ProfileEntity? = null,
+    profiles: List<ProfileEntity> = emptyList(),
+    onSelectProfile: (ProfileEntity) -> Unit = {},
+    onVerifyPin: (ProfileEntity, String) -> Boolean = { _, _ -> false },
+    modifier: Modifier = Modifier
 ) {
-    val expanded by remember { mutableStateOf(true) }
-    val width by animateDpAsState(
-        targetValue = if (expanded) 240.dp else 72.dp,
-        animationSpec = tween(Motion.transition),
-        label = "sidebar-width"
-    )
-
-    val profileViewModel = if (showProfileHeader) hiltViewModel<ProfileViewModel>() else null
-    val currentProfile by profileViewModel?.currentProfile?.collectAsStateWithLifecycle()
-        ?: remember { mutableStateOf<ProfileEntity?>(null) }
-    val profiles by profileViewModel?.profiles?.collectAsStateWithLifecycle()
-        ?: remember { mutableStateOf(emptyList<ProfileEntity>()) }
-
     var showProfileDialog by remember { mutableStateOf(false) }
     var pinLockedProfile by remember { mutableStateOf<ProfileEntity?>(null) }
+    val panelFocusRequester = remember { FocusRequester() }
+    var lastInteraction by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
-    LazyColumn(
+    LaunchedEffect(expanded) {
+        if (!expanded) return@LaunchedEffect
+        lastInteraction = System.currentTimeMillis()
+        while (expanded) {
+            delay(100)
+            if (System.currentTimeMillis() - lastInteraction >= SIDEBAR_AUTO_COLLAPSE_DELAY_MS) {
+                onExpandedChange(false)
+                break
+            }
+        }
+    }
+
+    LaunchedEffect(expanded) {
+        if (expanded) {
+            delay(50)
+            panelFocusRequester.requestFocus()
+        }
+    }
+
+    Box(
         modifier = modifier
             .fillMaxHeight()
-            .width(width)
-            .background(AppColor.Surface)
-            .padding(vertical = Spacing.md),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+            .width(SIDEBAR_OPEN_WIDTH),
+        contentAlignment = Alignment.TopStart
     ) {
-        item {
-            ProfileHeader(
-                profile = currentProfile,
-                expanded = expanded,
-                onClick = { showProfileDialog = true },
-                modifier = Modifier.padding(horizontal = Spacing.md)
+        AnimatedVisibility(
+            visible = !expanded,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            CollapsedSidebarPill(
+                current = current,
+                profile = profile,
+                hazeState = hazeState,
+                modifier = Modifier.padding(Spacing.md)
             )
         }
 
-        item {
-            // Logo area
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .padding(horizontal = Spacing.md),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                if (expanded) {
-                    Text(
-                        text = stringResource(id = R.string.app_name),
-                        style = AppTypography.titleLarge,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.VideoLibrary,
-                        contentDescription = stringResource(id = R.string.app_name),
-                        tint = AppColor.Accent,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-            }
-        }
-
-        item { Spacer(modifier = Modifier.height(Spacing.md)) }
-
-        itemsIndexed(sidebarItems) { index, item ->
-            val isFirst = index == 0
-            SidebarRow(
-                item = item,
-                selected = current == item.screen,
-                expanded = expanded,
-                onClick = { onNavigate(item.screen) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.sm)
-                    .then(if (isFirst) Modifier.focusRequester(focusRequester) else Modifier)
+        AnimatedVisibility(
+            visible = expanded,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            ModernSidebarBlurPanel(
+                current = current,
+                profile = profile,
+                hazeState = hazeState,
+                focusRequester = panelFocusRequester,
+                onProfileClick = { showProfileDialog = true },
+                onNavigate = { screen ->
+                    onExpandedChange(false)
+                    onNavigate(screen)
+                },
+                onInteraction = { lastInteraction = System.currentTimeMillis() },
+                modifier = Modifier.fillMaxHeight()
             )
         }
     }
@@ -170,29 +163,29 @@ fun Sidebar(
     if (showProfileDialog) {
         ProfileSelectionDialog(
             profiles = profiles,
-            currentProfile = currentProfile,
-            onSelect = { profile ->
+            currentProfile = profile,
+            onSelect = { selected ->
                 showProfileDialog = false
-                if (profile.isPinLocked && profile.pinCode != null) {
-                    pinLockedProfile = profile
+                if (selected.isPinLocked && selected.pinCode != null) {
+                    pinLockedProfile = selected
                 } else {
-                    profileViewModel?.selectProfile(profile)
+                    onSelectProfile(selected)
                 }
             },
             onDismiss = { showProfileDialog = false }
         )
     }
 
-    pinLockedProfile?.let { profile ->
+    pinLockedProfile?.let { lockedProfile ->
         AlertDialog(
             onDismissRequest = { pinLockedProfile = null },
             title = { Text(stringResource(id = R.string.enter_pin)) },
             text = {
                 PinScreen(
                     onPinEntered = { pin ->
-                        if (profileViewModel?.verifyPin(profile, pin) == true) {
+                        if (onVerifyPin(lockedProfile, pin)) {
                             pinLockedProfile = null
-                            profileViewModel.selectProfile(profile)
+                            onSelectProfile(lockedProfile)
                         }
                     },
                     onCancel = { pinLockedProfile = null }
@@ -205,7 +198,7 @@ fun Sidebar(
 }
 
 @Composable
-private fun ProfileHeader(
+internal fun ProfileHeader(
     profile: ProfileEntity?,
     expanded: Boolean,
     onClick: () -> Unit,
@@ -216,7 +209,7 @@ private fun ProfileHeader(
     FocusableSurface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(8.dp),
         backgroundColor = AppColor.Surface,
         focusedBackgroundColor = AppColor.SurfaceHover
     ) {
@@ -270,7 +263,7 @@ private fun ProfileHeader(
 }
 
 @Composable
-private fun ProfileSelectionDialog(
+internal fun ProfileSelectionDialog(
     profiles: List<ProfileEntity>,
     currentProfile: ProfileEntity?,
     onSelect: (ProfileEntity) -> Unit,
@@ -329,7 +322,7 @@ private fun ProfileSelectionDialog(
 }
 
 @Composable
-private fun SidebarRow(
+internal fun SidebarRow(
     item: SidebarItem,
     selected: Boolean,
     expanded: Boolean,
@@ -344,7 +337,7 @@ private fun SidebarRow(
         onClick = onClick,
         modifier = modifier.height(48.dp),
         scale = 1.02f,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(8.dp),
         backgroundColor = containerColor,
         focusedBackgroundColor = AppColor.SurfaceHover
     ) {

@@ -127,6 +127,9 @@ dependencies {
     // QuickJS JavaScript engine for plugin scripts
     implementation(libs.quickjs.wrapper)
 
+    // Haze frosted-glass blur for modern sidebar overlay
+    implementation(libs.haze.android)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

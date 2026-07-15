@@ -1,13 +1,22 @@
 package com.polishmediahub.app.navigation
 
-import androidx.compose.foundation.layout.Row
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,6 +25,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.polishmediahub.app.ui.components.Sidebar
 import com.polishmediahub.app.ui.screens.AdminScreen
 import com.polishmediahub.app.ui.screens.AnimeScreen
@@ -31,13 +42,17 @@ import com.polishmediahub.app.ui.screens.SearchScreen
 import com.polishmediahub.app.ui.screens.SettingsScreen
 import com.polishmediahub.app.ui.screens.TorrentsScreen
 import com.polishmediahub.app.ui.screens.WatchlistScreen
+import com.polishmediahub.app.ui.viewmodel.ProfileViewModel
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.rememberHazeState
 
 @Composable
 fun TVApp(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController()
 ) {
-    val activity = LocalActivity.current
+    val activity = androidx.activity.compose.LocalActivity.current
     LaunchedEffect(Unit) {
         activity?.intent?.let { navController.handleDeepLink(it) }
     }
@@ -68,23 +83,44 @@ fun TVApp(
         }
     } ?: Screen.Home
 
-    Row(modifier = modifier.fillMaxSize()) {
-        Sidebar(
-            current = currentScreen,
-            onNavigate = { screen ->
-                navController.navigate(screen.route) {
-                    popUpTo(Screen.Home.route) { saveState = true }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            },
-            modifier = Modifier.fillMaxHeight()
-        )
+    val profileViewModel = hiltViewModel<ProfileViewModel>()
+    val currentProfile by profileViewModel.currentProfile.collectAsStateWithLifecycle()
+    val profiles by profileViewModel.profiles.collectAsStateWithLifecycle()
 
+    val hazeState: HazeState = rememberHazeState()
+    var sidebarExpanded by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = sidebarExpanded || currentScreen == Screen.Home) {
+        if (sidebarExpanded) {
+            sidebarExpanded = false
+        } else if (currentScreen == Screen.Home) {
+            sidebarExpanded = true
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .focusable()
+            .onKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown &&
+                    event.key == Key.DirectionLeft &&
+                    !sidebarExpanded &&
+                    currentScreen !is Screen.Player
+                ) {
+                    sidebarExpanded = true
+                    true
+                } else {
+                    false
+                }
+            }
+    ) {
         NavHost(
             navController = navController,
             startDestination = Screen.Home.route,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .haze(state = hazeState)
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(onNavigate = { navController.navigate(it.route) })
@@ -165,5 +201,24 @@ fun TVApp(
                 )
             }
         }
+
+        Sidebar(
+            current = currentScreen,
+            expanded = sidebarExpanded,
+            onExpandedChange = { sidebarExpanded = it },
+            hazeState = hazeState,
+            onNavigate = { screen ->
+                navController.navigate(screen.route) {
+                    popUpTo(Screen.Home.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            profile = currentProfile,
+            profiles = profiles,
+            onSelectProfile = { profileViewModel.selectProfile(it) },
+            onVerifyPin = { profile, code -> profileViewModel.verifyPin(profile, code) },
+            modifier = Modifier.fillMaxHeight()
+        )
     }
 }

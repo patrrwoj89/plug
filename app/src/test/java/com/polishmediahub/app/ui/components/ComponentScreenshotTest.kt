@@ -1,6 +1,7 @@
 package com.polishmediahub.app.ui.components
 
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.DeviceConfig
@@ -10,6 +11,7 @@ import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.navigation.Screen
 import com.polishmediahub.app.ui.screens.PinScreen
 import com.polishmediahub.app.ui.theme.TVHubTheme
+import dev.chrisbanes.haze.HazeState
 import org.junit.Rule
 import org.junit.Test
 
@@ -51,10 +53,13 @@ class ComponentScreenshotTest {
     fun sidebar() {
         paparazzi.snapshot {
             TVHubTheme {
+                val hazeState = remember { HazeState() }
                 Sidebar(
                     current = Screen.Home,
-                    onNavigate = {},
-                    showProfileHeader = false
+                    expanded = false,
+                    onExpandedChange = {},
+                    hazeState = hazeState,
+                    onNavigate = {}
                 )
             }
         }
