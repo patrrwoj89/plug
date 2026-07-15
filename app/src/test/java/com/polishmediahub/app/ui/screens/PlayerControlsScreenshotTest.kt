@@ -29,7 +29,8 @@ class PlayerControlsScreenshotTest {
                     onSeek = {},
                     onEnterPip = {},
                     onCycleAudio = {},
-                    onCycleSubtitle = {}
+                    onCycleSubtitle = {},
+                    onSliderFocusChanged = {}
                 )
             }
         }
@@ -51,7 +52,8 @@ class PlayerControlsScreenshotTest {
                     onSeek = {},
                     onEnterPip = {},
                     onCycleAudio = {},
-                    onCycleSubtitle = {}
+                    onCycleSubtitle = {},
+                    onSliderFocusChanged = {}
                 )
             }
         }

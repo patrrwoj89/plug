@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,16 +21,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.polishmediahub.app.R
 import com.polishmediahub.app.ui.components.FocusableSurface
+import com.polishmediahub.app.ui.components.TvButton
 import com.polishmediahub.app.ui.theme.Spacing
 
 @Composable
 fun PinScreen(
     onPinEntered: (String) -> Unit,
     onCancel: () -> Unit,
+    onPinChanged: () -> Unit = {},
+    isError: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     var pin by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier.fillMaxSize().padding(Spacing.lg),
@@ -51,7 +52,7 @@ fun PinScreen(
                 )
             }
         }
-        if (error) {
+        if (isError) {
             Spacer(modifier = Modifier.height(Spacing.sm))
             Text(stringResource(id = R.string.pin_incorrect), color = MaterialTheme.colorScheme.error)
         }
@@ -64,7 +65,10 @@ fun PinScreen(
                         if (key.isNotEmpty()) {
                             FocusableSurface(
                                 onClick = {
-                                    if (pin.length < 4) pin += key
+                                    if (pin.length < 4) {
+                                        pin += key
+                                        onPinChanged()
+                                    }
                                     if (pin.length == 4) {
                                         onPinEntered(pin)
                                         pin = ""
@@ -83,10 +87,10 @@ fun PinScreen(
         }
         Spacer(modifier = Modifier.height(Spacing.lg))
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            Button(onClick = { pin = "" }) {
+            TvButton(onClick = { pin = ""; onPinChanged() }) {
                 Text(stringResource(id = R.string.clear))
             }
-            Button(onClick = onCancel) {
+            TvButton(onClick = onCancel) {
                 Text(stringResource(id = R.string.cancel))
             }
         }

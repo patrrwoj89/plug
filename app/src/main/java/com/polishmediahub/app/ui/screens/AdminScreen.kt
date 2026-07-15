@@ -13,10 +13,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +31,8 @@ import com.polishmediahub.app.R
 import com.polishmediahub.app.data.remote.debrid.DebridProvider
 import com.polishmediahub.app.ui.components.FocusableSurface
 import com.polishmediahub.app.ui.components.QrCodeGenerator
+import com.polishmediahub.app.ui.components.TvButton
+import com.polishmediahub.app.ui.components.TvOutlinedTextField
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Radius
@@ -87,7 +88,7 @@ fun AdminScreen(
             )
         }
 
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = state.tmdbApiKey,
             onValueChange = viewModel::setTmdbApiKey,
             label = { Text(stringResource(id = R.string.admin_tmdb_key)) },
@@ -95,7 +96,7 @@ fun AdminScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
 
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = state.aniListToken,
             onValueChange = viewModel::setAniListToken,
             label = { Text(stringResource(id = R.string.admin_anilist_token)) },
@@ -103,7 +104,7 @@ fun AdminScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
 
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = state.traktClientId,
             onValueChange = viewModel::setTraktClientId,
             label = { Text(stringResource(id = R.string.admin_trakt_id)) },
@@ -111,7 +112,7 @@ fun AdminScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
 
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = state.iptvSourceUrls,
             onValueChange = viewModel::setIptvSourceUrls,
             label = { Text(stringResource(id = R.string.admin_iptv_urls)) },
@@ -119,7 +120,7 @@ fun AdminScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
 
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = state.stremioAddons,
             onValueChange = viewModel::setStremioAddons,
             label = { Text(stringResource(id = R.string.admin_stremio_addons)) },
@@ -127,7 +128,7 @@ fun AdminScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
 
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = state.kodiUrl,
             onValueChange = viewModel::setKodiUrl,
             label = { Text(stringResource(id = R.string.admin_kodi_url)) },
@@ -135,7 +136,7 @@ fun AdminScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
 
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = state.cloudstreamRepoUrls,
             onValueChange = viewModel::setCloudstreamRepoUrls,
             label = { Text(stringResource(id = R.string.admin_cloudstream_repos)) },
@@ -143,7 +144,7 @@ fun AdminScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
 
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = state.webSourceConfig,
             onValueChange = viewModel::setWebSourceConfig,
             label = { Text(stringResource(id = R.string.admin_web_sources)) },
@@ -161,7 +162,7 @@ fun AdminScreen(
         )
 
         if (currentProvider == DebridProvider.TORBOX) {
-            OutlinedTextField(
+            TvOutlinedTextField(
                 value = state.debridApiKey,
                 onValueChange = viewModel::setDebridApiKey,
                 label = { Text("TorBox API key") },
@@ -169,7 +170,7 @@ fun AdminScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
             )
             if (state.debridApiKey.isNotBlank()) {
-                Button(onClick = { viewModel.showQrForApiKey(state.debridApiKey) }) {
+                TvButton(onClick = { viewModel.showQrForApiKey(state.debridApiKey) }) {
                     Text("Show API key QR")
                 }
             }
@@ -184,7 +185,7 @@ fun AdminScreen(
         }
 
         if (currentProvider == DebridProvider.REAL_DEBRID) {
-            Button(onClick = viewModel::startDebridOAuth) {
+            TvButton(onClick = viewModel::startDebridOAuth) {
                 Text(stringResource(id = R.string.admin_debrid_link))
             }
         }
@@ -239,7 +240,7 @@ fun AdminScreen(
         Spacer(modifier = Modifier.height(Spacing.lg))
         Text(stringResource(id = R.string.music_title), style = AppTypography.titleLarge)
 
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = state.subsonicUrl,
             onValueChange = viewModel::setSubsonicUrl,
             label = { Text(stringResource(id = R.string.admin_subsonic_url)) },
@@ -247,22 +248,23 @@ fun AdminScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            OutlinedTextField(
+            TvOutlinedTextField(
                 value = state.subsonicUser,
                 onValueChange = viewModel::setSubsonicUser,
                 label = { Text(stringResource(id = R.string.admin_subsonic_user)) },
                 modifier = Modifier.weight(1f),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
             )
-            OutlinedTextField(
+            TvOutlinedTextField(
                 value = state.subsonicPassword,
                 onValueChange = viewModel::setSubsonicPassword,
                 label = { Text(stringResource(id = R.string.admin_subsonic_password)) },
                 modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                visualTransformation = PasswordVisualTransformation()
             )
         }
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = state.podcastFeeds,
             onValueChange = viewModel::setPodcastFeeds,
             label = { Text(stringResource(id = R.string.admin_podcast_feeds)) },
@@ -274,7 +276,7 @@ fun AdminScreen(
         Text(stringResource(id = R.string.admin_plugins_title), style = AppTypography.titleLarge)
 
         var pluginUrl by remember { mutableStateOf("") }
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = pluginUrl,
             onValueChange = { pluginUrl = it },
             label = { Text(stringResource(id = R.string.admin_plugin_url)) },
@@ -282,13 +284,13 @@ fun AdminScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            Button(onClick = { viewModel.addPlugin(pluginUrl); pluginUrl = "" }) {
+            TvButton(onClick = { viewModel.addPlugin(pluginUrl); pluginUrl = "" }) {
                 Text(stringResource(id = R.string.admin_plugin_add))
             }
-            Button(onClick = { viewModel.checkPluginUpdates() }) {
+            TvButton(onClick = { viewModel.checkPluginUpdates() }) {
                 Text(stringResource(id = R.string.check_updates))
             }
-            Button(onClick = { viewModel.loadLegalSamples() }) {
+            TvButton(onClick = { viewModel.loadLegalSamples() }) {
                 Text(stringResource(id = R.string.load_legal_samples))
             }
         }
@@ -332,7 +334,7 @@ fun AdminScreen(
             }
         }
 
-        Button(onClick = {
+        TvButton(onClick = {
             viewModel.showQrForApiKey(buildPluginConfigQr(state))
         }) {
             Text(stringResource(id = R.string.admin_plugin_show_qr))
@@ -371,7 +373,7 @@ private fun ServerConfigFields(
     onShowQr: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth(0.5f)) {
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = url,
             onValueChange = onUrlChange,
             label = { Text(urlLabel) },
@@ -379,7 +381,7 @@ private fun ServerConfigFields(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            OutlinedTextField(
+            TvOutlinedTextField(
                 value = token,
                 onValueChange = onTokenChange,
                 label = { Text(tokenLabel) },
@@ -387,7 +389,7 @@ private fun ServerConfigFields(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
             )
             if (token.isNotBlank()) {
-                Button(onClick = onShowQr) {
+                TvButton(onClick = onShowQr) {
                     Text("QR")
                 }
             }

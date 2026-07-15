@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -16,7 +17,8 @@ private val Context.searchDataStore: DataStore<Preferences> by preferencesDataSt
 
 @Singleton
 class SearchHistoryRepository @Inject constructor(
-    @param:ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
+    private val settingsRepository: SettingsRepository
 ) {
 
     val history: Flow<List<String>> = context.searchDataStore.data
@@ -25,6 +27,7 @@ class SearchHistoryRepository @Inject constructor(
     suspend fun add(query: String) {
         val trimmed = query.trim()
         if (trimmed.isBlank()) return
+        if (!settingsRepository.saveSearchHistory.first()) return
         context.searchDataStore.edit { prefs ->
             val current = prefs[KEY_HISTORY]?.split(DELIMITER)?.toMutableList() ?: mutableListOf()
             current.remove(trimmed)

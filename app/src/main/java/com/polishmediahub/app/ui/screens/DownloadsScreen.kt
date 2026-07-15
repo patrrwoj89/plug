@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +19,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.polishmediahub.app.R
+import com.polishmediahub.app.ui.components.TvButton
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Spacing
@@ -55,7 +55,7 @@ fun DownloadsScreen(
                         )
                     }
                     Spacer(modifier = Modifier.height(Spacing.sm))
-                    Button(onClick = { viewModel.delete(download.downloadId) }) {
+                    TvButton(onClick = { viewModel.delete(download.downloadId) }) {
                         Text(stringResource(id = R.string.downloads_delete))
                     }
                 }

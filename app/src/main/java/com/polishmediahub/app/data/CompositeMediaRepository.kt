@@ -1,6 +1,7 @@
 package com.polishmediahub.app.data
 
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.remote.anilist.AniListMediaRepository
 import com.polishmediahub.app.data.remote.iptv.IptvRepository
 import com.polishmediahub.app.data.remote.stremio.StremioRepository
@@ -23,16 +24,16 @@ class CompositeMediaRepository @Inject constructor(
     private val federatedMediaRepository: FederatedMediaRepository
 ) : MediaRepository {
 
-    private val repositories: List<MediaRepository> = listOf(
-        mockMediaRepository,
-        tmdbMediaRepository,
-        aniListMediaRepository,
-        traktMediaRepository,
-        iptvRepository,
-        stremioRepository,
-        torrentMediaSource,
-        federatedMediaRepository
-    )
+    private val repositories: List<MediaRepository> = buildList {
+        if (BuildConfig.DEBUG) add(mockMediaRepository)
+        add(tmdbMediaRepository)
+        add(aniListMediaRepository)
+        add(traktMediaRepository)
+        add(iptvRepository)
+        add(stremioRepository)
+        add(torrentMediaSource)
+        add(federatedMediaRepository)
+    }
 
     override suspend fun featured(): List<MediaItem> =
         repositories.flatMap { repo -> repo.safeCall { featured() } ?: emptyList() }

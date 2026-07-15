@@ -25,7 +25,6 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -58,6 +57,7 @@ import com.polishmediahub.app.ui.components.EmptyState
 import com.polishmediahub.app.ui.components.ErrorState
 import com.polishmediahub.app.ui.components.FocusableSurface
 import com.polishmediahub.app.ui.components.ShimmerBox
+import com.polishmediahub.app.ui.components.TvOutlinedTextField
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Radius
@@ -100,14 +100,14 @@ fun EpgScreen(
         Spacer(modifier = Modifier.height(Spacing.md))
 
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            OutlinedTextField(
+            TvOutlinedTextField(
                 value = m3uUrl,
                 onValueChange = { m3uUrl = it },
                 label = { Text("M3U URL") },
                 modifier = Modifier.weight(1f),
                 singleLine = true
             )
-            OutlinedTextField(
+            TvOutlinedTextField(
                 value = url,
                 onValueChange = { url = it },
                 label = { Text(stringResource(id = R.string.epg_url)) },

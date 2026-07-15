@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.polishmediahub.app.data.MediaRepository
+import com.polishmediahub.app.data.SettingsRepository
 import com.polishmediahub.app.data.WatchHistoryRepository
 import com.polishmediahub.app.data.remote.trakt.TraktMediaRepository
 import com.polishmediahub.app.data.torrent.TorrentMediaSource
@@ -29,7 +30,8 @@ class PlayerViewModel @Inject constructor(
     private val torrentMediaSource: TorrentMediaSource,
     private val watchHistoryRepository: WatchHistoryRepository,
     private val tvLauncherManager: TvLauncherManager,
-    private val traktMediaRepository: TraktMediaRepository
+    private val traktMediaRepository: TraktMediaRepository,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     private val _item = MutableStateFlow<MediaItem?>(null)
@@ -46,6 +48,9 @@ class PlayerViewModel @Inject constructor(
 
     private val _torrentBuffering = MutableStateFlow<Int?>(null)
     val torrentBuffering: StateFlow<Int?> = _torrentBuffering.asStateFlow()
+
+    private val _preferredQuality = MutableStateFlow("Auto")
+    val preferredQuality: StateFlow<String> = _preferredQuality.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -78,6 +83,10 @@ class PlayerViewModel @Inject constructor(
                 _torrentStatus.value = status
                 _torrentBuffering.value = progress
             }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.preferredQuality.collect { _preferredQuality.value = it }
         }
     }
 

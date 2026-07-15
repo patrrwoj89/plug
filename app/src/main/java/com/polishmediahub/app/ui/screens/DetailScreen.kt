@@ -15,10 +15,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -36,6 +34,7 @@ import coil.compose.AsyncImage
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.navigation.Screen
 import com.polishmediahub.app.ui.components.FocusableSurface
+import com.polishmediahub.app.ui.components.TvTextButton
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Radius
@@ -138,29 +137,19 @@ private fun DetailContent(
                         }
                     }
 
-                    TextButton(
-                        onClick = onToggleLibrary,
-                        modifier = Modifier.height(48.dp),
-                        colors = ButtonDefaults.textButtonColors(contentColor = AppColor.OnSurface)
-                    ) {
-                        Text(
-                            stringResource(
-                                id = if (isInLibrary) R.string.remove_from_library else R.string.add_to_library
-                            )
-                        )
-                    }
+                    TvTextButton(
+                        text = stringResource(
+                            id = if (isInLibrary) R.string.remove_from_library else R.string.add_to_library
+                        ),
+                        onClick = onToggleLibrary
+                    )
 
-                    TextButton(
-                        onClick = onToggleWatchlist,
-                        modifier = Modifier.height(48.dp),
-                        colors = ButtonDefaults.textButtonColors(contentColor = AppColor.OnSurface)
-                    ) {
-                        Text(
-                            stringResource(
-                                id = if (isInWatchlist) R.string.remove_from_watchlist else R.string.add_to_watchlist
-                            )
-                        )
-                    }
+                    TvTextButton(
+                        text = stringResource(
+                            id = if (isInWatchlist) R.string.remove_from_watchlist else R.string.add_to_watchlist
+                        ),
+                        onClick = onToggleWatchlist
+                    )
                 }
             }
         }

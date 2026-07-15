@@ -12,6 +12,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,8 +30,6 @@ import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,7 +44,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -66,8 +67,8 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManagerProvider
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -76,6 +77,7 @@ import androidx.media3.ui.PlayerView
 import com.polishmediahub.app.R
 import com.polishmediahub.app.data.torrent.TorrentStatus
 import com.polishmediahub.app.navigation.Screen
+import com.polishmediahub.app.ui.components.TvIconButton
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Spacing
@@ -93,6 +95,7 @@ fun PlayerScreen(
     val resolvedUrl by viewModel.resolvedUrl.collectAsStateWithLifecycle()
     val torrentStatus by viewModel.torrentStatus.collectAsStateWithLifecycle()
     val torrentBuffering by viewModel.torrentBuffering.collectAsStateWithLifecycle()
+    val preferredQuality by viewModel.preferredQuality.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -122,6 +125,10 @@ fun PlayerScreen(
             .setRenderersFactory(DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON))
             .build()
             .apply { playWhenReady = true }
+    }
+
+    LaunchedEffect(preferredQuality, exoPlayer) {
+        applyPreferredQuality(exoPlayer, preferredQuality)
     }
 
     DisposableEffect(exoPlayer, item, resolvedUrl) {
@@ -221,6 +228,8 @@ private fun PlayerContent(
     var subtitleOptions by remember { mutableStateOf<List<TrackOption>>(emptyList()) }
     var selectedSubtitleIndex by remember { mutableIntStateOf(-1) }
     var subtitleLabel by remember { mutableStateOf("Off") }
+    var sliderFocused by remember { mutableStateOf(false) }
+    var lastInteraction by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
     LaunchedEffect(exoPlayer) {
         val listener = object : Player.Listener {
@@ -272,12 +281,25 @@ private fun PlayerContent(
         }
     }
 
+    LaunchedEffect(lastInteraction) {
+        delay(5_000)
+        if (controlsVisible) controlsVisible = false
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color.Black)
             .onPreviewKeyEvent { event ->
+                controlsVisible = true
+                lastInteraction = System.currentTimeMillis()
                 if (event.nativeKeyEvent.action != KeyEvent.ACTION_DOWN) return@onPreviewKeyEvent false
+                if (sliderFocused && (
+                    event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_LEFT ||
+                    event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT
+                )) {
+                    return@onPreviewKeyEvent false
+                }
                 when (event.nativeKeyEvent.keyCode) {
                     KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_SPACE,
                     KeyEvent.KEYCODE_BUTTON_A -> {
@@ -342,7 +364,7 @@ private fun PlayerContent(
                 subtitleLabel = subtitleLabel,
                 onBack = onBack,
                 onPlayPause = { exoPlayer.playPause() },
-                onSeek = { position -> exoPlayer.seekTo(position.toLong()) },
+                onSeek = { position -> exoPlayer.seekTo(position) },
                 onEnterPip = onEnterPip,
                 onCycleAudio = {
                     if (audioOptions.isNotEmpty()) {
@@ -355,7 +377,8 @@ private fun PlayerContent(
                     selectedSubtitleIndex = if (subtitleOptions.isEmpty()) -1 else (selectedSubtitleIndex + 1) % (subtitleOptions.size + 1)
                     exoPlayer.applySubtitleOption(selectedSubtitleIndex, subtitleOptions)
                     subtitleLabel = subtitleOptions.getOrNull(selectedSubtitleIndex)?.label ?: "Off"
-                }
+                },
+                onSliderFocusChanged = { sliderFocused = it }
             )
         }
 
@@ -390,10 +413,11 @@ internal fun PlayerControls(
     subtitleLabel: String,
     onBack: () -> Unit,
     onPlayPause: () -> Unit,
-    onSeek: (Float) -> Unit,
+    onSeek: (Long) -> Unit,
     onEnterPip: () -> Unit,
     onCycleAudio: () -> Unit,
-    onCycleSubtitle: () -> Unit
+    onCycleSubtitle: () -> Unit,
+    onSliderFocusChanged: (Boolean) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -403,9 +427,11 @@ internal fun PlayerControls(
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back), tint = AppColor.OnSurface)
-            }
+            TvIconButton(
+                onClick = onBack,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(id = R.string.back)
+            )
             Text(
                 text = title,
                 style = AppTypography.titleLarge,
@@ -418,49 +444,69 @@ internal fun PlayerControls(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
-                IconButton(onClick = onPlayPause) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = stringResource(id = if (isPlaying) R.string.pause else R.string.play),
-                        tint = AppColor.OnSurface
-                    )
-                }
+                TvIconButton(
+                    onClick = onPlayPause,
+                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = stringResource(id = if (isPlaying) R.string.pause else R.string.play)
+                )
 
-                IconButton(onClick = onEnterPip) {
-                    Icon(
-                        imageVector = Icons.Default.OpenInFull,
-                        contentDescription = "Picture in picture",
-                        tint = AppColor.OnSurface
-                    )
-                }
+                TvIconButton(
+                    onClick = onEnterPip,
+                    imageVector = Icons.Default.OpenInFull,
+                    contentDescription = "Picture in picture"
+                )
 
-                IconButton(onClick = onCycleAudio) {
-                    Icon(
-                        imageVector = Icons.Default.Audiotrack,
-                        contentDescription = "Audio: $audioLabel",
-                        tint = AppColor.OnSurface
-                    )
-                }
+                TvIconButton(
+                    onClick = onCycleAudio,
+                    imageVector = Icons.Default.Audiotrack,
+                    contentDescription = "Audio: $audioLabel"
+                )
                 if (audioLabel.isNotBlank()) {
                     Text(audioLabel, style = AppTypography.caption, modifier = Modifier.padding(start = Spacing.xs))
                 }
 
-                IconButton(onClick = onCycleSubtitle) {
-                    Icon(
-                        imageVector = Icons.Default.ClosedCaption,
-                        contentDescription = "Subtitles: $subtitleLabel",
-                        tint = AppColor.OnSurface
-                    )
-                }
+                TvIconButton(
+                    onClick = onCycleSubtitle,
+                    imageVector = Icons.Default.ClosedCaption,
+                    contentDescription = "Subtitles: $subtitleLabel"
+                )
                 if (subtitleLabel.isNotBlank()) {
                     Text(subtitleLabel, style = AppTypography.caption, modifier = Modifier.padding(start = Spacing.xs))
                 }
 
                 Slider(
                     value = if (duration > 0) currentPosition.toFloat() / duration else 0f,
-                    onValueChange = onSeek,
-                    modifier = Modifier.weight(1f)
-                        .focusProperties { canFocus = true },
+                    onValueChange = { fraction ->
+                        if (duration > 0) {
+                            val newMs = (fraction * duration).toLong().coerceIn(0L, duration)
+                            onSeek(newMs)
+                        }
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusProperties { canFocus = true }
+                        .focusable()
+                        .onFocusChanged { onSliderFocusChanged(it.isFocused) }
+                        .onKeyEvent { event ->
+                            if (event.nativeKeyEvent.action != KeyEvent.ACTION_DOWN) return@onKeyEvent false
+                            when (event.nativeKeyEvent.keyCode) {
+                                KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                                    if (duration > 0) {
+                                        val newMs = (currentPosition + 5_000L).coerceAtMost(duration)
+                                        onSeek(newMs)
+                                    }
+                                    true
+                                }
+                                KeyEvent.KEYCODE_DPAD_LEFT -> {
+                                    if (duration > 0) {
+                                        val newMs = (currentPosition - 5_000L).coerceAtLeast(0L)
+                                        onSeek(newMs)
+                                    }
+                                    true
+                                }
+                                else -> false
+                            }
+                        },
                     valueRange = 0f..1f
                 )
 
@@ -472,6 +518,19 @@ internal fun PlayerControls(
             }
         }
     }
+}
+
+private fun applyPreferredQuality(exoPlayer: ExoPlayer, quality: String) {
+    val (maxWidth, maxHeight) = when (quality) {
+        "1080p" -> 1920 to 1080
+        "720p" -> 1280 to 720
+        "480p" -> 854 to 480
+        else -> Int.MAX_VALUE to Int.MAX_VALUE
+    }
+    val params = exoPlayer.trackSelectionParameters as? DefaultTrackSelector.Parameters ?: return
+    exoPlayer.trackSelectionParameters = params.buildUpon()
+        .setMaxVideoSize(maxWidth, maxHeight)
+        .build()
 }
 
 private fun Activity.enterPipMode() {

@@ -11,14 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +26,7 @@ import com.polishmediahub.app.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.polishmediahub.app.navigation.Screen
 import com.polishmediahub.app.ui.components.FocusableSurface
+import com.polishmediahub.app.ui.components.TvOutlinedTextField
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Radius
@@ -48,7 +47,6 @@ fun SettingsScreen(
     val preferredQuality by viewModel.preferredQuality.collectAsStateWithLifecycle()
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
     val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
     var pinVerified by remember { mutableStateOf(false) }
     var pinError by remember { mutableStateOf(false) }
 
@@ -62,13 +60,11 @@ fun SettingsScreen(
                     pinError = true
                 }
             },
-            onCancel = { onNavigate(Screen.Home) }
+            onPinChanged = { pinError = false },
+            onCancel = { onNavigate(Screen.Home) },
+            isError = pinError
         )
         return
-    }
-
-    if (pinError) {
-        pinError = false
     }
 
     Column(
@@ -117,7 +113,7 @@ fun SettingsScreen(
             }
         )
 
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = pinCode,
             onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) pinViewModel.setPin(it, pinEnabled) },
             label = { Text(stringResource(id = R.string.settings_pin)) },

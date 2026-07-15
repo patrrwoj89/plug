@@ -17,10 +17,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,7 +28,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -43,6 +39,8 @@ import com.polishmediahub.app.ui.components.EmptyState
 import com.polishmediahub.app.ui.components.ErrorState
 import com.polishmediahub.app.ui.components.FocusableSurface
 import com.polishmediahub.app.ui.components.MediaCard
+import com.polishmediahub.app.ui.components.TvOutlinedTextField
+import com.polishmediahub.app.ui.components.TvTextButton
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Radius
@@ -74,20 +72,19 @@ fun SearchScreen(
             modifier = Modifier.padding(bottom = Spacing.md)
         )
 
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = uiState.query,
             onValueChange = viewModel::onQueryChange,
-            modifier = Modifier
-                .fillMaxWidth(0.5f)
-                .focusRequester(searchFieldFocus)
-                .onPreviewKeyEvent { event ->
-                    if (event.key == Key.Enter) {
-                        viewModel.submitSearch(uiState.query)
-                        true
-                    } else {
-                        false
-                    }
-                },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            focusRequester = searchFieldFocus,
+            onPreviewKeyEvent = { event ->
+                if (event.key == Key.Enter) {
+                    viewModel.submitSearch(uiState.query)
+                    true
+                } else {
+                    false
+                }
+            },
             placeholder = { Text(stringResource(id = R.string.search_placeholder)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(id = R.string.search)) },
             singleLine = true,
@@ -112,9 +109,10 @@ fun SearchScreen(
                 )
                 Spacer(modifier = Modifier.height(Spacing.sm))
             }
-            TextButton(onClick = viewModel::clearHistory) {
-                Text(stringResource(id = R.string.clear_history), color = AppColor.OnSurfaceVariant)
-            }
+            TvTextButton(
+                text = stringResource(id = R.string.clear_history),
+                onClick = viewModel::clearHistory
+            )
             Spacer(modifier = Modifier.height(Spacing.lg))
         }
 
@@ -173,13 +171,11 @@ private fun HistoryChip(
                 tint = AppColor.OnSurfaceVariant
             )
             Text(query, style = AppTypography.body, modifier = Modifier.weight(1f))
-            IconButton(onClick = { /* remove single history entry, add to VM if needed */ }) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = stringResource(id = R.string.clear_history),
-                    tint = AppColor.OnSurfaceVariant
-                )
-            }
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = stringResource(id = R.string.clear_history),
+                tint = AppColor.OnSurfaceVariant
+            )
         }
     }
 }

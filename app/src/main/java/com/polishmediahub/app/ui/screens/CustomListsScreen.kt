@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,6 +21,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import com.polishmediahub.app.R
 import com.polishmediahub.app.ui.components.FocusableSurface
+import com.polishmediahub.app.ui.components.TvButton
+import com.polishmediahub.app.ui.components.TvOutlinedTextField
 import com.polishmediahub.app.ui.theme.Spacing
 import com.polishmediahub.app.ui.viewmodel.CustomListsViewModel
 
@@ -49,13 +49,13 @@ fun CustomListsScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
-            OutlinedTextField(
+            TvOutlinedTextField(
                 value = newListName,
                 onValueChange = { newListName = it },
                 label = { Text(stringResource(id = R.string.new_list_name)) },
                 modifier = Modifier.weight(1f)
             )
-            Button(
+            TvButton(
                 onClick = {
                     if (newListName.isNotBlank()) {
                         viewModel.createList(newListName)

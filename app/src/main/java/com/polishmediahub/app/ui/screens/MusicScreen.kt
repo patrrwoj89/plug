@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -34,6 +32,7 @@ import com.polishmediahub.app.ui.components.EmptyState
 import com.polishmediahub.app.ui.components.ErrorState
 import com.polishmediahub.app.ui.components.FocusableSurface
 import com.polishmediahub.app.ui.components.ShimmerBox
+import com.polishmediahub.app.ui.components.TvOutlinedTextField
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Spacing
 import com.polishmediahub.app.ui.viewmodel.MusicViewModel
@@ -59,15 +58,14 @@ fun MusicScreen(
         Spacer(modifier = Modifier.height(Spacing.md))
 
         var query by remember { mutableStateOf("") }
-        OutlinedTextField(
+        TvOutlinedTextField(
             value = query,
             onValueChange = {
                 query = it
                 viewModel.search(it)
             },
-            modifier = Modifier
-                .fillMaxWidth(0.5f)
-                .focusRequester(focusRequester),
+            modifier = Modifier.fillMaxWidth(0.5f),
+            focusRequester = focusRequester,
             placeholder = { Text(stringResource(id = R.string.music_search_placeholder)) },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             singleLine = true
