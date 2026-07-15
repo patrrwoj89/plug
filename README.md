@@ -104,7 +104,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - Hilt 2.60.1 + `androidx.hilt` + `hilt-navigation-compose`
 - ExoPlayer / Media3 1.10.1
 - Room 2.8.4, DataStore 1.2.1, WorkManager 2.11.2
-- OkHttp 4.12.0, Retrofit 2.11.0, Jsoup 1.22.2
+- OkHttp 4.12.0, Retrofit 2.12.0, Jsoup 1.22.2
 - Kotlinx Serialization 1.8.0
 - Coil 2.7.0
 - jlibtorrent 2.0.12.9 (FrostWire Maven)

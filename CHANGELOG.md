@@ -226,6 +226,8 @@ All notable changes to Polish Media Hub are documented in this file.
   - `libvlc` updated to `4.0.0-eap23` (latest LibVLC Android EAP as of 2026-07-15, https://central.sonatype.com/artifact/org.videolan.android/libvlc-all).
   - `haze` updated to `1.7.2` (latest stable, https://github.com/chrisbanes/haze/releases/tag/1.7.2).
   - `zxing` updated to `3.5.4` (latest stable, https://github.com/zxing/zxing/releases).
+  - `retrofit` updated to `2.12.0` (latest stable, https://github.com/square/retrofit/releases/tag/2.12.0).
+  - `kotlinx-coroutines-test` updated to `1.10.2` (latest stable, https://github.com/Kotlin/kotlinx.coroutines/releases/tag/1.10.2).
 
 ### Fixed
 
