@@ -236,6 +236,22 @@ All notable changes to Polish Media Hub are documented in this file.
 
 ### Fixed
 
+- **TorBox token injection into Kodi FanFilm**
+  - `AdminHttpServer.pushAddonSettingsIfKodiConfigured()` now pushes the configured `debridApiKey` to `plugin.video.fanfilm` as both `torbox_token` and `torbox_apikey` when `debridProvider == "torbox"`, mirroring the existing Real-Debrid support.
+- **LibVLC player parity with ExoPlayer**
+  - `UniversalVlcPlayer` now applies Polish audio/subtitle preferences by scanning `mediaPlayer.getTracks(Audio/Text)` and selecting the best `pl`/`pol` track while deprioritizing Audio Description tracks.
+  - Subtitle styling (size, color, vertical offset) from `SettingsRepository` is passed to the LibVLC engine via `--sub-text-scale`, `--freetype-color`, `--freetype-opacity` and `--sub-margin` options.
+  - `Nerd Stats Overlay` and `Cinema Dimming Mode` (animated dim overlay + `PlayerControls`/`CinemaInfoCard`) now render over the `VLCVideoLayout` identically to the ExoPlayer path.
+- **Admin panel credential leak and CORS hardening**
+  - `AdminHttpServer.serveConfig()` masks all decrypted sensitive keys (TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby, Subsonic password, MDBList) before sending JSON, showing only the first 4 and last 4 characters.
+  - Wildcard `Access-Control-Allow-Origin: *` is removed; the server now allows cross-origin requests only from the authorized admin IP (`http://<clientIp>:<port>`), rejecting mismatched origins with HTTP 403.
+- **Parental Control "fail closed"**
+  - `ContentFilter` now rejects any `MediaItem` that lacks a declared age rating when the active profile has `maxAgeRating` set, hiding such content from child profiles instead of allowing it through.
+- **Trakt token refresh diagnostics**
+  - `TraktAuthenticator` logs `Log.e("TraktAuthenticator", "Krytyczny błąd automatycznego odświeżania sesji OAuth Trakt: ...")` before returning `null` on refresh failure.
+- **Dead code cleanup**
+  - Removed the unused `CastManager` skeleton and the entire `com.polishmediahub.app.data.cast` package.
+
 - **D-Pad focus restoration on vertical grid screens**
   - `LibraryScreen`, `WatchlistScreen` and `CustomListDetailScreen` now apply `Modifier.focusGroup()` + `focusRestorer()` to their `LazyVerticalGrid`, so focus returns to the last viewed tile after navigating back from the detail screen.
 - **Hero banner on Home**

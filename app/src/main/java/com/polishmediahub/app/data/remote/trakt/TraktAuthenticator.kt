@@ -1,5 +1,6 @@
 package com.polishmediahub.app.data.remote.trakt
 
+import android.util.Log
 import com.polishmediahub.app.data.ApiConfigRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -72,7 +73,8 @@ class TraktAuthenticator @Inject constructor(
                 token.refreshToken?.let { apiConfigRepository.setTraktRefreshToken(it) }
                 token.accessToken
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e("TraktAuthenticator", "Krytyczny błąd automatycznego odświeżania sesji OAuth Trakt: ${e.message}", e)
             null
         }
     }

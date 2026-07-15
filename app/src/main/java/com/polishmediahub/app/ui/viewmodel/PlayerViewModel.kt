@@ -116,6 +116,7 @@ class PlayerViewModel @Inject constructor(
 
     fun setIsPlaying(playing: Boolean) { _isPlaying.value = playing }
     fun setPipMode(inPip: Boolean) { _isInPipMode.value = inPip }
+    fun updatePlayerStats(stats: PlayerStats) { _playerStats.value = stats }
 
     fun updatePosition(positionMs: Long, durationMs: Long) {
         recomputeSkipState(positionMs, durationMs)

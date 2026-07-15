@@ -116,19 +116,28 @@ class AdminHttpServer @Inject constructor(
                 } else ""
 
                 val out = socket.getOutputStream()
+                val clientIp = socket.inetAddress?.hostAddress ?: ""
+                val allowedOrigin = if (clientIp.isNotBlank()) "http://$clientIp:$port" else null
+                val originHeader = headers["origin"]
                 val query = parseQuery(pathWithQuery)
                 val token = query["token"]
-                if (path.startsWith("/api/") && token != pairingToken) {
-                    writeResponse(out, 403, "Forbidden", "text/plain", "Forbidden")
-                    return@use
+                if (path.startsWith("/api/")) {
+                    if (token != pairingToken) {
+                        writeResponse(out, 403, "Forbidden", "text/plain", "Forbidden", allowedOrigin)
+                        return@use
+                    }
+                    if (allowedOrigin != null && originHeader != null && originHeader != allowedOrigin) {
+                        writeResponse(out, 403, "Forbidden", "text/plain", "Forbidden", allowedOrigin)
+                        return@use
+                    }
                 }
                 when {
-                    method == "GET" && path == "/admin" -> serveAdminPage(out)
-                    method == "POST" && path == "/api/config" -> handleConfigPost(body, out)
-                    method == "POST" && path == "/api/plugin" -> handlePluginPost(body, out)
-                    method == "POST" && path == "/api/trakt/sync" -> handleTraktSync(out)
-                    method == "GET" && path == "/api/config" -> serveConfig(out)
-                    else -> writeResponse(out, 404, "Not Found", "text/plain", "Not Found")
+                    method == "GET" && path == "/admin" -> serveAdminPage(out, allowedOrigin)
+                    method == "POST" && path == "/api/config" -> handleConfigPost(body, out, allowedOrigin)
+                    method == "POST" && path == "/api/plugin" -> handlePluginPost(body, out, allowedOrigin)
+                    method == "POST" && path == "/api/trakt/sync" -> handleTraktSync(out, allowedOrigin)
+                    method == "GET" && path == "/api/config" -> serveConfig(out, allowedOrigin)
+                    else -> writeResponse(out, 404, "Not Found", "text/plain", "Not Found", allowedOrigin)
                 }
             }
         } catch (e: Exception) {
@@ -136,12 +145,12 @@ class AdminHttpServer @Inject constructor(
         }
     }
 
-    private fun serveAdminPage(out: java.io.OutputStream) {
+    private fun serveAdminPage(out: java.io.OutputStream, corsOrigin: String?) {
         val html = ADMIN_HTML
-        writeResponse(out, 200, "OK", "text/html; charset=utf-8", html)
+        writeResponse(out, 200, "OK", "text/html; charset=utf-8", html, corsOrigin)
     }
 
-    private fun serveConfig(out: java.io.OutputStream) {
+    private fun serveConfig(out: java.io.OutputStream, corsOrigin: String?) {
         runBlocking(Dispatchers.IO) {
             val values = apiConfigRepository.run {
                 mapOf(
@@ -187,14 +196,17 @@ class AdminHttpServer @Inject constructor(
                     )
                 }
             }.mapValues { (_, flow) -> flow.first().toString() }
-            val jsonObj = JsonObject(values.mapValues { (_, v) -> JsonPrimitive(v) })
+            val maskedValues = values.mapValues { (key, value) ->
+                if (key in SENSITIVE_KEYS) maskSecret(value) else value
+            }
+            val jsonObj = JsonObject(maskedValues.mapValues { (_, v) -> JsonPrimitive(v) })
             val json = Json.encodeToString(JsonObject.serializer(), jsonObj)
-            writeResponse(out, 200, "OK", "application/json", json)
+            writeResponse(out, 200, "OK", "application/json", json, corsOrigin)
         }
     }
 
 
-    private fun handleConfigPost(body: String, out: java.io.OutputStream) {
+    private fun handleConfigPost(body: String, out: java.io.OutputStream, corsOrigin: String?) {
         val params = parseForm(body)
         runBlocking(Dispatchers.IO) {
             params["tmdbApiKey"]?.let { apiConfigRepository.setTmdbApiKey(it) }
@@ -230,7 +242,7 @@ class AdminHttpServer @Inject constructor(
             params["useAlternativePlayer"]?.toBooleanStrictOrNull()?.let { settingsRepository.setUseAlternativePlayer(it) }
             pushAddonSettingsIfKodiConfigured()
         }
-        writeResponse(out, 200, "OK", "text/plain", "OK")
+        writeResponse(out, 200, "OK", "text/plain", "OK", corsOrigin)
     }
 
     private suspend fun pushAddonSettingsIfKodiConfigured() {
@@ -239,8 +251,19 @@ class AdminHttpServer @Inject constructor(
             if (kodiUrl.isBlank()) return
             kodiMediaSource.configure(kodiUrl)
             val debrid = apiConfigRepository.debridApiKey.first()
-            if (debrid.isNotBlank()) {
-                kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "realdebrid_token", debrid)
+            val debridProvider = apiConfigRepository.debridProvider.first()
+            when (debridProvider) {
+                "real_debrid" -> {
+                    if (debrid.isNotBlank()) {
+                        kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "realdebrid_token", debrid)
+                    }
+                }
+                "torbox" -> {
+                    if (debrid.isNotBlank()) {
+                        kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "torbox_token", debrid)
+                        kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "torbox_apikey", debrid)
+                    }
+                }
             }
             val traktId = apiConfigRepository.traktClientId.first()
             if (traktId.isNotBlank()) {
@@ -251,24 +274,24 @@ class AdminHttpServer @Inject constructor(
         }
     }
 
-    private fun handleTraktSync(out: java.io.OutputStream) {
+    private fun handleTraktSync(out: java.io.OutputStream, corsOrigin: String?) {
         TraktSyncWorker.startImmediate(context)
-        writeResponse(out, 200, "OK", "text/plain", "Trakt sync scheduled")
+        writeResponse(out, 200, "OK", "text/plain", "Trakt sync scheduled", corsOrigin)
     }
 
-    private fun handlePluginPost(body: String, out: java.io.OutputStream) {
+    private fun handlePluginPost(body: String, out: java.io.OutputStream, corsOrigin: String?) {
         val params = parseForm(body)
         val url = params["url"]
         if (url.isNullOrBlank()) {
-            writeResponse(out, 400, "Bad Request", "text/plain", "Missing url")
+            writeResponse(out, 400, "Bad Request", "text/plain", "Missing url", corsOrigin)
             return
         }
         runBlocking(Dispatchers.IO) {
             try {
                 pluginRepository.addPluginFromUrl(url)
-                writeResponse(out, 200, "OK", "text/plain", "OK")
+                writeResponse(out, 200, "OK", "text/plain", "OK", corsOrigin)
             } catch (e: Exception) {
-                writeResponse(out, 500, "Error", "text/plain", e.message ?: "Error")
+                writeResponse(out, 500, "Error", "text/plain", e.message ?: "Error", corsOrigin)
             }
         }
     }
@@ -298,19 +321,52 @@ class AdminHttpServer @Inject constructor(
         }.toMap()
     }
 
-    private fun writeResponse(out: java.io.OutputStream, code: Int, status: String, contentType: String, body: String) {
+    private fun writeResponse(
+        out: java.io.OutputStream,
+        code: Int,
+        status: String,
+        contentType: String,
+        body: String,
+        corsOrigin: String? = null
+    ) {
         val bytes = body.toByteArray(Charsets.UTF_8)
+        val corsHeader = corsOrigin?.let { "Access-Control-Allow-Origin: $it\r\n" } ?: ""
         val headers = "HTTP/1.1 $code $status\r\n" +
             "Content-Type: $contentType\r\n" +
             "Content-Length: ${bytes.size}\r\n" +
             "Connection: close\r\n" +
-            "Access-Control-Allow-Origin: *\r\n\r\n"
+            corsHeader +
+            "\r\n"
         out.write(headers.toByteArray(Charsets.UTF_8))
         out.write(bytes)
         out.flush()
     }
 
+    private fun maskSecret(value: String): String {
+        if (value.isBlank()) return value
+        return if (value.length <= 8) {
+            "*".repeat(value.length)
+        } else {
+            value.take(4) + "*".repeat(value.length - 8) + value.takeLast(4)
+        }
+    }
+
     companion object {
+        private val SENSITIVE_KEYS = setOf(
+            "tmdbApiKey",
+            "aniListToken",
+            "traktClientId",
+            "traktClientSecret",
+            "traktRefreshToken",
+            "traktAccessToken",
+            "debridApiKey",
+            "jellyfinToken",
+            "plexToken",
+            "embyToken",
+            "subsonicPassword",
+            "mdbListApiKey"
+        )
+
         private val ADMIN_HTML = """
 <!DOCTYPE html>
 <html lang="en">

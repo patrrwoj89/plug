@@ -796,7 +796,7 @@ internal fun NextEpisodeOverlay(
 }
 
 @Composable
-private fun PlayerStatsOverlay(
+internal fun PlayerStatsOverlay(
     playerStats: PlayerViewModel.PlayerStats
 ) {
     Box(
@@ -996,7 +996,7 @@ internal fun PlayerControls(
 }
 
 @Composable
-private fun CinemaInfoCard(info: com.polishmediahub.app.ui.viewmodel.PlayerViewModel.CinemaInfo) {
+internal fun CinemaInfoCard(info: com.polishmediahub.app.ui.viewmodel.PlayerViewModel.CinemaInfo) {
     Column(
         modifier = Modifier
             .padding(top = Spacing.md)
@@ -1041,7 +1041,7 @@ private fun applyPreferredQuality(exoPlayer: ExoPlayer, quality: String) {
         .build()
 }
 
-private fun Activity.enterPipMode() {
+internal fun Activity.enterPipMode() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         try {
             val params = PictureInPictureParams.Builder()
@@ -1054,7 +1054,7 @@ private fun Activity.enterPipMode() {
     }
 }
 
-private tailrec fun android.content.Context.findActivity(): Activity? = when (this) {
+internal tailrec fun android.content.Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is android.content.ContextWrapper -> baseContext.findActivity()
     else -> null
@@ -1068,7 +1068,7 @@ private fun ExoPlayer.seekBy(deltaMs: Long) {
     seekTo((currentPosition + deltaMs).coerceAtLeast(0L))
 }
 
-private fun formatMs(ms: Long): String {
+internal fun formatMs(ms: Long): String {
     if (ms <= 0) return "00:00"
     val totalSeconds = ms / 1000
     val hours = totalSeconds / 3600

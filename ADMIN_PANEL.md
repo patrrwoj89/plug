@@ -22,6 +22,7 @@ The URL contains a unique per-process pairing token. All API endpoints require t
 - The port is allocated dynamically (`ServerSocket(0)`) to avoid conflicts with other apps or system services.
 - On startup the server generates a random UUID pairing token and appends it to the admin URL (`/admin?token=...`).
 - All `/api/*` endpoints verify the `?token=...` query parameter; missing/invalid tokens receive HTTP `403 Forbidden`.
+- Cross-origin requests are restricted to the IP/port shown in the admin URL. If a browser sends an `Origin` header that does not match `http://<TV_IP>:<port>`, the request is rejected with HTTP `403 Forbidden`; the wildcard CORS header is no longer used.
 - The built-in admin HTML reads the token from the page URL and appends it to every `/api/*` fetch, so you do not have to type it manually.
 - Server errors are logged with `Log.w(...)` instead of being silently swallowed, so admin interactions can be debugged.
 - The server binds to the local network IP discovered by `NetworkAddressHelper` (usually Wi-Fi or ethernet).
@@ -32,7 +33,7 @@ The URL contains a unique per-process pairing token. All API endpoints require t
 | Method | Path | Purpose |
 |--------|------|---------|
 | GET | `/admin` | Serves the responsive HTML admin page. |
-| GET | `/api/config` | Returns the current `ApiConfigRepository` values as JSON. Requires `?token=...`. |
+| GET | `/api/config` | Returns the current `ApiConfigRepository` values as JSON. Sensitive keys are masked (first 4 + last 4 chars). Requires `?token=...`. |
 | POST | `/api/config` | Receives form-encoded values and saves them into `ApiConfigRepository` (DataStore). Requires `?token=...`. |
 | POST | `/api/plugin` | Receives a plugin manifest / script URL and stores it through `PluginRepository`. Requires `?token=...`. |
 | POST | `/api/trakt/sync` | Triggers an immediate Trakt two-way sync (`TraktSyncWorker.startImmediate`). Requires `?token=...`. |
@@ -116,7 +117,7 @@ Only the fields you actually use need to be present. Empty strings are ignored.
 }
 ```
 
-Note: the actual HTTP endpoint expects `application/x-www-form-urlencoded` form fields, not raw JSON. The JSON example above is shown for clarity. Sensitive fields (MDBList, TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens and Subsonic password) are encrypted with AES-256-GCM in Android Keystore before being written to DataStore; values sent to the panel are already decrypted on read.
+Note: the actual HTTP endpoint expects `application/x-www-form-urlencoded` form fields, not raw JSON. The JSON example above is shown for clarity. Sensitive fields (MDBList, TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens and Subsonic password) are encrypted with AES-256-GCM in Android Keystore before being written to DataStore. When `GET /api/config` returns them they are masked to only the first 4 and last 4 characters (e.g. `A1B2***********C3D4`), so raw credentials are never visible to other devices on the LAN. Saving new values still works via `POST /api/config` because the plain value is received and encrypted on the TV.
 
 ## Kodi remote settings sync
 
@@ -130,6 +131,7 @@ When you save a Debrid or Trakt token in the admin panel, the app attempts to pu
 
 - `Settings.SetSettingValue` is called over JSON-RPC for `plugin.video.fanfilm`.
 - `realdebrid_token` and `trakt_token` settings are updated automatically.
+- When `debridProvider` is `torbox`, the same API key is pushed as both `torbox_token` and `torbox_apikey` for backward compatibility.
 - This requires `kodiUrl` to be configured and reachable.
 
 ## Adding a plugin (POST `/api/plugin`)
@@ -194,7 +196,7 @@ New profiles see the **Essential Addon Setup** screen. You can pre-configure `le
 | The URL contains `0.0.0.0` or `127.0.0.1` | `NetworkAddressHelper` could not find a non-loopback interface. | Connect the TV to Wi-Fi / ethernet and disable any VPN that tunnels all traffic. |
 | Config saves but UI does not change | The repository `Flow` may not be collected by the screen. | Navigate away and back to the screen; restart the app. |
 | Plugin does not appear in Search/Home | The plugin may have thrown during evaluation or loading. | Check `logcat` for QuickJS or DEX loading errors; verify URLs return valid data. |
-| Kodi settings are not pushed | Kodi is offline or the add-on ID differs. | Verify `kodiUrl` and that the target add-on uses `realdebrid_token` / `trakt_token`. |
+| Kodi settings are not pushed | Kodi is offline or the add-on ID differs. | Verify `kodiUrl` and that the target add-on uses `realdebrid_token` (Real-Debrid), `torbox_token` / `torbox_apikey` (TorBox) and `trakt_token` (Trakt). |
 
 ## Security notes
 

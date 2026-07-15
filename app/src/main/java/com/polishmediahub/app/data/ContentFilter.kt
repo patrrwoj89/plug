@@ -41,10 +41,13 @@ object ContentFilter {
         val maxLevel = level(profile.maxAgeRating) ?: return true
 
         val ageRating = item.ageRating?.trim()?.uppercase()
-        if (!ageRating.isNullOrBlank()) {
-            val itemLevel = level(ageRating)
-            if (itemLevel != null && itemLevel > maxLevel) return false
+        if (ageRating.isNullOrBlank()) {
+            // Fail closed: when an age cap is configured, items without a declared
+            // rating are treated as unsafe and hidden from the child profile.
+            return false
         }
+        val itemLevel = level(ageRating)
+        if (itemLevel != null && itemLevel > maxLevel) return false
 
         // If the rating is unknown but the item is flagged adult, enforce the age cap:
         // only profiles with an adult-level cap (18+) may see it.

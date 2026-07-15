@@ -236,6 +236,22 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 
 ### Naprawiono
 
+- **Wstrzykiwanie tokenu TorBox do Kodi FanFilm**
+  - `AdminHttpServer.pushAddonSettingsIfKodiConfigured()` przekazuje skonfigurowany `debridApiKey` do `plugin.video.fanfilm` pod kluczami `torbox_token` i `torbox_apikey`, gdy `debridProvider == "torbox"`, analogicznie do obsługi Real-Debrid.
+- **Parytet odtwarzacza LibVLC z ExoPlayerem**
+  - `UniversalVlcPlayer` stosuje preferencje językowe dla dźwięku i napisów, skanując `mediaPlayer.getTracks(Audio/Text)` i wybierając najlepszą ścieżkę `pl`/`pol`, a jednocześnie obniżając priorytet ścieżek z audiodeskrypcją.
+  - Stylizacja napisów (rozmiar, kolor, przesunięcie pionowe) z `SettingsRepository` jest przekazywana do silnika LibVLC za pomocą opcji `--sub-text-scale`, `--freetype-color`, `--freetype-opacity` i `--sub-margin`.
+  - Nakładka `Nerd Stats Overlay` i `Tryb Kinowy` (animowane przyciemnienie ekranu + `PlayerControls`/`CinemaInfoCard`) renderują się teraz nad `VLCVideoLayout` identycznie jak w ścieżce ExoPlayer.
+- **Ochrona wycieku danych logowania i zaostrzenie CORS w panelu Admina**
+  - `AdminHttpServer.serveConfig()` maskuje wszystkie odszyfrowane wrażliwe klucze (TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby, hasło Subsonic, MDBList) przed wysłaniem JSON-a, pokazując jedynie pierwsze 4 i ostatnie 4 znaki.
+  - Usunięto dziką kartę `Access-Control-Allow-Origin: *`; serwer akceptuje żądania cross-origin wyłącznie z autoryzowanego IP admina (`http://<clientIp>:<port>`), odrzucając niepasujące nagłówki `Origin` kodem HTTP 403.
+- **Kontrola rodzicielska w trybie „fail closed”**
+  - `ContentFilter` odrzuca teraz każdy `MediaItem` bez zadeklarowanego ograniczenia wiekowego, gdy aktywny profil ma ustawione `maxAgeRating`, ukrywając takie treści przed profilem dziecięcym.
+- **Diagnostyka odświeżania tokena Trakt**
+  - `TraktAuthenticator` loguje `Log.e("TraktAuthenticator", "Krytyczny błąd automatycznego odświeżania sesji OAuth Trakt: ...")` przed zwróceniem `null` przy niepowodzeniu odświeżania.
+- **Porządki w martwym kodzie**
+  - Usunięto nieużywany szkielet `CastManager` oraz cały pakiet `com.polishmediahub.app.data.cast`.
+
 - **Przywracanie fokusu D-Pada w pionowych siatkach**
   - `LibraryScreen`, `WatchlistScreen` i `CustomListDetailScreen` mają teraz `Modifier.focusGroup()` + `focusRestorer()` na `LazyVerticalGrid`, więc fokus wraca do ostatnio oglądanego kafelka po powrocie z ekranu szczegółów.
 - **Hero banner na Home**

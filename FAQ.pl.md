@@ -41,7 +41,7 @@ Na ekranie **Szukaj** przesuń fokus na przycisk **mikrofonu** obok pola wyszuki
 ### Jak dodać źródła?
 
 1. Otwórz **Admin** w panelu bocznym.
-2. Zeskanuj kod QR telefonem lub otwórz `http://<IP_TV>:<port>/admin` w przeglądarce w tej samej sieci.
+2. Zeskanuj kod QR telefonem lub otwórz `http://<IP_TV>:<port>/admin?token=<token>` w przeglądarce w tej samej sieci. Token jest unikalny dla każdej sesji serwera i osadzony w kodzie QR/URL.
 3. Wklej URL / konfigurację JSON dla wybranego źródła i zapisz.
 
 Szczegółowe opisy endpointów i przykłady JSON znajdziesz w [ADMIN_PANEL.md](ADMIN_PANEL.md) / [ADMIN_PANEL.pl.md](ADMIN_PANEL.pl.md).
@@ -69,7 +69,7 @@ MDBList to dostawca list metadanych. Wejdź w **Ustawienia** lub bezprzewodowy p
 
 ### Gdzie przechowywane są moje klucze API?
 
-Wrażliwe wartości, takie jak MDBList, TMDB, AniList, Trakt, Debrid, tokeny Jellyfin/Plex/Emby czy hasło Subsonic, są szyfrowane algorytmem AES-256-GCM z użyciem sprzętowo chronionego klucza z Android Keystore przed zapisem do DataStore. Nigdy nie są zapisywane jako jawny tekst w kopiach zapasowych. Zwykłe preferencje (motyw, jakość wideo, status EPG itp.) pozostają niezaszyfrowane dla szybkiego dostępu.
+Wrażliwe wartości, takie jak MDBList, TMDB, AniList, Trakt, Debrid, tokeny Jellyfin/Plex/Emby czy hasło Subsonic, są szyfrowane algorytmem AES-256-GCM z użyciem sprzętowo chronionego klucza z Android Keystore przed zapisem do DataStore. Nigdy nie są zapisywane jako jawny tekst w kopiach zapasowych. Gdy bezprzewodowy panel Admin zwraca konfigurację JSON, wszystkie odszyfrowane klucze API i hasła są maskowane — widoczne są tylko pierwsze 4 i ostatnie 4 znaki (np. `A1B2***********C3D4`) — więc nie można ich przechwycić z innych urządzeń w sieci LAN. Zwykłe preferencje (motyw, jakość wideo, status EPG itp.) pozostają niezaszyfrowane dla szybkiego dostępu.
 
 ## Reaktywny fallback Kitsu dla anime
 
@@ -150,7 +150,7 @@ Każdy profil może mieć `isPinLocked = true` i 4-cyfrowy `pinCode`. Po wybrani
 
 ### Jak działa Kontrola Rodzicielska?
 
-Każda encja `ProfileEntity` przechowuje `maxAgeRating` (np. G, PG, PG-13, R, NC-17, 7/12/16/18) oraz `allowNsfw` (Boolean). Zanim wyniki `search()`, `categories()` lub `featured()` trafią do UI, `ContentFilter` usuwa pozycje, których kategoria wiekowa przekracza limit profilu lub które są oznaczone jako treści dla dorosłych/NSFW. Filtr jest stosowany w `CompositeMediaRepository`, `FederatedMediaRepository` i `PluginMediaSource`.
+Każda encja `ProfileEntity` przechowuje `maxAgeRating` (np. G, PG, PG-13, R, NC-17, 7/12/16/18) oraz `allowNsfw` (Boolean). Zanim wyniki `search()`, `categories()` lub `featured()` trafią do UI, `ContentFilter` usuwa pozycje, których kategoria wiekowa przekracza limit profilu lub które są oznaczone jako treści dla dorosłych/NSFW. Pozycje bez zadeklarowanego ograniczenia wiekowego są również ukrywane, gdy profil ma ustawione `maxAgeRating` (tryb fail-closed). Filtr jest stosowany w `CompositeMediaRepository`, `FederatedMediaRepository` i `PluginMediaSource`.
 
 ### Jak zmienić ustawienia Kontroli Rodzicielskiej?
 
@@ -204,7 +204,7 @@ Tak. Zwróć obiekt `headers` w `MediaItem`. Odtwarzacz przekaże te nagłówki 
 
 ### Niektóre pliki MKV/AVI lub dźwięk DTS/AC3 nie odtwarzają się. Co robić?
 
-Włącz opcję **Użyj odtwarzacza LibVLC** w **Ustawieniach > Odtwarzacz** (lub z poziomu bezprzewodowego panelu Admina). Spowoduje to przełączenie `PlayerScreen` na wbudowany w proces aplikacji `UniversalVlcPlayer` oparty na `org.videolan.android:libvlc-all`. LibVLC obsługuje wiele kodeków i kontenerów, których ExoPlayer na Android TV może nie dekodować, w tym dźwięk DTS/AC3 oraz pliki MKV/AVI z torrentów, Kodi i wtyczek webowych.
+Włącz opcję **Użyj odtwarzacza LibVLC** w **Ustawieniach > Odtwarzacz** (lub z poziomu bezprzewodowego panelu Admina). Spowoduje to przełączenie `PlayerScreen` na wbudowany w proces aplikacji `UniversalVlcPlayer` oparty na `org.videolan.android:libvlc-all`. LibVLC obsługuje wiele kodeków i kontenerów, których ExoPlayer na Android TV może nie dekodować, w tym dźwięk DTS/AC3 oraz pliki MKV/AVI z torrentów, Kodi i wtyczek webowych. Odtwarzacz LibVLC powiela również logikę polskiego doboru ścieżki dźwiękowej i napisów (preferuje `pl`/`pol`, depriorytetyzuje audiodeskrypcję), stosuje ustawienia rozmiaru/koloru/przesunięcia napisów przez opcje LibVLC oraz obsługuje nakładkę Nerd Stats i Tryb Kinowy.
 
 ### Czym wtyczki Cloudstream / Aniyomi różnią się od QuickJS?
 
@@ -338,9 +338,9 @@ Sprawdza `WatchHistoryRepository` dla pozycji odtwarzania większej niż próg d
 
 Tak, jeśli Twoje Kodi ogłasza usługę `_xbmc-jsonrpc._tcp` przez mDNS/Bonjour. `KodiDiscoveryManager` nasłuchuje przez Android NSD i automatycznie aktualizuje URL Kodi w `ApiConfigRepository`.
 
-### Czy mogę wysłać tokeny Real-Debrid / Trakt do wtyczek Kodi?
+### Czy mogę wysłać tokeny Real-Debrid / Trakt / TorBox do wtyczek Kodi?
 
-Tak. Panel Admin zapisuje tokeny debrid / trakt. `KodiMediaSource.setAddonSetting()` wywołuje `Settings.SetSettingValue` przez JSON-RPC i przesyła je do pliku ustawień wybranej wtyczki Kodi.
+Tak. Panel Admin zapisuje tokeny debrid / trakt. Gdy skonfigurowany dostawca debrid to `real_debrid`, `KodiMediaSource.setAddonSetting()` przesyła `realdebrid_token` do `plugin.video.fanfilm`. Gdy dostawca to `torbox`, ten sam klucz API jest wysyłany jako `torbox_token` i `torbox_apikey` dla kompatybilności wstecznej. Token Trakt (client ID) przekazywany jest jako `trakt_token`.
 
 ### Czy Kodi DRM działa?
 

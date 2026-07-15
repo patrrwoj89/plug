@@ -41,7 +41,7 @@ On the **Search** screen, move focus to the **microphone** button next to the se
 ### How do I add sources?
 
 1. Open **Admin** in the sidebar.
-2. Scan the QR code with your phone, or open `http://<TV_IP>:<port>/admin` in a browser on the same network.
+2. Scan the QR code with your phone, or open `http://<TV_IP>:<port>/admin?token=<token>` in a browser on the same network. The token is unique per server run and is embedded in the QR/URL.
 3. Paste the URL / JSON config for the source you want and save.
 
 See [ADMIN_PANEL.md](ADMIN_PANEL.md) for detailed endpoint descriptions and JSON examples.
@@ -69,7 +69,7 @@ MDBList is a metadata list provider. Go to **Settings** or the wireless **Admin*
 
 ### Where are my API keys stored?
 
-Sensitive values such as MDBList, TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens and the Subsonic password are encrypted with AES-256-GCM using a hardware-backed key from the Android Keystore before being written to DataStore. They are never included in system backups as plain text. Ordinary preferences (dark theme, video quality, EPG sync status, etc.) remain unencrypted for quick access.
+Sensitive values such as MDBList, TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens and the Subsonic password are encrypted with AES-256-GCM using a hardware-backed key from the Android Keystore before being written to DataStore. They are never included in system backups as plain text. When the wireless Admin panel returns configuration JSON, all decrypted API keys and passwords are masked to only the first 4 and last 4 characters (e.g. `A1B2***********C3D4`) so they cannot be captured by other devices on the LAN. Ordinary preferences (dark theme, video quality, EPG sync status, etc.) remain unencrypted for quick access.
 
 ## Kitsu anime fallback
 
@@ -150,7 +150,7 @@ Each profile can have `isPinLocked = true` and a 4-digit `pinCode`. When a locke
 
 ### How does Parental Control work?
 
-Each `ProfileEntity` stores `maxAgeRating` (e.g. G, PG, PG-13, R, NC-17, 7/12/16/18) and `allowNsfw` (Boolean). Before any `search()`, `categories()` or `featured()` results are returned to the UI, `ContentFilter` removes items whose age rating is higher than the profile's limit or that are flagged as adult/NSFW. Filtering is applied in `CompositeMediaRepository`, `FederatedMediaRepository` and `PluginMediaSource`.
+Each `ProfileEntity` stores `maxAgeRating` (e.g. G, PG, PG-13, R, NC-17, 7/12/16/18) and `allowNsfw` (Boolean). Before any `search()`, `categories()` or `featured()` results are returned to the UI, `ContentFilter` removes items whose age rating is higher than the profile's limit or that are flagged as adult/NSFW. Items with no declared age rating are also hidden when a profile has `maxAgeRating` set (fail-closed). Filtering is applied in `CompositeMediaRepository`, `FederatedMediaRepository` and `PluginMediaSource`.
 
 ### How do I change Parental Control settings?
 
@@ -204,7 +204,7 @@ Yes. Return a `headers` map in the `MediaItem` object. The player will forward t
 
 ### Some MKV/AVI files or DTS/AC3 audio won't play. What can I do?
 
-Enable **Use LibVLC player** in **Settings > Player** (or from the wireless Admin panel). This switches `PlayerScreen` to the in-process `UniversalVlcPlayer` built on `org.videolan.android:libvlc-all`. LibVLC handles many codecs and containers that ExoPlayer may fail to decode on Android TV, including DTS/AC3 audio and MKV/AVI sources from torrents, Kodi and web plugins.
+Enable **Use LibVLC player** in **Settings > Player** (or from the wireless Admin panel). This switches `PlayerScreen` to the in-process `UniversalVlcPlayer` built on `org.videolan.android:libvlc-all`. LibVLC handles many codecs and containers that ExoPlayer may fail to decode on Android TV, including DTS/AC3 audio and MKV/AVI sources from torrents, Kodi and web plugins. The LibVLC player also mirrors the Polish audio/subtitle preference logic (prefers `pl`/`pol`, deprioritizes Audio Description), applies subtitle size/color/vertical-offset settings through LibVLC options, and supports the Nerd Stats Overlay and Cinema Dimming Mode overlays.
 
 ### How are Cloudstream / Aniyomi plugins different from QuickJS plugins?
 
@@ -338,9 +338,9 @@ It checks `WatchHistoryRepository` for a playback position greater than the thre
 
 Yes, if your Kodi instance advertises `_xbmc-jsonrpc._tcp` via mDNS/Bonjour. `KodiDiscoveryManager` listens on Android NSD and automatically updates the Kodi URL in `ApiConfigRepository`.
 
-### Can I send Real-Debrid / Trakt tokens to Kodi plugins?
+### Can I send Real-Debrid / Trakt / TorBox tokens to Kodi plugins?
 
-Yes. The Admin panel stores your debrid / trakt tokens. `KodiMediaSource.setAddonSetting()` calls `Settings.SetSettingValue` over JSON-RPC to push them into the selected Kodi add-on's settings file.
+Yes. The Admin panel stores your debrid / trakt tokens. When the configured debrid provider is `real_debrid`, `KodiMediaSource.setAddonSetting()` pushes `realdebrid_token` to `plugin.video.fanfilm`. When the provider is `torbox`, it pushes the same API key as both `torbox_token` and `torbox_apikey` for backward compatibility. Trakt client ID is pushed as `trakt_token`.
 
 ### Does Kodi DRM work?
 
