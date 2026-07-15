@@ -32,15 +32,20 @@ class SettingsRepository @Inject constructor(
     val preferredQuality: Flow<String> = context.dataStore.data
         .map { it[KEY_PREFERRED_QUALITY] ?: "Auto" }
 
+    val spoilerBlurEnabled: Flow<Boolean> = context.dataStore.data
+        .map { it[KEY_SPOILER_BLUR] ?: false }
+
     suspend fun setDarkTheme(value: Boolean) = context.dataStore.edit { it[KEY_DARK_THEME] = value }
     suspend fun setAutoplayTrailers(value: Boolean) = context.dataStore.edit { it[KEY_AUTOPLAY_TRAILERS] = value }
     suspend fun setSaveSearchHistory(value: Boolean) = context.dataStore.edit { it[KEY_SAVE_SEARCH_HISTORY] = value }
     suspend fun setPreferredQuality(value: String) = context.dataStore.edit { it[KEY_PREFERRED_QUALITY] = value }
+    suspend fun setSpoilerBlur(value: Boolean) = context.dataStore.edit { it[KEY_SPOILER_BLUR] = value }
 
     companion object {
         private val KEY_DARK_THEME = booleanPreferencesKey("dark_theme")
         private val KEY_AUTOPLAY_TRAILERS = booleanPreferencesKey("autoplay_trailers")
         private val KEY_SAVE_SEARCH_HISTORY = booleanPreferencesKey("save_search_history")
         private val KEY_PREFERRED_QUALITY = stringPreferencesKey("preferred_quality")
+        private val KEY_SPOILER_BLUR = booleanPreferencesKey("spoiler_blur_enabled")
     }
 }

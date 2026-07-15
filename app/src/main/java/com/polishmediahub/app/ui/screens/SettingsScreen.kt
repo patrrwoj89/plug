@@ -45,6 +45,7 @@ fun SettingsScreen(
     val autoplayTrailers by viewModel.autoplayTrailers.collectAsStateWithLifecycle()
     val saveSearchHistory by viewModel.saveSearchHistory.collectAsStateWithLifecycle()
     val preferredQuality by viewModel.preferredQuality.collectAsStateWithLifecycle()
+    val spoilerBlurEnabled by viewModel.spoilerBlurEnabled.collectAsStateWithLifecycle()
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
     val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
     var pinVerified by remember { mutableStateOf(false) }
@@ -95,6 +96,13 @@ fun SettingsScreen(
             subtitle = stringResource(id = R.string.settings_save_search_history_subtitle),
             checked = saveSearchHistory,
             onCheckedChange = viewModel::setSaveSearchHistory
+        )
+
+        SettingsToggle(
+            title = stringResource(id = R.string.settings_spoiler_blur),
+            subtitle = stringResource(id = R.string.settings_spoiler_blur_subtitle),
+            checked = spoilerBlurEnabled,
+            onCheckedChange = viewModel::setSpoilerBlur
         )
 
         SettingsSelector(

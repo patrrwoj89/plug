@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -83,7 +85,9 @@ import com.polishmediahub.app.data.torrent.TorrentStatus
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.model.PlaybackState
 import com.polishmediahub.app.navigation.Screen
+import com.polishmediahub.app.ui.components.TvButton
 import com.polishmediahub.app.ui.components.TvIconButton
+import com.polishmediahub.app.ui.components.TvTextButton
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Spacing
@@ -102,6 +106,8 @@ fun PlayerScreen(
     val torrentStatus by viewModel.torrentStatus.collectAsStateWithLifecycle()
     val torrentBuffering by viewModel.torrentBuffering.collectAsStateWithLifecycle()
     val preferredQuality by viewModel.preferredQuality.collectAsStateWithLifecycle()
+    val nextEpisode by viewModel.nextEpisode.collectAsStateWithLifecycle()
+    val autoPlayCancelled by viewModel.autoPlayCancelled.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -216,14 +222,14 @@ fun PlayerScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    BackHandler { onNavigate(Screen.Home) }
-
     val activity = context.findActivity()
 
     PlayerContent(
         exoPlayer = exoPlayer,
         mediaItem = item,
         title = item?.title ?: stringResource(id = R.string.app_name),
+        nextEpisode = nextEpisode,
+        autoPlayCancelled = autoPlayCancelled,
         onBack = { onNavigate(Screen.Home) },
         onSaveProgress = { position, duration ->
             viewModel.saveProgress(position, duration)
@@ -235,6 +241,8 @@ fun PlayerScreen(
             viewModel.reportPlaybackProgress(position, duration, state)
         },
         onEnterPip = { activity?.enterPipMode() },
+        onCancelAutoPlay = { viewModel.cancelAutoPlay() },
+        onPlayNextEpisode = { position, duration -> viewModel.playNextEpisode(position, duration) },
         torrentBuffering = torrentBuffering,
         torrentStatus = torrentStatus,
         modifier = modifier
@@ -246,12 +254,16 @@ private fun PlayerContent(
     exoPlayer: ExoPlayer,
     mediaItem: MediaItem?,
     title: String,
+    nextEpisode: MediaItem?,
+    autoPlayCancelled: Boolean,
     onBack: () -> Unit,
     onEnterPip: () -> Unit,
     onSaveProgress: (Long, Long) -> Unit,
     onScrobbleStart: (Long, Long) -> Unit,
     onScrobbleStop: (Long, Long) -> Unit,
     onReportProgress: (Long, Long, Boolean) -> Unit,
+    onCancelAutoPlay: () -> Unit,
+    onPlayNextEpisode: (Long, Long) -> Unit,
     torrentBuffering: Int?,
     torrentStatus: TorrentStatus?,
     modifier: Modifier = Modifier
@@ -268,10 +280,17 @@ private fun PlayerContent(
     var subtitleLabel by remember { mutableStateOf("Off") }
     var sliderFocused by remember { mutableStateOf(false) }
     var lastInteraction by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var autoPlayTriggered by remember(mediaItem?.id) { mutableStateOf(false) }
     val isLive = mediaItem?.isLive == true
+    val isSeriesLike = mediaItem?.type == MediaItem.Type.SERIES || mediaItem?.type == MediaItem.Type.EPISODE
+    val remainingMs = if (duration > currentPosition) duration - currentPosition else 0L
+    val overlayVisible = nextEpisode != null && !autoPlayCancelled && isSeriesLike && !isLive && remainingMs in 0..15_000
+    val countdownSeconds = (remainingMs / 1000).toInt().coerceIn(0, 15)
     val coverUrl = mediaItem?.posterUrl
 
-    LaunchedEffect(exoPlayer) {
+    BackHandler { if (overlayVisible) onCancelAutoPlay() else onBack() }
+
+    LaunchedEffect(exoPlayer, nextEpisode, autoPlayCancelled, isLive, isSeriesLike) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
@@ -310,6 +329,11 @@ private fun PlayerContent(
         while (true) {
             currentPosition = exoPlayer.currentPosition.coerceAtLeast(0L)
             duration = exoPlayer.duration.coerceAtLeast(0L)
+            val rem = if (duration > currentPosition) duration - currentPosition else 0L
+            if (nextEpisode != null && !autoPlayCancelled && isSeriesLike && !isLive && !autoPlayTriggered && rem <= 0) {
+                autoPlayTriggered = true
+                onPlayNextEpisode(currentPosition, duration)
+            }
             delay(500)
         }
     }
@@ -380,7 +404,11 @@ private fun PlayerContent(
                         true
                     }
                     KeyEvent.KEYCODE_BACK -> {
-                        onBack()
+                        if (overlayVisible) {
+                            onCancelAutoPlay()
+                        } else {
+                            onBack()
+                        }
                         true
                     }
                     else -> false
@@ -476,6 +504,102 @@ private fun PlayerContent(
                     text = "${torrentStatus.state} | Peers: ${torrentStatus.numPeers} | Seeds: ${torrentStatus.numSeeds}",
                     style = AppTypography.caption,
                     color = AppColor.OnSurface
+                )
+            }
+        }
+
+        if (overlayVisible) {
+            NextEpisodeOverlay(
+                nextEpisode = nextEpisode,
+                countdownSeconds = countdownSeconds,
+                onPlayNow = { onPlayNextEpisode(currentPosition, duration) },
+                onCancel = onCancelAutoPlay
+            )
+        }
+    }
+}
+
+@Composable
+private fun NextEpisodeOverlay(
+    nextEpisode: MediaItem,
+    countdownSeconds: Int,
+    onPlayNow: () -> Unit,
+    onCancel: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.75f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.padding(48.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(nextEpisode.backdropUrl ?: nextEpisode.posterUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = nextEpisode.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .height(220.dp)
+            )
+
+            Text(
+                text = nextEpisode.title,
+                style = AppTypography.titleLarge
+            )
+
+            if (nextEpisode.season != null && nextEpisode.episode != null) {
+                Text(
+                    text = stringResource(
+                        id = R.string.next_episode_season_episode,
+                        nextEpisode.season,
+                        nextEpisode.episode
+                    ),
+                    style = AppTypography.body
+                )
+            }
+
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.padding(vertical = Spacing.md)
+            ) {
+                CircularProgressIndicator(
+                    progress = { countdownSeconds / 15f },
+                    modifier = Modifier.size(96.dp),
+                    color = AppColor.Accent,
+                    trackColor = AppColor.SurfaceVariant
+                )
+                Text(
+                    text = countdownSeconds.toString(),
+                    style = AppTypography.headline
+                )
+            }
+
+            Text(
+                text = stringResource(id = R.string.next_episode_title, countdownSeconds),
+                style = AppTypography.body
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+            ) {
+                TvButton(onClick = onPlayNow) {
+                    Text(
+                        text = stringResource(id = R.string.next_episode_play_now),
+                        color = AppColor.Black,
+                        style = AppTypography.button
+                    )
+                }
+
+                TvTextButton(
+                    text = stringResource(id = R.string.next_episode_cancel),
+                    onClick = onCancel
                 )
             }
         }

@@ -27,8 +27,12 @@ class SettingsViewModel @Inject constructor(
     val preferredQuality: StateFlow<String> = settingsRepository.preferredQuality
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = "Auto")
 
+    val spoilerBlurEnabled: StateFlow<Boolean> = settingsRepository.spoilerBlurEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = false)
+
     fun setDarkTheme(value: Boolean) = viewModelScope.launch { settingsRepository.setDarkTheme(value) }
     fun setAutoplayTrailers(value: Boolean) = viewModelScope.launch { settingsRepository.setAutoplayTrailers(value) }
     fun setSaveSearchHistory(value: Boolean) = viewModelScope.launch { settingsRepository.setSaveSearchHistory(value) }
     fun setPreferredQuality(value: String) = viewModelScope.launch { settingsRepository.setPreferredQuality(value) }
+    fun setSpoilerBlur(value: Boolean) = viewModelScope.launch { settingsRepository.setSpoilerBlur(value) }
 }

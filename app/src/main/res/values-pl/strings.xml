@@ -45,6 +45,8 @@
     <string name="settings_save_search_history">Zapisuj historię wyszukiwania</string>
     <string name="settings_save_search_history_subtitle">Zapamiętuj ostatnie wyszukiwania i pokazuj podpowiedzi</string>
     <string name="settings_preferred_quality">Preferowana jakość strumienia</string>
+    <string name="settings_spoiler_blur">Rozmycie spoilerów</string>
+    <string name="settings_spoiler_blur_subtitle">Rozmyj opisy fabuły dla nieobejrzanych odcinków</string>
     <string name="version_info">PolishMediaHub Skeleton v0.2.0</string>
 
     <string name="admin_title">Admin / Źródła</string>
@@ -117,4 +119,10 @@
     <string name="profile_default">Domyślny</string>
     <string name="profile_switch">Przełącz profil</string>
     <string name="profile_select">Wybierz profil</string>
+
+    <string name="next_episode_title">Następny odcinek za %1$d</string>
+    <string name="next_episode_play_now">Odtwórz teraz</string>
+    <string name="next_episode_cancel">Anuluj</string>
+    <string name="next_episode_season_episode">Sezon %1$d • Odcinek %2$d</string>
+    <string name="spoiler_reveal_hint">Naciśnij SELECT, aby odsłonić</string>
 </resources>

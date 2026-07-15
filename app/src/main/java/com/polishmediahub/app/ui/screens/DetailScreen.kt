@@ -19,8 +19,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -28,13 +32,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.polishmediahub.app.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.polishmediahub.app.R
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.navigation.Screen
 import com.polishmediahub.app.ui.components.FocusableSurface
 import com.polishmediahub.app.ui.components.TvTextButton
+import com.polishmediahub.app.ui.components.tvFocusable
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Radius
@@ -50,6 +55,7 @@ fun DetailScreen(
     val item by viewModel.item.collectAsStateWithLifecycle()
     val isInLibrary by viewModel.isInLibrary.collectAsStateWithLifecycle()
     val isInWatchlist by viewModel.isInWatchlist.collectAsStateWithLifecycle()
+    val blurDescription by viewModel.blurDescription.collectAsStateWithLifecycle(initialValue = false)
 
     if (item == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -62,6 +68,7 @@ fun DetailScreen(
         item = item!!,
         isInLibrary = isInLibrary,
         isInWatchlist = isInWatchlist,
+        blurDescription = blurDescription,
         onPlay = { onNavigate(Screen.Player(item!!.id)) },
         onToggleLibrary = viewModel::toggleLibrary,
         onToggleWatchlist = viewModel::toggleWatchlist,
@@ -74,12 +81,15 @@ private fun DetailContent(
     item: MediaItem,
     isInLibrary: Boolean,
     isInWatchlist: Boolean,
+    blurDescription: Boolean,
     onPlay: () -> Unit,
     onToggleLibrary: () -> Unit,
     onToggleWatchlist: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
+    var spoilerRevealed by remember(item.id) { mutableStateOf(false) }
+    val shouldBlur = blurDescription && !spoilerRevealed
 
     Column(
         modifier = modifier
@@ -159,7 +169,30 @@ private fun DetailContent(
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             Text(stringResource(id = R.string.overview), style = AppTypography.titleLarge)
-            Text(item.description, style = AppTypography.body)
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .tvFocusable(
+                        scale = 1f,
+                        onClick = { if (shouldBlur) spoilerRevealed = true }
+                    )
+            ) {
+                Text(
+                    text = item.description,
+                    style = AppTypography.body,
+                    modifier = if (shouldBlur) Modifier.blur(16.dp) else Modifier
+                )
+            }
+
+            if (shouldBlur) {
+                Text(
+                    text = stringResource(id = R.string.spoiler_reveal_hint),
+                    style = AppTypography.caption,
+                    color = AppColor.OnSurfaceVariant
+                )
+            }
+
             Text("${stringResource(id = R.string.genres)}: ${item.genres.joinToString(", ")}", style = AppTypography.caption)
             Text(
                 "${stringResource(id = R.string.year)}: ${item.year}  •  ${stringResource(id = R.string.duration)}: ${item.duration}  •  ${stringResource(id = R.string.rating)}: ${item.rating}",

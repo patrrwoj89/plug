@@ -36,6 +36,14 @@ class WatchHistoryRepository @Inject constructor(
             historyDao.observeById(profile.id, id).map { it?.positionMs ?: 0L }
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun isWatched(id: String): Flow<Boolean> =
+        profileRepository.currentProfile.filterNotNull().flatMapLatest { profile ->
+            historyDao.observeById(profile.id, id).map { entity ->
+                entity != null && (entity.positionMs > 0 || entity.durationMs > 0)
+            }
+        }
+
     suspend fun updatePosition(id: String, positionMs: Long, durationMs: Long) = withContext(Dispatchers.IO) {
         val profileId = currentProfileId() ?: return@withContext
         historyDao.upsert(
