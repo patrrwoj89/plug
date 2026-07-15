@@ -32,7 +32,12 @@ class AnimeRepository @Inject constructor(
     }
 
     override suspend fun categories(): List<Category> {
-        val result = aniListRepository.categories().ifEmpty { kitsuMediaSource.categories() }
+        val aniListCategories = aniListRepository.categories()
+        val result = if (aniListCategories.any { it.items.isNotEmpty() }) {
+            aniListCategories
+        } else {
+            kitsuMediaSource.categories()
+        }
         return ContentFilter.filterCategories(result, profile())
     }
 
