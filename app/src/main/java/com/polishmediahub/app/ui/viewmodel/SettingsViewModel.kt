@@ -42,8 +42,8 @@ class SettingsViewModel @Inject constructor(
     val showLoadingStats: StateFlow<Boolean> = settingsRepository.showLoadingStats
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = false)
 
-    val isFirstLaunch: StateFlow<Boolean> = settingsRepository.isFirstLaunch
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = true)
+    val isFirstLaunch: StateFlow<Boolean?> = settingsRepository.isFirstLaunch
+        .stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = null)
 
     fun setDarkTheme(value: Boolean) = viewModelScope.launch { settingsRepository.setDarkTheme(value) }
     fun setAutoplayTrailers(value: Boolean) = viewModelScope.launch { settingsRepository.setAutoplayTrailers(value) }

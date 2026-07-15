@@ -91,7 +91,11 @@ fun TVApp(
     val profiles by profileViewModel.profiles.collectAsStateWithLifecycle()
 
     val settingsViewModel = hiltViewModel<SettingsViewModel>()
-    val isFirstLaunch by settingsViewModel.isFirstLaunch.collectAsStateWithLifecycle()
+    val firstLaunch by settingsViewModel.isFirstLaunch.collectAsStateWithLifecycle()
+    val isFirstLaunch = firstLaunch ?: run {
+        Box(modifier = modifier.fillMaxSize())
+        return
+    }
     val startDestination = if (isFirstLaunch) Screen.EssentialSetup.route else Screen.Home.route
 
     val hazeState: HazeState = rememberHazeState()
