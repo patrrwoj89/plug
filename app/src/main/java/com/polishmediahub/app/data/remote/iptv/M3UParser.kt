@@ -15,16 +15,20 @@ object M3UParser {
                 currentExtInf = trimmed
             } else if (currentExtInf != null && trimmed.isNotBlank() && !trimmed.startsWith("#")) {
                 val name = parseName(currentExtInf)
+                val tvgId = parseTvgId(currentExtInf)
+                val channelNumber = parseChannelNumber(currentExtInf)
                 val logo = parseAttribute(currentExtInf, "tvg-logo")
                 val group = parseAttribute(currentExtInf, "group-title")
                 channels.add(
                     MediaItem(
-                        id = "iptv:${name}:${trimmed}",
+                        id = tvgId?.let { "iptv:$it" } ?: "iptv:${name}:${trimmed}",
                         title = name,
                         subtitle = group.orEmpty(),
                         description = "IPTV channel from M3U playlist",
                         posterUrl = logo,
                         videoUrl = trimmed,
+                        tvgId = tvgId,
+                        channelNumber = channelNumber,
                         genres = group?.let { listOf(it) } ?: emptyList(),
                         type = MediaItem.Type.CHANNEL
                     )
@@ -43,5 +47,16 @@ object M3UParser {
     private fun parseAttribute(extInf: String, key: String): String? {
         val regex = "$key=\"([^\"]*)\"".toRegex()
         return regex.find(extInf)?.groupValues?.get(1)
+    }
+
+    private fun parseTvgId(extInf: String): String? {
+        return parseAttribute(extInf, "tvg-id")
+            ?: parseAttribute(extInf, "tvg-name")
+            ?.takeIf { it.isNotBlank() }
+    }
+
+    private fun parseChannelNumber(extInf: String): String? {
+        return parseAttribute(extInf, "tvg-chno")
+            ?: parseAttribute(extInf, "channel-number")
     }
 }

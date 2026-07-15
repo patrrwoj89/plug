@@ -13,7 +13,7 @@ import androidx.room.RoomDatabase
         DownloadEntity::class,
         EpgEntity::class
     ],
-    version = 5,
+    version = 7,
     exportSchema = false
 )
 abstract class MediaDatabase : RoomDatabase() {

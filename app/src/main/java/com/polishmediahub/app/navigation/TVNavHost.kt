@@ -110,7 +110,15 @@ fun TVApp(
                 )
             }
             composable(Screen.Epg.route) {
-                EpgScreen(modifier = Modifier.fillMaxSize())
+                EpgScreen(
+                    onNavigate = { screen ->
+                        when (screen) {
+                            is Screen.Player -> navController.navigate(screen.route)
+                            else -> navController.navigate(screen.route)
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
             composable(Screen.Torrents.route) {
                 TorrentsScreen(

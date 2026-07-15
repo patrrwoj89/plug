@@ -17,6 +17,8 @@ data class MediaItem(
     val genres: List<String> = emptyList(),
     val season: Int? = null,
     val episode: Int? = null,
+    val tvgId: String? = null,
+    val channelNumber: String? = null,
     val headers: Map<String, String> = emptyMap(),
     val subtitleUrl: String? = null,
     val subtitleLanguage: String? = "pl",

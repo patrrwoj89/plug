@@ -11,8 +11,11 @@ import androidx.room.PrimaryKey
 data class EpgEntity(
     @PrimaryKey val id: String,
     val channelId: String,
+    val channelName: String? = null,
     val title: String,
     val description: String = "",
+    val year: String? = null,
+    val category: String? = null,
     val startTime: Long,
     val endTime: Long,
     val iconUrl: String? = null

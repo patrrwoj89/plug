@@ -14,13 +14,18 @@ object EpgParser {
 
     fun parse(input: InputStream): List<EpgEntity> {
         val entries = mutableListOf<EpgEntity>()
+        val channelNames = mutableMapOf<String, String>()
+        val channelIcons = mutableMapOf<String, String>()
         val factory = XmlPullParserFactory.newInstance()
         val parser = factory.newPullParser()
         parser.setInput(input, null)
 
-        var channelId: String? = null
+        var currentChannelId: String? = null
+        var programmeChannelId: String? = null
         var title = ""
         var desc = ""
+        var year = ""
+        var category = ""
         var start = 0L
         var end = 0L
         var icon: String? = null
@@ -30,33 +35,63 @@ object EpgParser {
             when (eventType) {
                 XmlPullParser.START_TAG -> {
                     when (parser.name) {
+                        "channel" -> {
+                            currentChannelId = parser.getAttributeValue(null, "id")
+                            channelNames[currentChannelId ?: ""] = ""
+                            channelIcons[currentChannelId ?: ""] = ""
+                        }
+                        "display-name" -> {
+                            val text = parser.nextText()
+                            if (!currentChannelId.isNullOrBlank() && text.isNotBlank()) {
+                                channelNames[currentChannelId] = text.trim()
+                            }
+                        }
                         "programme" -> {
-                            channelId = parser.getAttributeValue(null, "channel")
+                            programmeChannelId = parser.getAttributeValue(null, "channel")
                             start = parseTime(parser.getAttributeValue(null, "start"))
                             end = parseTime(parser.getAttributeValue(null, "stop"))
                             title = ""
                             desc = ""
+                            year = ""
+                            category = ""
                             icon = null
                         }
                         "title" -> title = parser.nextText()
                         "desc" -> desc = parser.nextText()
-                        "icon" -> icon = parser.getAttributeValue(null, "src")
+                        "date" -> year = parser.nextText()
+                        "category" -> if (category.isBlank()) category = parser.nextText()
+                        "icon" -> {
+                            val src = parser.getAttributeValue(null, "src")
+                            if (!currentChannelId.isNullOrBlank()) {
+                                channelIcons[currentChannelId] = src ?: ""
+                            }
+                            if (!programmeChannelId.isNullOrBlank()) {
+                                icon = src
+                            }
+                        }
                     }
                 }
                 XmlPullParser.END_TAG -> {
-                    if (parser.name == "programme" && channelId != null) {
-                        entries.add(
-                            EpgEntity(
-                                id = UUID.nameUUIDFromBytes("$channelId$start$end".toByteArray()).toString(),
-                                channelId = channelId,
-                                title = title,
-                                description = desc,
-                                startTime = start,
-                                endTime = end,
-                                iconUrl = icon
+                    when (parser.name) {
+                        "channel" -> currentChannelId = null
+                        "programme" -> {
+                            val chId = programmeChannelId ?: continue
+                            entries.add(
+                                EpgEntity(
+                                    id = UUID.nameUUIDFromBytes("$chId$start$end".toByteArray()).toString(),
+                                    channelId = chId,
+                                    channelName = channelNames[chId]?.takeIf { it.isNotBlank() },
+                                    title = title,
+                                    description = desc,
+                                    year = year.takeIf { it.isNotBlank() },
+                                    category = category.takeIf { it.isNotBlank() },
+                                    startTime = start,
+                                    endTime = end,
+                                    iconUrl = icon ?: channelIcons[chId]?.takeIf { it.isNotBlank() }
+                                )
                             )
-                        )
-                        channelId = null
+                            programmeChannelId = null
+                        }
                     }
                 }
             }
