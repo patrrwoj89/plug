@@ -3,6 +3,7 @@ package com.polishmediahub.app.data.admin
 import android.content.Context
 import android.util.Log
 import com.polishmediahub.app.data.ApiConfigRepository
+import com.polishmediahub.app.data.SettingsRepository
 import com.polishmediahub.app.data.plugin.PluginRepository
 import com.polishmediahub.app.data.remote.trakt.TraktSyncWorker
 import com.polishmediahub.app.data.source.KodiMediaSource
@@ -31,6 +32,7 @@ import javax.inject.Singleton
 class AdminHttpServer @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val apiConfigRepository: ApiConfigRepository,
+    private val settingsRepository: SettingsRepository,
     private val pluginRepository: PluginRepository,
     private val kodiMediaSource: KodiMediaSource
 ) {
@@ -164,7 +166,13 @@ class AdminHttpServer @Inject constructor(
                     "lastTraktSyncAt" to lastTraktSyncAt,
                     "lastTraktSyncStatus" to lastTraktSyncStatus,
                     "lastTraktSyncError" to lastTraktSyncError.map { it ?: "" }
-                )
+                ) + with(settingsRepository) {
+                    mapOf(
+                        "autoSkipIntro" to autoSkipIntro,
+                        "introEndSeconds" to defaultIntroEndSeconds,
+                        "outroDurationSeconds" to defaultOutroDurationSeconds
+                    )
+                }
             }.mapValues { (_, flow) -> flow.first().toString() }
             val jsonObj = JsonObject(values.mapValues { (_, v) -> JsonPrimitive(v) })
             val json = Json.encodeToString(JsonObject.serializer(), jsonObj)
@@ -203,6 +211,9 @@ class AdminHttpServer @Inject constructor(
             params["deezerProxyUrl"]?.let { apiConfigRepository.setDeezerProxyUrl(it) }
             params["mdbListApiKey"]?.let { apiConfigRepository.setMdbListApiKey(it) }
             params["traktAccessToken"]?.let { apiConfigRepository.setTraktAccessToken(it) }
+            params["autoSkipIntro"]?.toBooleanStrictOrNull()?.let { settingsRepository.setAutoSkipIntro(it) }
+            params["introEndSeconds"]?.toIntOrNull()?.let { settingsRepository.setDefaultIntroEndSeconds(it.coerceIn(1, 600)) }
+            params["outroDurationSeconds"]?.toIntOrNull()?.let { settingsRepository.setDefaultOutroDurationSeconds(it.coerceIn(1, 600)) }
             pushAddonSettingsIfKodiConfigured()
         }
         writeResponse(out, 200, "OK", "text/plain", "OK")
@@ -350,6 +361,13 @@ button:hover { background: #29b6f6; }
   <input type="text" name="debridApiKey">
   <label>Debrid Provider</label>
   <input type="text" name="debridProvider" placeholder="real_debrid or torbox">
+  <h3>Skip Intro / Outro</h3>
+  <label>Auto Skip Intros and Outros (true/false)</label>
+  <input type="text" name="autoSkipIntro" placeholder="true">
+  <label>Intro End (seconds)</label>
+  <input type="text" name="introEndSeconds" placeholder="90">
+  <label>Outro Duration from End (seconds)</label>
+  <input type="text" name="outroDurationSeconds" placeholder="120">
   <button type="submit">Save Configuration</button>
   <div id="status" class="status"></div>
 </form>

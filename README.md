@@ -50,6 +50,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **Cinema Dimming Mode**: when enabled, overlays auto-hide while playing and the screen smoothly dims; on pause an animated info card below the slider shows title, description, genres and top cast members fetched from TMDB/Trakt.
 - **Trakt.tv device-code login** (`TraktAuthManager`, `TraktPairingSection`): the TV app requests a device code, shows the `user_code` and a QR code pointing to the activation URL, and polls `oauth/device/token` until you authorize it. The access/refresh tokens are encrypted with AES-256-GCM in the Android Keystore.
 - **Native Picture-in-Picture** (`MainActivity`, `PlayerScreen`): when playback is active and the user leaves the activity, the app enters PiP; `PlayerScreen` hides controls, subtitles, Nerd Stats, Cinema info and the Next Episode overlay, leaving only the video stream.
+- **Smart Skip Intro/Outro** (`PlayerScreen`, `PlayerViewModel`): plugins can provide exact `introStartMs/introEndMs/outroStartMs/outroEndMs` timestamps in `MediaItem`; otherwise the player uses configurable default intro/outro durations. A D-Pad-focusable button slides in during the segment to skip the intro or trigger the Auto-Play Next overlay.
 - **Stream headers**: `User-Agent`, `Referer`, `Cookie` and custom headers forwarded to `DefaultHttpDataSource.Factory`.
 
 ### Network & anti-bot
@@ -64,6 +65,8 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **Background EPG/IPTV updater** (`IptvUpdateWorker`) runs every 12 hours (and on cold start) on `Dispatchers.IO` with unmetered/idle/battery-not-low constraints, caches channels and EPG in Room, so the live-TV screen opens instantly.
 - **Trakt.tv device-code pairing**: in `Settings → Trakt Sync` or the admin panel, enter your Trakt client ID and secret, tap **Log in with Trakt**, then scan the QR code or type the on-screen `user_code` at the activation URL on your phone.
 - **Background Trakt.tv sync** (`TraktSyncWorker`) runs every 6 hours with network/battery constraints. You can also trigger an immediate sync from `Settings` or the admin panel.
+- **Automatic Trakt token refresh** (`TraktAuthenticator`): when a Trakt API call returns 401, a dedicated `OkHttpClient` refreshes the `access_token` using the encrypted `refresh_token`, stores the new tokens in the Android Keystore and retries the original request transparently.
+- **Smart Skip Intro/Outro settings**: toggle and default intro/outro durations can be set from `Settings` or the wireless admin panel.
 - **First-launch onboarding** lets new users pick legal starter source packages, including an MDBList starter package in `legal_sources.json`.
 
 ### Android TV integration

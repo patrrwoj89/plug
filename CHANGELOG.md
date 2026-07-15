@@ -179,6 +179,20 @@ All notable changes to Polish Media Hub are documented in this file.
 - `PlayerScreen` hides controls, subtitles, Nerd Stats, Cinema info card and Next Episode overlay when `isInPipMode == true`, leaving only the clean video stream.
 - Returning to fullscreen restores the full control interface.
 
+#### Trakt.tv Token Refresh (`TraktAuthenticator`, `NetworkModule`)
+- New `okhttp3.Authenticator` intercepts HTTP 401 responses from Trakt API endpoints.
+- It reads the encrypted `refresh_token` from `ApiConfigRepository`, synchronously calls `/oauth/token` with `grant_type=refresh_token`, and encrypts the new `access_token` / `refresh_token` pair back to DataStore.
+- The original request is retried with the fresh bearer token, keeping background sync and scrobbling alive without re-pairing.
+- `NetworkModule` provides a dedicated `@Named("trakt")` `OkHttpClient` with `TraktAuthenticator` for `TraktApi`; the global `OkHttpClient` keeps the `DebridAuthenticator`.
+
+#### Smart Skip Intro/Outro (`PlayerScreen`, `PlayerViewModel`, `SettingsRepository`)
+- `MediaItem` extended with optional `introStartMs`, `introEndMs`, `outroStartMs`, `outroEndMs`; plugins (Stremio/Kodi) can supply exact segment timestamps.
+- Fallback defaults are configurable in `SettingsScreen` / Admin panel: intro ends at N seconds, outro starts N seconds before the end.
+- During playback a semi-transparent `TvButton` slides in and auto-focuses when the playhead enters an intro or outro segment.
+- **Skip intro** seeks the player to the intro end timestamp.
+- **Skip credits/outro** immediately triggers the existing Auto-Play Next overlay so the user can play the next episode or cancel.
+- Toggle and default durations are persisted in `SettingsRepository` and exposed through `SettingsViewModel`.
+
 ### Changed
 - `TVNavHost` waits for the `isFirstLaunch` value before choosing the `NavHost` start destination, avoiding graph resets.
 - `TvLauncherManager` progress writes throttled to 15 seconds during playback, with a forced write on `onPlaybackStopped`.
@@ -186,6 +200,9 @@ All notable changes to Polish Media Hub are documented in this file.
 - `PlayerControls` signature extended with `cinemaMode` and `cinemaInfo` to support the Cinema Dimming info card.
 - `AdminHttpServer` now accepts `/api/trakt/sync` and exposes `traktClientSecret`, `traktRefreshToken`, `traktAccessToken`, `lastTraktSyncAt/Status/Error`.
 - `ApiConfigRepository` extended with encrypted `traktClientSecret` and `traktRefreshToken` keys.
+- `PlayerContent` signature extended with `onUpdatePosition`, `onSkipIntro`, `onSkipOutro`, `onSeekHandled`, `skipIntroState`, `pendingSeekToMs` and `forceAutoPlayOverlay`.
+- `NextEpisodeOverlay` accepts a nullable `nextEpisode` and exits early when null.
+- `AdminHttpServer` now saves and exposes `autoSkipIntro`, `introEndSeconds` and `outroDurationSeconds` from `SettingsRepository`.
 
 ### Fixed
 

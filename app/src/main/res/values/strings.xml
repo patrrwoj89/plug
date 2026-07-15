@@ -213,4 +213,11 @@
     <string name="genres_label">Genres: %1$s</string>
     <string name="cast_label">Cast: %1$s</string>
     <string name="live_broadcast">Live broadcast</string>
+    <string name="skip_intro">Skip intro</string>
+    <string name="skip_outro">Skip credits</string>
+    <string name="settings_skip_intro_section">Skip Intro / Outro</string>
+    <string name="settings_auto_skip_intro">Auto skip intros and outros</string>
+    <string name="settings_auto_skip_intro_subtitle">Show skip buttons during intro and outro segments</string>
+    <string name="settings_intro_end_seconds">Intro end (seconds)</string>
+    <string name="settings_outro_duration_seconds">Outro duration from end (seconds)</string>
 </resources>

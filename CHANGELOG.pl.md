@@ -179,6 +179,20 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 - `PlayerScreen` ukrywa kontrolki, napisy, nakładkę Nerd Stats, kartę informacyjną Trybu Kinowego i nakładkę następnego odcinka, gdy `isInPipMode == true`, pozostawiając sam strumień wideo.
 - Powrót do pełnego ekranu przywraca pełny interfejs sterowania.
 
+#### Automatyczne odświeżanie tokenów Trakt (`TraktAuthenticator`, `NetworkModule`)
+- Nowy `okhttp3.Authenticator` przechwytuje odpowiedzi HTTP 401 z API Trakt.
+- Wczytuje zaszyfrowany `refresh_token` z `ApiConfigRepository`, synchronicznie wywołuje `/oauth/token` z `grant_type=refresh_token` i szyfruje nową parę `access_token` / `refresh_token` z powrotem do DataStore.
+- Pierwotne żądanie jest ponawiane z nowym tokenem Bearer, dzięki czemu synchronizacja w tle i scrobbling działają bez ponownego parowania.
+- `NetworkModule` dostarcza dedykowanego klienta `@Named("trakt")` `OkHttpClient` z `TraktAuthenticator` dla `TraktApi`; globalny `OkHttpClient` zachowuje `DebridAuthenticator`.
+
+#### Inteligentne pomijanie czołówki i końcówki (`PlayerScreen`, `PlayerViewModel`, `SettingsRepository`)
+- `MediaItem` rozszerzono o opcjonalne `introStartMs`, `introEndMs`, `outroStartMs`, `outroEndMs`; wtyczki (Stremio/Kodi) mogą podać dokładne segmenty.
+- Domyślne wartości zastępcze są konfigurowalne w `SettingsScreen` / panelu admina: koniec czołówki po N sekundach, początek końcówki na N sekund przed końcem.
+- Podczas odtwarzania półprzezroczysty przycisk `TvButton` wysuwa się i automatycznie przejmuje fokus, gdy głowica znajdzie się w segmencie czołówki lub końcówki.
+- **Pomiń czołówkę** przesuwa odtwarzacz na koniec czołówki.
+- **Pomiń napisy końcowe** natychmiast wywołuje istniejącą nakładkę Auto-Play Next, umożliwiając odtworzenie następnego odcinka lub anulowanie.
+- Przełącznik i domyślne czasy trwania są zapisywane w `SettingsRepository` i udostępniane przez `SettingsViewModel`.
+
 ### Zmieniono
 - `TVNavHost` czeka na wartość `isFirstLaunch` przed wyborem startu `NavHost`, co zapobiega resetowaniu grafu nawigacji.
 - `TvLauncherManager` zapisuje postęp co 15 sekund podczas odtwarzania, z wymuszonym zapisem przy `onPlaybackStopped`.
@@ -186,6 +200,9 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 - Sygnatura `PlayerControls` rozszerzona o parametry `cinemaMode` i `cinemaInfo` dla karty informacyjnej Trybu Kinowego.
 - `AdminHttpServer` obsługuje teraz `/api/trakt/sync` i eksponuje `traktClientSecret`, `traktRefreshToken`, `traktAccessToken`, `lastTraktSyncAt/Status/Error`.
 - `ApiConfigRepository` rozszerzona o szyfrowane pola `traktClientSecret` i `traktRefreshToken`.
+- Sygnatura `PlayerContent` rozszerzona o `onUpdatePosition`, `onSkipIntro`, `onSkipOutro`, `onSeekHandled`, `skipIntroState`, `pendingSeekToMs` i `forceAutoPlayOverlay`.
+- `NextEpisodeOverlay` przyjmuje nullable `nextEpisode` i kończy się natychmiast, gdy wartość jest null.
+- `AdminHttpServer` zapisuje i eksponuje `autoSkipIntro`, `introEndSeconds` oraz `outroDurationSeconds` z `SettingsRepository`.
 
 ### Naprawiono
 

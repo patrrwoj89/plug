@@ -52,6 +52,15 @@ class SettingsViewModel @Inject constructor(
     val cinemaMode: StateFlow<Boolean> = settingsRepository.cinemaMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = false)
 
+    val autoSkipIntro: StateFlow<Boolean> = settingsRepository.autoSkipIntro
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = true)
+
+    val defaultIntroEndSeconds: StateFlow<Int> = settingsRepository.defaultIntroEndSeconds
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = 90)
+
+    val defaultOutroDurationSeconds: StateFlow<Int> = settingsRepository.defaultOutroDurationSeconds
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = 120)
+
     val isFirstLaunch: StateFlow<Boolean?> = settingsRepository.isFirstLaunch
         .stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = null)
 
@@ -88,6 +97,9 @@ class SettingsViewModel @Inject constructor(
     fun setSubtitleVerticalOffset(value: Float) = viewModelScope.launch { settingsRepository.setSubtitleVerticalOffset(value) }
     fun setShowLoadingStats(value: Boolean) = viewModelScope.launch { settingsRepository.setShowLoadingStats(value) }
     fun setCinemaMode(value: Boolean) = viewModelScope.launch { settingsRepository.setCinemaMode(value) }
+    fun setAutoSkipIntro(value: Boolean) = viewModelScope.launch { settingsRepository.setAutoSkipIntro(value) }
+    fun setDefaultIntroEndSeconds(value: Int) = viewModelScope.launch { settingsRepository.setDefaultIntroEndSeconds(value) }
+    fun setDefaultOutroDurationSeconds(value: Int) = viewModelScope.launch { settingsRepository.setDefaultOutroDurationSeconds(value) }
 
     fun setMdbListApiKey(value: String) = viewModelScope.launch { apiConfigRepository.setMdbListApiKey(value) }
     fun setTraktClientId(value: String) = viewModelScope.launch { apiConfigRepository.setTraktClientId(value) }

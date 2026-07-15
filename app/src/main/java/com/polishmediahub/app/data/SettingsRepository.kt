@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -54,6 +55,15 @@ class SettingsRepository @Inject constructor(
     val cinemaMode: Flow<Boolean> = context.dataStore.data
         .map { it[KEY_CINEMA_MODE] ?: false }
 
+    val autoSkipIntro: Flow<Boolean> = context.dataStore.data
+        .map { it[KEY_AUTO_SKIP_INTRO] ?: true }
+
+    val defaultIntroEndSeconds: Flow<Int> = context.dataStore.data
+        .map { it[KEY_INTRO_END_SECONDS] ?: 90 }
+
+    val defaultOutroDurationSeconds: Flow<Int> = context.dataStore.data
+        .map { it[KEY_OUTRO_DURATION_SECONDS] ?: 120 }
+
     suspend fun setDarkTheme(value: Boolean) = context.dataStore.edit { it[KEY_DARK_THEME] = value }
     suspend fun setAutoplayTrailers(value: Boolean) = context.dataStore.edit { it[KEY_AUTOPLAY_TRAILERS] = value }
     suspend fun setSaveSearchHistory(value: Boolean) = context.dataStore.edit { it[KEY_SAVE_SEARCH_HISTORY] = value }
@@ -65,6 +75,9 @@ class SettingsRepository @Inject constructor(
     suspend fun setShowLoadingStats(value: Boolean) = context.dataStore.edit { it[KEY_SHOW_LOADING_STATS] = value }
     suspend fun setFirstLaunchCompleted() = context.dataStore.edit { it[KEY_FIRST_LAUNCH] = false }
     suspend fun setCinemaMode(value: Boolean) = context.dataStore.edit { it[KEY_CINEMA_MODE] = value }
+    suspend fun setAutoSkipIntro(value: Boolean) = context.dataStore.edit { it[KEY_AUTO_SKIP_INTRO] = value }
+    suspend fun setDefaultIntroEndSeconds(value: Int) = context.dataStore.edit { it[KEY_INTRO_END_SECONDS] = value }
+    suspend fun setDefaultOutroDurationSeconds(value: Int) = context.dataStore.edit { it[KEY_OUTRO_DURATION_SECONDS] = value }
 
     companion object {
         private val KEY_DARK_THEME = booleanPreferencesKey("dark_theme")
@@ -78,5 +91,8 @@ class SettingsRepository @Inject constructor(
         private val KEY_SHOW_LOADING_STATS = booleanPreferencesKey("show_loading_stats")
         private val KEY_FIRST_LAUNCH = booleanPreferencesKey("first_launch")
         private val KEY_CINEMA_MODE = booleanPreferencesKey("cinema_mode")
+        private val KEY_AUTO_SKIP_INTRO = booleanPreferencesKey("auto_skip_intro")
+        private val KEY_INTRO_END_SECONDS = intPreferencesKey("intro_end_seconds")
+        private val KEY_OUTRO_DURATION_SECONDS = intPreferencesKey("outro_duration_seconds")
     }
 }

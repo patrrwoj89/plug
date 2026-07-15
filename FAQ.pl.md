@@ -276,6 +276,16 @@ Gdy odtwarzasz wideo i naciśniesz przycisk **Home** (lub w inny sposób opuści
 
 Podczas odtwarzania aplikacja wysyła `/scrobble/start` po rozpoczęciu odtwarzania, `/scrobble/pause` po pauzie i `/scrobble/stop` po zamknięciu odtwarzacza. Każde żądanie zawiera dokładny procent postępu, więc Trakt wie, na jakim etapie jesteś w filmie lub odcinku.
 
+### Czy muszę ponownie parować Trakt po wygaśnięciu tokena dostępowego?
+
+Nie. `TraktAuthenticator` jest podpięty pod dedykowanego klienta `OkHttpClient` dla Trakt. Gdy zapytanie do API Trakt zwróci HTTP 401, odczytuje zaszyfrowany `refresh_token` z DataStore, wywołuje endpoint `/oauth/token` z `grant_type=refresh_token`, szyfruje nowe tokeny i transparentnie ponawia pierwotne żądanie.
+
+## Pomijanie czołówki / końcówki
+
+### Jak działa przycisk "Pomiń czołówkę"?
+
+Jeśli wtyczka lub źródło dostarczy dokładne znaczniki `introStartMs`/`introEndMs` w `MediaItem`, odtwarzacz ich użyje. W przeciwnym razie użyje domyślnych czasów ustawionych w **Ustawienia → Pomijanie czołówki / końcówki**. Gdy głowica wejdzie w segment czołówki, wysuwa się przycisk „Pomiń czołówkę” i przejmuje fokus pilota D-Pad; jego naciśnięcie przesuwa odtwarzanie za czołówkę. Analogicznie dla końcówki/napisów końcowych przycisk wywołuje nakładkę Auto-Play Next, aby uruchomić następny odcinek lub anulować.
+
 ### Gdzie zobaczyć status ostatniej synchronizacji?
 
 Ekran **Ustawień** oraz bezprzewodowy **panel Admin** pokazują „Ostatnia synchronizacja Trakt: [data] — [status]”. W przypadku błędu wyświetlana jest także jego treść.

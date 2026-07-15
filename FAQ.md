@@ -276,6 +276,16 @@ When you are playing a video and press the **Home** button (or otherwise leave t
 
 During playback the app sends `/scrobble/start` when the video starts playing, `/scrobble/pause` when you pause, and `/scrobble/stop` when the player closes. Each request includes the exact percent progress, so Trakt knows how far you are in a movie or episode.
 
+### Will I have to re-pair Trakt when the access token expires?
+
+No. `TraktAuthenticator` is installed on the dedicated Trakt `OkHttpClient`. If a Trakt API call returns HTTP 401, it reads the encrypted `refresh_token` from DataStore, calls Trakt's `/oauth/token` endpoint with `grant_type=refresh_token`, encrypts the new tokens, and retries the original request automatically.
+
+## Skip Intro / Outro
+
+### How does the skip intro button work?
+
+If a plugin or source provides exact `introStartMs`/`introEndMs` timestamps in `MediaItem`, the player uses them. Otherwise it falls back to the default durations set in **Settings → Skip Intro / Outro**. When the playhead enters the intro segment, a "Skip intro" button slides in and grabs D-Pad focus; pressing it seeks past the intro. The same happens for the outro/credits, where the button triggers the Auto-Play Next overlay so you can start the next episode or cancel.
+
 ### Where can I see the last sync status?
 
 The **Settings** screen and the wireless **Admin** panel show "Last Trakt sync: [date] — [status]". If a sync fails, the error message is displayed there.

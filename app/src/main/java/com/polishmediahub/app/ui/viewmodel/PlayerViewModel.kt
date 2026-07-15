@@ -97,11 +97,74 @@ class PlayerViewModel @Inject constructor(
     private val _isInPipMode = MutableStateFlow(false)
     val isInPipMode: StateFlow<Boolean> = _isInPipMode.asStateFlow()
 
+    private val _skipIntroState = MutableStateFlow(SkipIntroState())
+    val skipIntroState: StateFlow<SkipIntroState> = _skipIntroState.asStateFlow()
+
+    private val _pendingSeekToMs = MutableStateFlow<Long?>(null)
+    val pendingSeekToMs: StateFlow<Long?> = _pendingSeekToMs.asStateFlow()
+
+    private val _forceAutoPlayOverlay = MutableStateFlow(false)
+    val forceAutoPlayOverlay: StateFlow<Boolean> = _forceAutoPlayOverlay.asStateFlow()
+
+    private var skipSettings = SkipSettings()
+
     private val _playerStats = MutableStateFlow(PlayerStats())
     val playerStats: StateFlow<PlayerStats> = _playerStats.asStateFlow()
 
     fun setIsPlaying(playing: Boolean) { _isPlaying.value = playing }
     fun setPipMode(inPip: Boolean) { _isInPipMode.value = inPip }
+
+    fun updatePosition(positionMs: Long, durationMs: Long) {
+        recomputeSkipState(positionMs, durationMs)
+    }
+
+    private fun recomputeSkipState(positionMs: Long, durationMs: Long) {
+        val current = item.value ?: return
+        if (isAudioItem(current) || current.isLive || durationMs <= 0) {
+            _skipIntroState.value = SkipIntroState()
+            return
+        }
+
+        if (!skipSettings.autoSkipIntro) {
+            _skipIntroState.value = SkipIntroState()
+            return
+        }
+
+        val introStart = current.introStartMs ?: 10_000L
+        val introEnd = current.introEndMs ?: (skipSettings.introEndSeconds * 1_000L)
+        val outroEnd = current.outroEndMs ?: durationMs
+        val outroStart = current.outroStartMs ?: (outroEnd - skipSettings.outroDurationSeconds * 1_000L).coerceAtLeast(0L)
+
+        val inIntro = positionMs in introStart until introEnd
+        val inOutro = positionMs >= outroStart && positionMs < outroEnd && outroStart < outroEnd
+
+        _skipIntroState.value = SkipIntroState(
+            showSkipIntro = inIntro && !inOutro,
+            introEndMs = introEnd,
+            showSkipOutro = inOutro,
+            outroEndMs = outroEnd
+        )
+    }
+
+    fun onSkipIntro() {
+        val state = _skipIntroState.value
+        if (state.showSkipIntro) {
+            _pendingSeekToMs.value = state.introEndMs
+            _skipIntroState.value = state.copy(showSkipIntro = false)
+        }
+    }
+
+    fun onSkipOutro() {
+        val state = _skipIntroState.value
+        if (state.showSkipOutro) {
+            _forceAutoPlayOverlay.value = true
+            _skipIntroState.value = state.copy(showSkipOutro = false)
+        }
+    }
+
+    fun onSeekHandled() {
+        _pendingSeekToMs.value = null
+    }
 
     private var currentAudioTrack: AudioTrack? = null
     private var analyticsListener: PlayerAnalyticsListener? = null
@@ -182,6 +245,18 @@ class PlayerViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            settingsRepository.autoSkipIntro.collect { skipSettings = skipSettings.copy(autoSkipIntro = it) }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.defaultIntroEndSeconds.collect { skipSettings = skipSettings.copy(introEndSeconds = it) }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.defaultOutroDurationSeconds.collect { skipSettings = skipSettings.copy(outroDurationSeconds = it) }
+        }
+
+        viewModelScope.launch {
             _item.filterNotNull().collect { current ->
                 _cinemaInfo.value = CinemaInfo()
                 if (_cinemaMode.value) {
@@ -228,6 +303,7 @@ class PlayerViewModel @Inject constructor(
 
     fun cancelAutoPlay() {
         _autoPlayCancelled.value = true
+        _forceAutoPlayOverlay.value = false
     }
 
     fun resetAutoPlayCancel() {
@@ -246,6 +322,7 @@ class PlayerViewModel @Inject constructor(
                 _resumePosition.value = 0L
                 _nextEpisode.value = null
                 _autoPlayCancelled.value = false
+                _forceAutoPlayOverlay.value = false
             } catch (e: Exception) {
                 Log.w("PlayerViewModel", "playNextEpisode failed: ${e.message}")
             }
@@ -480,6 +557,19 @@ class PlayerViewModel @Inject constructor(
         val currentBitrateMbps: Float = 0f,
         val droppedFrames: Int = 0,
         val jankFrames: Int = 0
+    )
+
+    data class SkipIntroState(
+        val showSkipIntro: Boolean = false,
+        val introEndMs: Long = 0L,
+        val showSkipOutro: Boolean = false,
+        val outroEndMs: Long = 0L
+    )
+
+    private data class SkipSettings(
+        val autoSkipIntro: Boolean = true,
+        val introEndSeconds: Int = 90,
+        val outroDurationSeconds: Int = 120
     )
 
     private inner class PlayerAnalyticsListener : AnalyticsListener {

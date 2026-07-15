@@ -17,6 +17,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.core.net.toUri
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -53,7 +55,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onKeyEvent
@@ -126,6 +130,9 @@ fun PlayerScreen(
     val playerStats by viewModel.playerStats.collectAsStateWithLifecycle()
     val cinemaMode by viewModel.cinemaMode.collectAsStateWithLifecycle()
     val cinemaInfo by viewModel.cinemaInfo.collectAsStateWithLifecycle()
+    val skipIntroState by viewModel.skipIntroState.collectAsStateWithLifecycle()
+    val pendingSeekToMs by viewModel.pendingSeekToMs.collectAsStateWithLifecycle()
+    val forceAutoPlayOverlay by viewModel.forceAutoPlayOverlay.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val density = LocalDensity.current
@@ -267,11 +274,18 @@ fun PlayerScreen(
             val state = if (isPlaying) PlaybackState.PLAYING else PlaybackState.PAUSED
             viewModel.reportPlaybackProgress(position, duration, state)
         },
+        onUpdatePosition = { position, duration -> viewModel.updatePosition(position, duration) },
         onEnterPip = { activity?.enterPipMode() },
         onIsPlayingChanged = { playing -> viewModel.setIsPlaying(playing) },
         onCancelAutoPlay = { viewModel.cancelAutoPlay() },
         onPlayNextEpisode = { position, duration -> viewModel.playNextEpisode(position, duration) },
+        onSkipIntro = { viewModel.onSkipIntro() },
+        onSkipOutro = { viewModel.onSkipOutro() },
+        onSeekHandled = { viewModel.onSeekHandled() },
         isInPipMode = isInPipMode,
+        skipIntroState = skipIntroState,
+        pendingSeekToMs = pendingSeekToMs,
+        forceAutoPlayOverlay = forceAutoPlayOverlay,
         torrentBuffering = torrentBuffering,
         torrentStatus = torrentStatus,
         showLoadingStats = showLoadingStats,
@@ -300,9 +314,16 @@ private fun PlayerContent(
     onScrobblePause: (Long, Long) -> Unit,
     onScrobbleStop: (Long, Long) -> Unit,
     onReportProgress: (Long, Long, Boolean) -> Unit,
+    onUpdatePosition: (Long, Long) -> Unit,
     onCancelAutoPlay: () -> Unit,
     onPlayNextEpisode: (Long, Long) -> Unit,
+    onSkipIntro: () -> Unit,
+    onSkipOutro: () -> Unit,
+    onSeekHandled: () -> Unit,
     isInPipMode: Boolean,
+    skipIntroState: PlayerViewModel.SkipIntroState,
+    pendingSeekToMs: Long?,
+    forceAutoPlayOverlay: Boolean,
     torrentBuffering: Int?,
     torrentStatus: TorrentStatus?,
     showLoadingStats: Boolean,
@@ -327,14 +348,29 @@ private fun PlayerContent(
     var sliderFocused by remember { mutableStateOf(false) }
     var lastInteraction by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var autoPlayTriggered by remember(mediaItem?.id) { mutableStateOf(false) }
+    val skipFocusRequester = remember { FocusRequester() }
     val isLive = mediaItem?.isLive == true
+
+    LaunchedEffect(skipIntroState.showSkipIntro, skipIntroState.showSkipOutro) {
+        if (skipIntroState.showSkipIntro || skipIntroState.showSkipOutro) {
+            skipFocusRequester.requestFocus()
+        }
+    }
+
+    LaunchedEffect(pendingSeekToMs) {
+        val seekTo = pendingSeekToMs
+        if (seekTo != null) {
+            exoPlayer.seekTo(seekTo.coerceAtLeast(0L))
+            onSeekHandled()
+        }
+    }
     val dimAlpha by animateFloatAsState(
         targetValue = if (isPlaying && cinemaMode && !controlsVisible && !isInPipMode) 0.45f else 0f,
         label = "dim_alpha"
     )
     val isSeriesLike = mediaItem?.type == MediaItem.Type.SERIES || mediaItem?.type == MediaItem.Type.EPISODE
     val remainingMs = if (duration > currentPosition) duration - currentPosition else 0L
-    val overlayVisible = nextEpisode != null && !autoPlayCancelled && isSeriesLike && !isLive && remainingMs in 0..15_000
+    val overlayVisible = (nextEpisode != null && !autoPlayCancelled && isSeriesLike && !isLive && remainingMs in 0..15_000) || forceAutoPlayOverlay
     val countdownSeconds = (remainingMs / 1000).toInt().coerceIn(0, 15)
     val coverUrl = mediaItem?.posterUrl
     val density = LocalDensity.current
@@ -398,6 +434,7 @@ private fun PlayerContent(
         while (true) {
             currentPosition = exoPlayer.currentPosition.coerceAtLeast(0L)
             duration = exoPlayer.duration.coerceAtLeast(0L)
+            onUpdatePosition(currentPosition, duration)
             val rem = if (duration > currentPosition) duration - currentPosition else 0L
             if (nextEpisode != null && !autoPlayCancelled && isSeriesLike && !isLive && !autoPlayTriggered && rem <= 0) {
                 autoPlayTriggered = true
@@ -611,6 +648,38 @@ private fun PlayerContent(
             }
         }
 
+        val showSkipButton = (skipIntroState.showSkipIntro || skipIntroState.showSkipOutro) && !isInPipMode
+        AnimatedVisibility(
+            visible = showSkipButton,
+            enter = slideInVertically { it } + fadeIn(),
+            exit = slideOutVertically { it } + fadeOut(),
+            modifier = Modifier.align(Alignment.BottomEnd)
+        ) {
+            val skipLabel = when {
+                skipIntroState.showSkipOutro -> stringResource(id = R.string.skip_outro)
+                else -> stringResource(id = R.string.skip_intro)
+            }
+            val onSkip = when {
+                skipIntroState.showSkipOutro -> onSkipOutro
+                else -> onSkipIntro
+            }
+            TvButton(
+                onClick = {
+                    lastInteraction = System.currentTimeMillis()
+                    onSkip()
+                },
+                modifier = Modifier
+                    .focusRequester(skipFocusRequester)
+                    .padding(Spacing.md)
+            ) {
+                Text(
+                    text = skipLabel,
+                    style = AppTypography.button,
+                    color = AppColor.Black
+                )
+            }
+        }
+
         if (overlayVisible && !isInPipMode) {
             NextEpisodeOverlay(
                 nextEpisode = nextEpisode,
@@ -628,11 +697,12 @@ private fun PlayerContent(
 
 @Composable
 private fun NextEpisodeOverlay(
-    nextEpisode: MediaItem,
+    nextEpisode: MediaItem?,
     countdownSeconds: Int,
     onPlayNow: () -> Unit,
     onCancel: () -> Unit
 ) {
+    if (nextEpisode == null) return
     Box(
         modifier = Modifier
             .fillMaxSize()

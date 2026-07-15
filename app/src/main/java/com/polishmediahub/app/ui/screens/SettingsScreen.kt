@@ -64,6 +64,9 @@ fun SettingsScreen(
     val mdbListApiKey by viewModel.mdbListApiKey.collectAsStateWithLifecycle()
     val lastTraktSync by viewModel.lastTraktSync.collectAsStateWithLifecycle()
     val cinemaMode by viewModel.cinemaMode.collectAsStateWithLifecycle()
+    val autoSkipIntro by viewModel.autoSkipIntro.collectAsStateWithLifecycle()
+    val defaultIntroEndSeconds by viewModel.defaultIntroEndSeconds.collectAsStateWithLifecycle()
+    val defaultOutroDurationSeconds by viewModel.defaultOutroDurationSeconds.collectAsStateWithLifecycle()
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
     val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
     val lastEpgSync by viewModel.lastEpgSync.collectAsStateWithLifecycle()
@@ -189,6 +192,39 @@ fun SettingsScreen(
             subtitle = stringResource(id = R.string.settings_cinema_mode_subtitle),
             checked = cinemaMode,
             onCheckedChange = viewModel::setCinemaMode
+        )
+
+        Text(
+            text = stringResource(id = R.string.settings_skip_intro_section),
+            style = AppTypography.headline,
+            modifier = Modifier.padding(top = Spacing.md)
+        )
+
+        SettingsToggle(
+            title = stringResource(id = R.string.settings_auto_skip_intro),
+            subtitle = stringResource(id = R.string.settings_auto_skip_intro_subtitle),
+            checked = autoSkipIntro,
+            onCheckedChange = viewModel::setAutoSkipIntro
+        )
+
+        TvOutlinedTextField(
+            value = defaultIntroEndSeconds.toString(),
+            onValueChange = {
+                it.toIntOrNull()?.coerceIn(1, 600)?.let(viewModel::setDefaultIntroEndSeconds)
+            },
+            label = { Text(stringResource(id = R.string.settings_intro_end_seconds)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            keyboardOptions = KeyboardOptions.Default
+        )
+
+        TvOutlinedTextField(
+            value = defaultOutroDurationSeconds.toString(),
+            onValueChange = {
+                it.toIntOrNull()?.coerceIn(1, 600)?.let(viewModel::setDefaultOutroDurationSeconds)
+            },
+            label = { Text(stringResource(id = R.string.settings_outro_duration_seconds)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            keyboardOptions = KeyboardOptions.Default
         )
 
         SettingsSelector(

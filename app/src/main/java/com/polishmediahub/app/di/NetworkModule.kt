@@ -10,6 +10,7 @@ import com.polishmediahub.app.data.remote.anilist.AniListApi
 import com.polishmediahub.app.data.remote.stremio.StremioApi
 import com.polishmediahub.app.data.remote.tmdb.TmdbApi
 import com.polishmediahub.app.data.remote.trakt.TraktApi
+import com.polishmediahub.app.data.remote.trakt.TraktAuthenticator
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,6 +25,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import java.io.File
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -79,7 +81,17 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideTraktApi(client: OkHttpClient): TraktApi = Retrofit.Builder()
+    @Named("trakt")
+    fun provideTraktOkHttpClient(
+        client: OkHttpClient,
+        traktAuthenticator: TraktAuthenticator
+    ): OkHttpClient = client.newBuilder()
+        .authenticator(traktAuthenticator)
+        .build()
+
+    @Provides
+    @Singleton
+    fun provideTraktApi(@Named("trakt") client: OkHttpClient): TraktApi = Retrofit.Builder()
         .baseUrl(TraktApi.BASE_URL)
         .client(client)
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))

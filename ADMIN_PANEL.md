@@ -65,6 +65,9 @@ Send form fields matching the keys supported by `ApiConfigRepository`. The admin
 | `lastTraktSyncAt` | Read-only timestamp of the last Trakt sync (milliseconds since epoch) |
 | `lastTraktSyncStatus` | Read-only status of the last Trakt sync: `success` or `error` |
 | `lastTraktSyncError` | Read-only error message from the last failed Trakt sync, if any |
+| `autoSkipIntro` | `true` or `false` — show skip intro/outro buttons during playback |
+| `introEndSeconds` | Default intro end time in seconds (e.g. `90`) |
+| `outroDurationSeconds` | Default outro duration measured from the end, in seconds (e.g. `120`) |
 
 Only the fields you actually use need to be present. Empty strings are ignored.
 
@@ -99,7 +102,10 @@ Only the fields you actually use need to be present. Empty strings are ignored.
   "mdbListApiKey": "your-mdblist-api-key",
   "lastTraktSyncAt": "0",
   "lastTraktSyncStatus": "",
-  "lastTraktSyncError": ""
+  "lastTraktSyncError": "",
+  "autoSkipIntro": "true",
+  "introEndSeconds": "90",
+  "outroDurationSeconds": "120"
 }
 ```
 
@@ -108,6 +114,10 @@ Note: the actual HTTP endpoint expects `application/x-www-form-urlencoded` form 
 ## Kodi remote settings sync
 
 The Trakt **Sync now** button on the admin page posts to `/api/trakt/sync` and starts `TraktSyncWorker` immediately. It requires `traktClientId` and `traktAccessToken` to be set (obtained automatically after device-code pairing).
+
+### Trakt token refresh
+
+A dedicated `@Named("trakt")` `OkHttpClient` installs `TraktAuthenticator`. If any Trakt API call returns HTTP 401, the authenticator reads the encrypted `refresh_token`, synchronously calls `/oauth/token`, encrypts the new `access_token` / `refresh_token` pair, and retries the original request. You do not need to re-pair the device when the access token expires.
 
 When you save a Debrid or Trakt token in the admin panel, the app attempts to push it to a configured Kodi instance:
 

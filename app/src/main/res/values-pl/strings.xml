@@ -210,4 +210,11 @@
     <string name="genres_label">Gatunki: %1$s</string>
     <string name="cast_label">Obsada: %1$s</string>
     <string name="live_broadcast">Transmisja na żywo</string>
+    <string name="skip_intro">Pomiń czołówkę</string>
+    <string name="skip_outro">Pomiń napisy końcowe</string>
+    <string name="settings_skip_intro_section">Pomijanie czołówki / końcówki</string>
+    <string name="settings_auto_skip_intro">Automatycznie pomijaj czołówki i końcówki</string>
+    <string name="settings_auto_skip_intro_subtitle">Pokazuj przyciski pomijania podczas czołówki i końcówki</string>
+    <string name="settings_intro_end_seconds">Koniec czołówki (sekundy)</string>
+    <string name="settings_outro_duration_seconds">Długość końcówki od końca (sekundy)</string>
 </resources>

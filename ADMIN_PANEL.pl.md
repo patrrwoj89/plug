@@ -65,6 +65,9 @@ Wyślij pola formularza odpowiadające kluczom obsługiwanym przez `ApiConfigRep
 | `lastTraktSyncAt` | Tylko do odczytu — znacznik czasu ostatniej synchronizacji Trakt (ms od epoki) |
 | `lastTraktSyncStatus` | Tylko do odczytu — status ostatniej synchronizacji Trakt: `success` lub `error` |
 | `lastTraktSyncError` | Tylko do odczytu — komunikat błędu z ostatniej nieudanej synchronizacji Trakt |
+| `autoSkipIntro` | `true` lub `false` — pokazuj przyciski pomijania czołówki i końcówki |
+| `introEndSeconds` | Domyślny czas końca czołówki w sekundach (np. `90`) |
+| `outroDurationSeconds` | Domyślna długość końcówki liczona od końca filmu w sekundach (np. `120`) |
 
 Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignorowane.
 
@@ -99,7 +102,10 @@ Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignoro
   "mdbListApiKey": "your-mdblist-api-key",
   "lastTraktSyncAt": "0",
   "lastTraktSyncStatus": "",
-  "lastTraktSyncError": ""
+  "lastTraktSyncError": "",
+  "autoSkipIntro": "true",
+  "introEndSeconds": "90",
+  "outroDurationSeconds": "120"
 }
 ```
 
@@ -108,6 +114,10 @@ Uwaga: rzeczywisty endpoint HTTP oczekuje danych `application/x-www-form-urlenco
 ## Zdalna synchronizacja ustawień Kodi
 
 Przycisk **Zsynchronizuj z Trakt teraz** w panelu web wysyła POST na `/api/trakt/sync` i natychmiast uruchamia `TraktSyncWorker`. Wymaga to ustawionych `traktClientId` i `traktAccessToken` (uzyskanych automatycznie po parowaniu kodem urządzenia).
+
+### Odświeżanie tokenów Trakt
+
+Dedykowany klient `@Named("trakt")` `OkHttpClient` instaluje `TraktAuthenticator`. Jeśli dowolne zapytanie do API Trakt zwróci HTTP 401, authenticator odczytuje zaszyfrowany `refresh_token`, synchronicznie wywołuje `/oauth/token`, szyfruje nową parę `access_token` / `refresh_token` i ponawia pierwotne żądanie. Nie trzeba ponownie parować urządzenia po wygaśnięciu tokena dostępowego.
 
 Gdy zapiszesz token Debrid lub Trakt w panelu administracyjnym, aplikacja próbuje automatycznie przesłać go do skonfigurowanego Kodi:
 
