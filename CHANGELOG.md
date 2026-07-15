@@ -63,6 +63,13 @@ All notable changes to Polish Media Hub are documented in this file.
   - Native `android.media.audiofx.LoudnessEnhancer` is bound to the ExoPlayer `audioSessionId`; when Night Mode is enabled it applies `setTargetGain(dialogueBoostGainmB)` to flatten dynamic range and boost quiet dialogue. The effect is released on player close, pause and LibVLC switch.
   - Added "Premium Audio" section to `SettingsScreen` and the wireless admin panel (toggle, slider, selector) with `collectAsStateWithLifecycle()`.
   - Audio session IDs are logged only in `BuildConfig.DEBUG`; no audio ID leaks in release builds.
+- **Home poster pre-fetch & offline image cache** (`HomePreFetchWorker`, `NetworkModule`, `TVCard`, `AsyncImage`)
+  - `HomePreFetchWorker` is a `@HiltWorker` `CoroutineWorker` that runs every 12 hours with `NetworkType.UNMETERED`, `requiresDeviceIdle` and `requiresBatteryNotLow` constraints, and is also triggered immediately after a successful Trakt sync.
+  - It queries `MediaRepository.featured()` and all home `Category` lists, collects unique `posterUrl` and `backdropUrl` values, then calls `ImageLoader.execute(ImageRequest.Builder(...).data(url).build())` to warm Coil's persistent disk cache.
+  - `TVHubApplication` implements `ImageLoaderFactory` and builds a singleton `ImageLoader` with a 100 MB `DiskCache` (`File(cacheDir, "image_cache")`), `diskCachePolicy(ENABLED)` and `memoryCachePolicy(ENABLED)`.
+  - Every `AsyncImage` in `TVCard`, `HomeScreen`, `DetailScreen`, `PlayerScreen`, `EpgScreen`, `ModernSidebarBlurPanel` and `Sidebar` now uses an explicit `ImageRequest` with `diskCachePolicy(ENABLED)` and `memoryCachePolicy(ENABLED)` so posters render instantly from cache.
+  - URL logging inside the worker is blocked in release builds (`BuildConfig.DEBUG == false`).
+  - Added `HomePreFetchWorkerTest` with MockK, verifying URL extraction and `ImageLoader.execute()` invocations.
 
 #### Sources
 - **MDBList integration** (`MdbListMediaSource`, `MdbListApi` models)

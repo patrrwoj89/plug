@@ -50,10 +50,13 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.polishmediahub.app.R
 import com.polishmediahub.app.data.local.ProfileEntity
 import com.polishmediahub.app.navigation.Screen
@@ -249,7 +252,11 @@ internal fun ProfileHeader(
             ) {
                 if (profile != null && !profile.avatarUrl.isNullOrBlank()) {
                     AsyncImage(
-                        model = profile.avatarUrl,
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(profile.avatarUrl)
+                            .diskCachePolicy(CachePolicy.ENABLED)
+                            .memoryCachePolicy(CachePolicy.ENABLED)
+                            .build(),
                         contentDescription = name,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()

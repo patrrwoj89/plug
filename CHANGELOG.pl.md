@@ -63,6 +63,13 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
   - Natywny efekt `android.media.audiofx.LoudnessEnhancer` jest wiązany z `audioSessionId` ExoPlayera; gdy Tryb Nocny jest włączony, ustawiana jest `setTargetGain(dialogueBoostGainmB)`, co spłaszcza dynamikę i podbija ciche dialogi. Efekt jest zwalniany przy zamykaniu playera, pauzie i przełączaniu na LibVLC.
   - Dodano sekcję "Premium Audio" w `SettingsScreen` oraz bezprzewodowym panelu admina (przełącznik, suwak, selektor) z użyciem `collectAsStateWithLifecycle()`.
   - ID sesji audio są logowane wyłącznie w `BuildConfig.DEBUG`; w wersji produkcyjnej nie dochodzi do wycieku identyfikatora audio.
+- **Wyprzedzające pobieranie plakatów i offline cache obrazów** (`HomePreFetchWorker`, `NetworkModule`, `TVCard`, `AsyncImage`)
+  - `HomePreFetchWorker` to `@HiltWorker` `CoroutineWorker`, uruchamiany co 12 godzin z constrainami `NetworkType.UNMETERED`, `requiresDeviceIdle` i `requiresBatteryNotLow`, a także natychmiast po udanej synchronizacji Trakt.
+  - Odpytuje `MediaRepository.featured()` oraz listy `Category`, zbiera unikalne `posterUrl` i `backdropUrl`, a następnie wywołuje `ImageLoader.execute(ImageRequest.Builder(...).data(url).build())`, aby rozgrzać trwały dyskowy cache Coil.
+  - `TVHubApplication` implementuje `ImageLoaderFactory` i buduje singletonowy `ImageLoader` z 100 MB `DiskCache` (`File(cacheDir, "image_cache")`), `diskCachePolicy(ENABLED)` i `memoryCachePolicy(ENABLED)`.
+  - Każdy `AsyncImage` w `TVCard`, `HomeScreen`, `DetailScreen`, `PlayerScreen`, `EpgScreen`, `ModernSidebarBlurPanel` i `Sidebar` używa teraz jawnego `ImageRequest` z `diskCachePolicy(ENABLED)` i `memoryCachePolicy(ENABLED)`, więc plakaty renderują się natychmiast z cache.
+  - Logowanie adresów URL wewnątrz Workera jest zablokowane w wersjach produkcyjnych (`BuildConfig.DEBUG == false`).
+  - Dodano test jednostkowy `HomePreFetchWorkerTest` z MockK weryfikujący wyciąganie URL-i i wywołania `ImageLoader.execute()`.
 
 #### Źródła
 - **Integracja MDBList** (`MdbListMediaSource`, modele `MdbListApi`)

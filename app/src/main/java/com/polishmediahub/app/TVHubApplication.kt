@@ -3,6 +3,11 @@ package com.polishmediahub.app
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.disk.DiskCache
+import coil.request.CachePolicy
+import com.polishmediahub.app.data.remote.cache.HomePreFetchWorker
 import com.polishmediahub.app.data.remote.health.HealthCheckWorker
 import com.polishmediahub.app.data.remote.iptv.IptvUpdateWorker
 import com.polishmediahub.app.data.remote.trakt.TraktSyncWorker
@@ -14,7 +19,7 @@ import java.io.File
 import javax.inject.Inject
 
 @HiltAndroidApp
-class TVHubApplication : Application(), Configuration.Provider {
+class TVHubApplication : Application(), Configuration.Provider, ImageLoaderFactory {
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
@@ -38,7 +43,22 @@ class TVHubApplication : Application(), Configuration.Provider {
             TraktSyncWorker.schedule(this)
             HealthCheckWorker.schedule(this)
             HealthCheckWorker.startImmediate(this)
+            HomePreFetchWorker.schedule(this)
         }
+    }
+
+    override fun newImageLoader(): ImageLoader {
+        return ImageLoader.Builder(this)
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(File(cacheDir, "image_cache").apply { mkdirs() })
+                    .maxSizeBytes(100 * 1024 * 1024L)
+                    .build()
+            }
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .crossfade(true)
+            .build()
     }
 
     override val workManagerConfiguration: Configuration

@@ -43,6 +43,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - **Ustawienia napisów w locie**: rozmiar, kolor i przesunięcie pionowe zapisywane w DataStore i aplikane na żywo w `SubtitleView`.
 - **Nakładka Nerd Stats**: panel diagnostyczny w prawym górnym rogu (rozdzielczość, fps, kodeki, bitrate, pominięte klatki).
 - **Zaokrąglenie okładek i awatarów**: `MediaCard` i `WideCard` przycinają `AsyncImage` za pomocą `RoundedCornerShape(Radius.md)`; awatary profili w `Sidebar` i `CollapsedSidebarPill` używają `ContentScale.Crop` i `fillMaxSize()` w okrągłych kontenerach.
+- **Wyprzedzające pobieranie plakatów i dyskowy cache Coil** (`HomePreFetchWorker`, `ImageLoaderFactory`, `TVCard`): zadanie `WorkManager` uruchamiane co 12 godzin rozgrzewa URL-e plakatów i tła ekranu głównego w 100 MB trwałym cache dyskowym Coil przy niezlimitowanym Wi-Fi, gdy urządzenie jest bezczynne. Każdy `AsyncImage` używa jawnego `ImageRequest` z `diskCachePolicy(ENABLED)` i `memoryCachePolicy(ENABLED)`, więc siatka główna renderuje się natychmiast nawet offline.
 
 ### Odtwarzacz i media
 

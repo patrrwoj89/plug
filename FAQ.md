@@ -36,6 +36,12 @@ Clear app data or uninstall/reinstall. The `isFirstLaunch` flag is stored in Dat
 
 On the **Search** screen, move focus to the **microphone** button next to the search field and press SELECT. The app launches the system speech recognizer configured for Polish (`pl-PL`). Once you speak, the recognized text is inserted into the search field and a search is started automatically. Voice search requires a Google / system speech recognizer app on the device.
 
+## Offline posters & cache
+
+### Why do posters load instantly when I open the app?
+
+Polish Media Hub runs a background `HomePreFetchWorker` every 12 hours (and after every successful Trakt sync) when the Android TV is on unmetered Wi-Fi/Ethernet, idle and has enough battery. It downloads all home-screen poster and backdrop URLs into a 100 MB persistent Coil disk cache. Every `AsyncImage` in the TV UI is configured to read from the disk and memory cache first, so the Home, Detail, Library and Player screens render posters immediately — even without an active internet connection.
+
 ## Sources & Content
 
 ### How do I add sources?

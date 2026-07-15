@@ -36,6 +36,12 @@ Wyczyść dane aplikacji lub odinstaluj / zainstaluj ponownie. Flaga `isFirstLau
 
 Na ekranie **Szukaj** przesuń fokus na przycisk **mikrofonu** obok pola wyszukiwania i naciśnij SELECT. Aplikacja uruchamia systemowy rozpoznawanie mowy skonfigurowane dla języka polskiego (`pl-PL`). Po wypowiedzeniu frazy rozpoznany tekst jest wstawiany do pola wyszukiwania i automatycznie uruchamiane jest wyszukiwanie. Wyszukiwanie głosowe wymaga zainstalowanej aplikacji rozpoznawania mowy Google / systemowej.
 
+## Offline cache plakatów
+
+### Dlaczego plakaty ładują się natychmiast po otwarciu aplikacji?
+
+Polish Media Hub uruchamia w tle `HomePreFetchWorker` co 12 godzin (oraz po każdej udanej synchronizacji Trakt), gdy Android TV ma niezlimitowane Wi-Fi/Ethernet, telewizor jest bezczynny i bateria jest wystarczająco naładowana. Pobiera wszystkie adresy URL okładek i tła ekranu głównego do 100 MB trwałego dyskowego cache Coil. Każdy `AsyncImage` w interfejsie TV jest skonfigurowany, aby najpierw czytać z cache dyskowego i pamięciowego, więc ekrany Home, Szczegóły, Biblioteka i Odtwarzacz renderują plakaty od razu — nawet bez aktywnego połączenia z internetem.
+
 ## Źródła i treści
 
 ### Jak dodać źródła?

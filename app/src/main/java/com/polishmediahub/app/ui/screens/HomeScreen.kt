@@ -29,6 +29,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -37,6 +38,8 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.polishmediahub.app.R
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.navigation.Screen
@@ -149,7 +152,11 @@ private fun HeroFeaturedBanner(
             .clip(RoundedCornerShape(Radius.md))
     ) {
         AsyncImage(
-            model = item.backdropUrl ?: item.posterUrl,
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(item.backdropUrl ?: item.posterUrl)
+                .diskCachePolicy(CachePolicy.ENABLED)
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .build(),
             contentDescription = item.title,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()

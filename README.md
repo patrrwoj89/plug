@@ -43,6 +43,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **Subtitle settings in player**: size, color and vertical offset stored in DataStore and applied live to `SubtitleView`.
 - **Nerd Stats Overlay**: optional real-time panel with resolution, fps, active codecs, current bitrate and dropped/jank frames.
 - **Rounded media and avatar clipping**: `MediaCard` and `WideCard` clip `AsyncImage` with `RoundedCornerShape(Radius.md)`; profile avatars in `Sidebar` and `CollapsedSidebarPill` use `ContentScale.Crop` and `fillMaxSize()` inside circular containers.
+- **Offline poster pre-fetch and Coil disk cache** (`HomePreFetchWorker`, `ImageLoaderFactory`, `TVCard`): a 12-hour `WorkManager` job pre-warms home poster and backdrop URLs into a 100 MB persistent Coil disk cache on unmetered Wi-Fi while the device is idle. Every `AsyncImage` uses explicit `ImageRequest` options with `diskCachePolicy(ENABLED)` and `memoryCachePolicy(ENABLED)`, so the home grid renders instantly even when offline.
 
 ### Player & media
 

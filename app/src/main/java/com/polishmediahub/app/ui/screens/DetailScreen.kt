@@ -30,12 +30,15 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.polishmediahub.app.R
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.navigation.Screen
@@ -123,7 +126,11 @@ private fun DetailContent(
                 .height(420.dp)
         ) {
             AsyncImage(
-                model = item.posterUrl ?: item.backdropUrl,
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(item.posterUrl ?: item.backdropUrl)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .build(),
                 contentDescription = item.title,
                 contentScale = ContentScale.Crop,
                 modifier = posterModifier

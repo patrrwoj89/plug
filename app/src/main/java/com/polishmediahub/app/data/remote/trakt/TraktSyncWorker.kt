@@ -16,6 +16,7 @@ import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.ProfileRepository
 import com.polishmediahub.app.data.SavedMediaRepository
 import com.polishmediahub.app.data.WatchHistoryRepository
+import com.polishmediahub.app.data.remote.cache.HomePreFetchWorker
 import com.polishmediahub.app.data.local.SavedMediaEntity
 import com.polishmediahub.app.data.local.WatchedEntity
 import com.polishmediahub.app.model.MediaItem
@@ -125,6 +126,7 @@ class TraktSyncWorker @AssistedInject constructor(
 
             apiConfigRepository.setLastTraktSync(System.currentTimeMillis(), "success")
             Log.d(TAG, "Trakt sync success. Watched: ${toDownloadWatched.size} down, ${watchedUploadItems.size} up. Watchlist: ${toDownloadWatchlist.size} down, ${toUploadWatchlist.size} up.")
+            HomePreFetchWorker.startImmediate(applicationContext)
             Result.success()
         } catch (e: Exception) {
             Log.w(TAG, "Trakt sync failed: ${e.message}", e)

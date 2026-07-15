@@ -1,6 +1,8 @@
 package com.polishmediahub.app.di
 
 import android.content.Context
+import coil.ImageLoader
+import coil.imageLoader
 import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.remote.RetryInterceptor
 import com.polishmediahub.app.data.remote.debrid.DebridAuthenticator
@@ -37,6 +39,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideJson(): Json = json
+
+    @Provides
+    @Singleton
+    fun provideImageLoader(@ApplicationContext context: Context): ImageLoader = context.imageLoader
 
     @Provides
     @Singleton

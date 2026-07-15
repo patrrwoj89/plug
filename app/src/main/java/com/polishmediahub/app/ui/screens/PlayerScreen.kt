@@ -78,6 +78,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.C
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem as ExoMediaItem
@@ -644,6 +645,8 @@ private fun PlayerContent(
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(coverUrl)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
                         .crossfade(true)
                         .build(),
                     contentDescription = null,
@@ -659,6 +662,8 @@ private fun PlayerContent(
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(coverUrl)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
                         .crossfade(true)
                         .build(),
                     contentDescription = title,
@@ -799,6 +804,8 @@ internal fun NextEpisodeOverlay(
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(nextEpisode.backdropUrl ?: nextEpisode.posterUrl)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
                     .crossfade(true)
                     .build(),
                 contentDescription = nextEpisode.title,

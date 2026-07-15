@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.polishmediahub.app.R
 import com.polishmediahub.app.data.iptv.ChannelWithPrograms
@@ -334,6 +335,8 @@ private fun ChannelInfoBox(
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(logoUrl)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
                     .crossfade(true)
                     .build(),
                 contentDescription = null,
