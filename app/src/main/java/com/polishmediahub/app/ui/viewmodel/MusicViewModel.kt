@@ -2,6 +2,7 @@ package com.polishmediahub.app.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.polishmediahub.app.data.audio.AudioHistoryRepository
 import com.polishmediahub.app.data.audio.AudioRepository
 import com.polishmediahub.app.data.download.DownloadRepository
 import com.polishmediahub.app.model.AudioTrack
@@ -15,6 +16,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MusicViewModel @Inject constructor(
     private val audioRepository: AudioRepository,
+    private val audioHistoryRepository: AudioHistoryRepository,
     private val downloadRepository: DownloadRepository
 ) : ViewModel() {
 
@@ -33,6 +35,20 @@ class MusicViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(tracks = tracks, isLoading = false)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message, isLoading = false)
+            }
+        }
+    }
+
+    fun playTrack(track: AudioTrack, onResolved: (AudioTrack) -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                audioHistoryRepository.save(track)
+                val streamUrl = audioRepository.resolve(track)
+                if (!streamUrl.isNullOrBlank()) {
+                    onResolved(track.copy(streamUrl = streamUrl))
+                }
+            } catch (_: Exception) {
+                // Failures are non-fatal; history save is best-effort.
             }
         }
     }

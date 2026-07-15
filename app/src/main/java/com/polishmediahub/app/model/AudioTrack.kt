@@ -12,5 +12,6 @@ data class AudioTrack(
     val streamUrl: String? = null,
     val durationMs: Long = 0L,
     val isLocal: Boolean = false,
-    val sourceId: String = ""
+    val sourceId: String = "",
+    val headers: Map<String, String> = emptyMap()
 )

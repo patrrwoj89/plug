@@ -90,7 +90,7 @@ fun MusicScreen(
                     items(uiState.tracks, key = { it.id }) { track ->
                         TrackRow(
                             track = track,
-                            onClick = { onPlay(track) },
+                            onClick = { viewModel.playTrack(track) { resolved -> onPlay(resolved) } },
                             onDownload = { viewModel.downloadTrack(track) }
                         )
                     }

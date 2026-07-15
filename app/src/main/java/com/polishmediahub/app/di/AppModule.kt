@@ -7,6 +7,7 @@ import com.polishmediahub.app.data.local.HistoryDao
 import com.polishmediahub.app.data.local.MediaDatabase
 import com.polishmediahub.app.data.local.DownloadDao
 import com.polishmediahub.app.data.local.EpgDao
+import com.polishmediahub.app.data.local.AudioHistoryDao
 import com.polishmediahub.app.data.local.PluginDao
 import com.polishmediahub.app.data.local.ProfileDao
 import com.polishmediahub.app.data.local.SavedMediaDao
@@ -58,4 +59,8 @@ object AppModule {
     @Provides
     fun provideProfileDao(database: MediaDatabase): ProfileDao =
         database.profileDao()
+
+    @Provides
+    fun provideAudioHistoryDao(database: MediaDatabase): AudioHistoryDao =
+        database.audioHistoryDao()
 }

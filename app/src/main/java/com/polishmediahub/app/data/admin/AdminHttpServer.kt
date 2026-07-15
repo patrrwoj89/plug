@@ -143,7 +143,8 @@ class AdminHttpServer @Inject constructor(
                     "subsonicUrl" to subsonicUrl,
                     "subsonicUser" to subsonicUser,
                     "subsonicPassword" to subsonicPassword,
-                    "podcastFeeds" to podcastFeeds
+                    "podcastFeeds" to podcastFeeds,
+                    "deezerProxyUrl" to deezerProxyUrl
                 )
             }.mapValues { (_, flow) -> flow.first().toString() }
             val jsonObj = JsonObject(values.mapValues { (_, v) -> JsonPrimitive(v) })
@@ -178,6 +179,7 @@ class AdminHttpServer @Inject constructor(
             params["subsonicUser"]?.let { apiConfigRepository.setSubsonicUser(it) }
             params["subsonicPassword"]?.let { apiConfigRepository.setSubsonicPassword(it) }
             params["podcastFeeds"]?.let { apiConfigRepository.setPodcastFeeds(it) }
+            params["deezerProxyUrl"]?.let { apiConfigRepository.setDeezerProxyUrl(it) }
         }
         writeResponse(out, 200, "OK", "text/plain", "OK")
     }
@@ -282,6 +284,8 @@ button:hover { background: #29b6f6; }
   <input type="text" name="subsonicPassword">
   <label>Podcast RSS Feeds (one per line)</label>
   <textarea name="podcastFeeds"></textarea>
+  <label>Deezer Proxy URL</label>
+  <input type="text" name="deezerProxyUrl" placeholder="https://your-worker.workers.dev">
   <label>TMDB API Key</label>
   <input type="text" name="tmdbApiKey">
   <label>AniList Token</label>

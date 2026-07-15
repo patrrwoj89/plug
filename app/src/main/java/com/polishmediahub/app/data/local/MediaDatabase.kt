@@ -14,9 +14,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         PluginEntity::class,
         DownloadEntity::class,
         EpgEntity::class,
-        ProfileEntity::class
+        ProfileEntity::class,
+        AudioHistoryEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class MediaDatabase : RoomDatabase() {
@@ -26,13 +27,14 @@ abstract class MediaDatabase : RoomDatabase() {
     abstract fun downloadDao(): DownloadDao
     abstract fun epgDao(): EpgDao
     abstract fun profileDao(): ProfileDao
+    abstract fun audioHistoryDao(): AudioHistoryDao
 
     companion object {
 
         /**
-         * Stable migrations from every previous schema version to the current one (8).
+         * Stable migrations from every previous schema version to the current one (9).
          * These migrations preserve user data (watch history, library, watchlist, downloads,
-         * custom lists, plugins, profiles) and only rebuild the EPG cache table when needed.
+         * custom lists, plugins, profiles, audio history) and only rebuild the EPG cache table when needed.
          */
         val MIGRATIONS: Array<Migration> = listOf(
             migrationWithEpgRebuild(1, 7),
@@ -41,7 +43,8 @@ abstract class MediaDatabase : RoomDatabase() {
             migrationWithEpgRebuild(4, 7),
             migrationWithEpgRebuild(5, 7),
             migrationFromV6toV7(),
-            migrationFromV7toV8()
+            migrationFromV7toV8(),
+            migrationFromV8toV9()
         ).toTypedArray()
 
         private fun migrationWithEpgRebuild(startVersion: Int, endVersion: Int): Migration =
@@ -206,6 +209,33 @@ abstract class MediaDatabase : RoomDatabase() {
             }
             db.execSQL("DROP TABLE IF EXISTS custom_list_items")
             db.execSQL("ALTER TABLE custom_list_items_new RENAME TO custom_list_items")
+        }
+
+        private fun migrationFromV8toV9(): Migration =
+            object : Migration(8, 9) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    createAudioHistoryTable(db)
+                }
+            }
+
+        private fun createAudioHistoryTable(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS audio_history (
+                    profileId TEXT NOT NULL,
+                    trackId TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    artist TEXT NOT NULL,
+                    album TEXT NOT NULL,
+                    coverUrl TEXT,
+                    streamUrl TEXT,
+                    durationMs INTEGER NOT NULL,
+                    playedAt INTEGER NOT NULL,
+                    PRIMARY KEY(profileId, trackId),
+                    FOREIGN KEY(profileId) REFERENCES profiles(id) ON DELETE CASCADE
+                )
+                """.trimIndent()
+            )
         }
 
         private fun createAllTablesIfMissing(db: SupportSQLiteDatabase) {
