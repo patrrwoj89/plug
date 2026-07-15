@@ -194,8 +194,17 @@ private fun DetailContent(
             }
 
             Text("${stringResource(id = R.string.genres)}: ${item.genres.joinToString(", ")}", style = AppTypography.caption)
+            val yearLabel = stringResource(id = R.string.year)
+            val durationLabel = stringResource(id = R.string.duration)
+            val ratingLabel = stringResource(id = R.string.rating)
+            val filmwebLabel = stringResource(id = R.string.filmweb_rating)
             Text(
-                "${stringResource(id = R.string.year)}: ${item.year}  •  ${stringResource(id = R.string.duration)}: ${item.duration}  •  ${stringResource(id = R.string.rating)}: ${item.rating}",
+                buildString {
+                    append("$yearLabel: ${item.year}")
+                    append("  •  $durationLabel: ${item.duration}")
+                    append("  •  $ratingLabel: ${item.rating}")
+                    item.filmwebRating?.let { append("  •  $filmwebLabel: $it") }
+                },
                 style = AppTypography.caption
             )
         }

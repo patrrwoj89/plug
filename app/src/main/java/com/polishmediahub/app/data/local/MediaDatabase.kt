@@ -17,9 +17,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         EpgEntity::class,
         ProfileEntity::class,
         AudioHistoryEntity::class,
-        ChannelEntity::class
+        ChannelEntity::class,
+        FilmwebCacheEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 abstract class MediaDatabase : RoomDatabase() {
@@ -31,6 +32,7 @@ abstract class MediaDatabase : RoomDatabase() {
     abstract fun profileDao(): ProfileDao
     abstract fun audioHistoryDao(): AudioHistoryDao
     abstract fun channelDao(): ChannelDao
+    abstract fun filmwebCacheDao(): FilmwebCacheDao
 
     companion object {
 
@@ -53,7 +55,8 @@ abstract class MediaDatabase : RoomDatabase() {
             migrationFromV9toV10(),
             migrationFromV10toV11(),
             migrationFromV11toV12(),
-            migrationFromV12toV13()
+            migrationFromV12toV13(),
+            migrationFromV13toV14()
         ).toTypedArray()
 
         private fun migrationWithEpgRebuild(startVersion: Int, endVersion: Int): Migration =
@@ -317,6 +320,7 @@ abstract class MediaDatabase : RoomDatabase() {
             createDownloadsTable(db)
             createEpgTable(db)
             createIptvChannelsTable(db)
+            createFilmwebCacheTable(db)
         }
 
         private fun createSavedMediaTable(db: SupportSQLiteDatabase) {
@@ -428,6 +432,31 @@ abstract class MediaDatabase : RoomDatabase() {
                 """.trimIndent()
             )
             createEpgIndexIfMissing(db)
+        }
+
+        private fun migrationFromV13toV14(): Migration =
+            object : Migration(13, 14) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    createFilmwebCacheTable(db)
+                }
+            }
+
+        private fun createFilmwebCacheTable(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS filmweb_cache (
+                    cacheKey TEXT PRIMARY KEY NOT NULL,
+                    title TEXT NOT NULL,
+                    year TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    posterUrl TEXT,
+                    rating TEXT,
+                    voteCount TEXT,
+                    filmwebUrl TEXT,
+                    updatedAt INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
         }
 
         private fun createIptvChannelsTable(db: SupportSQLiteDatabase) {

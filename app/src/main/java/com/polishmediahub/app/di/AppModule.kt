@@ -11,6 +11,7 @@ import com.polishmediahub.app.data.local.AudioHistoryDao
 import com.polishmediahub.app.data.local.PluginDao
 import com.polishmediahub.app.data.local.ProfileDao
 import com.polishmediahub.app.data.local.ChannelDao
+import com.polishmediahub.app.data.local.FilmwebCacheDao
 import com.polishmediahub.app.data.local.SavedMediaDao
 import com.polishmediahub.app.data.EncryptedSettingsManager
 import dagger.Module
@@ -74,4 +75,8 @@ object AppModule {
     @Provides
     fun provideChannelDao(database: MediaDatabase): ChannelDao =
         database.channelDao()
+
+    @Provides
+    fun provideFilmwebCacheDao(database: MediaDatabase): FilmwebCacheDao =
+        database.filmwebCacheDao()
 }

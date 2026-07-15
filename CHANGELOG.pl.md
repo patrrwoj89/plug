@@ -63,6 +63,12 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
   - `AnimeRepository` opakowuje `AniListMediaRepository` i `KitsuMediaSource`; gdy AniList zwróci pusty wynik (błąd sieci, timeout, 429), aplikacja automatycznie przełącza się na Kitsu.
   - Mapowanie anime Kitsu na `MediaItem` z polami `malId` i `aniListId` sparsowanymi z relacji `include=mappings`.
   - Dodano wpis `kitsu` do `legal_sources.json`.
+- **Fallback metadanych Filmweb.pl** (`FilmwebMediaSource`, `FederatedMediaRepository`, `FilmwebCacheRepository`, Room v14)
+  - Nowe `FilmwebMediaSource` implementujące `MediaSource`, korzystające z globalnego `OkHttpClient` z `MemoryCookieJar` i `CloudflareBypassInterceptor`.
+  - Wyszukiwanie przez `www.filmweb.pl/api/v1/films/search` oraz `/live/search`, a następnie pobieranie tytułu, polskiego opisu, plakatu, oceny i liczby głosów z endpointów `/film/{id}/info`, `/description`, `/preview` i `/rating`.
+  - `FederatedMediaRepository.enrichWithFilmweb(item)` jest wywoływane z `DetailViewModel` na `Dispatchers.IO`, gdy opis z TMDB jest pusty, zbyt krótki lub nie zawiera polskich znaków diakrytycznych.
+  - Wzbogacone metadane (opis, plakat, `filmwebRating`, `filmwebVoteCount`, `filmwebUrl`) są zapisywane w nowej tabeli `filmweb_cache` w Room za pośrednictwem `FilmwebCacheRepository`, co przyspiesza kolejne otwarcia karty szczegółów.
+  - `DetailScreen` wyświetla etykietę `Filmweb: X.X` obok roku/czasu trwania/oceny, gdy dane Filmweb są dostępne.
 
 #### Bezpieczeństwo
 - **Szyfrowanie wrażliwych ustawień** (`EncryptedSettingsManager`, `ApiConfigRepository`)

@@ -85,6 +85,24 @@ Nie. Kitsu to darmowe, publiczne API i jest wymienione jako źródło startowe w
 
 Zapytania do Kitsu używają `include=mappings`. Mapowania Kitsu z `externalSite` zawierającym `myanimelist` są zapisywane w wynikowym `MediaItem` jako `malId`; mapowania zawierające `anilist` jako `aniListId`. Identyfikatory te pomagają innym wtyczkom i resolverom dopasować strumienie.
 
+## Fallback metadanych Filmweb.pl
+
+### Kiedy aplikacja pobiera metadane z Filmwebu?
+
+Ekran szczegółów w Polish Media Hub najpierw ładuje metadane z TMDB. Jeśli opis z TMDB jest pusty, krótszy niż 50 znaków lub nie zawiera polskich znaków diakrytycznych (ą/ć/ę/ł/ń/ó/ś/ź/ż), `DetailViewModel` uruchamia zadanie w tle na `Dispatchers.IO`, które wyszukuje tytuł na Filmweb.pl przez publiczne API (`www.filmweb.pl/api/v1`) i pobiera polski tytuł, fabułę, plakat, ocenę społeczności oraz liczbę głosów.
+
+### Czy Filmweb wymaga konfiguracji źródła?
+
+Nie. Fallback metadanych Filmweb jest całkowicie automatyczny i nie wymaga klucza API. `FilmwebMediaSource` korzysta z globalnego `OkHttpClient`, więc dzieli `MemoryCookieJar` i `CloudflareBypassInterceptor` z resztą aplikacji.
+
+### Gdzie zapisywane są dane z Filmwebu?
+
+Wzbogacone opisy, plakaty, oceny i adresy URL są buforowane w tabeli `filmweb_cache` w Room (dodanej w wersji v14) przez `FilmwebCacheRepository`. Przy kolejnym otwarciu tego samego tytułu i roku karta szczegółów wyświetla polskie metadane natychmiast, bez ponownego odpytywania API.
+
+### Dlaczego na niektórych kartach szczegółów widzę etykietę „Filmweb: X,X"?
+
+Gdy uda się pobrać dane z Filmwebu, `DetailScreen` dodaje etykietę `Filmweb: X,X` obok wiersza z rokiem / czasem trwania / oceną TMDB. Jeśli etykiety nie ma, oznacza to, że TMDB dostarczył już wystarczający polski opis lub wyszukiwanie Filmweb nie znalazło dopasowania.
+
 ## TV na żywo i EPG
 
 ### Kiedy aktualizowany jest EPG?

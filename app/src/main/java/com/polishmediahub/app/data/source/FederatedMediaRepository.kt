@@ -5,6 +5,7 @@ import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.ContentFilter
 import com.polishmediahub.app.data.MediaRepository
 import com.polishmediahub.app.data.ProfileRepository
+import com.polishmediahub.app.data.remote.filmweb.FilmwebMediaSource
 import com.polishmediahub.app.data.remote.mdblist.MdbListMediaSource
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,6 +28,7 @@ class FederatedMediaRepository @Inject constructor(
     private val webMediaSource: WebMediaSource,
     private val cloudstreamSource: CloudstreamSource,
     private val mdbListMediaSource: MdbListMediaSource,
+    private val filmwebMediaSource: FilmwebMediaSource,
     private val apiConfigRepository: ApiConfigRepository,
     private val profileRepository: ProfileRepository
 ) : MediaRepository {
@@ -124,6 +127,38 @@ class FederatedMediaRepository @Inject constructor(
             android.util.Log.w("FederatedMediaRepository", "resolveItem failed for ${source.id}: ${e.message}")
             mediaItem
         }
+    }
+
+    /**
+     * Fetches Polish metadata from Filmweb.pl when the existing description is empty,
+     * too short or does not contain Polish diacritics, and falls back to cached data.
+     */
+    suspend fun enrichWithFilmweb(item: MediaItem): MediaItem {
+        if (!shouldFetchFromFilmweb(item)) return item
+
+        return try {
+            withContext(Dispatchers.IO) {
+                val polish = filmwebMediaSource.fetchPolishMetadata(item.title, item.year) ?: return@withContext item
+                item.copy(
+                    description = polish.description.takeIf { it.isNotBlank() } ?: item.description,
+                    posterUrl = polish.posterUrl ?: item.posterUrl,
+                    backdropUrl = polish.backdropUrl ?: item.backdropUrl,
+                    filmwebRating = polish.filmwebRating,
+                    filmwebVoteCount = polish.filmwebVoteCount,
+                    filmwebUrl = polish.filmwebUrl
+                )
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("FederatedMediaRepository", "enrichWithFilmweb failed: ${e.message}")
+            item
+        }
+    }
+
+    private fun shouldFetchFromFilmweb(item: MediaItem): Boolean {
+        if (!item.filmwebRating.isNullOrBlank()) return false
+        if (item.description.isBlank() || item.description.length < 50) return true
+        val hasPolishDiacritics = item.description.contains(Regex("[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]"))
+        return !hasPolishDiacritics
     }
 
     override suspend fun reportProgress(

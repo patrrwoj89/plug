@@ -22,6 +22,7 @@
     <string name="year">Year</string>
     <string name="duration">Duration</string>
     <string name="rating">Rating</string>
+    <string name="filmweb_rating">Filmweb</string>
 
     <string name="add_to_library">Add to Library</string>
     <string name="remove_from_library">Remove from Library</string>

@@ -7,6 +7,8 @@ import com.polishmediahub.app.data.MediaRepository
 import com.polishmediahub.app.data.SavedMediaRepository
 import com.polishmediahub.app.data.SettingsRepository
 import com.polishmediahub.app.data.WatchHistoryRepository
+import com.polishmediahub.app.data.source.FederatedMediaRepository
+import kotlinx.coroutines.Dispatchers
 import com.polishmediahub.app.model.MediaItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -29,7 +31,8 @@ class DetailViewModel @Inject constructor(
     private val mediaRepository: MediaRepository,
     private val savedMediaRepository: SavedMediaRepository,
     private val watchHistoryRepository: WatchHistoryRepository,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val federatedMediaRepository: FederatedMediaRepository
 ) : ViewModel() {
 
     private val _item = MutableStateFlow<MediaItem?>(null)
@@ -38,7 +41,16 @@ class DetailViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val id: String? = savedStateHandle["id"]
-            _item.value = id?.let { mediaRepository.byId(it) }
+            val baseItem = id?.let { mediaRepository.byId(it) }
+            _item.value = baseItem
+            baseItem?.let {
+                launch(Dispatchers.IO) {
+                    val enriched = federatedMediaRepository.enrichWithFilmweb(it)
+                    if (enriched != it) {
+                        _item.value = enriched
+                    }
+                }
+            }
         }
     }
 

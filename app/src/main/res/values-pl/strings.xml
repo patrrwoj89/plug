@@ -19,6 +19,7 @@
     <string name="year">Rok</string>
     <string name="duration">Czas trwania</string>
     <string name="rating">Ocena</string>
+    <string name="filmweb_rating">Filmweb</string>
 
     <string name="add_to_library">Dodaj do biblioteki</string>
     <string name="remove_from_library">Usuń z biblioteki</string>

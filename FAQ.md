@@ -85,6 +85,24 @@ No. Kitsu is a free, public API and is listed as a starter source in `legal_sour
 
 Kitsu responses are requested with `include=mappings`. Kitsu mappings with `externalSite` containing `myanimelist` are stored on the resulting `MediaItem` as `malId`; mappings containing `anilist` are stored as `aniListId`. These IDs help other plugins and resolvers find matching streams.
 
+## Filmweb.pl metadata fallback
+
+### When does the app fetch Filmweb metadata?
+
+The Polish Media Hub detail screen first loads metadata from TMDB. If the TMDB description is empty, shorter than 50 characters, or does not contain Polish diacritics (ą/ć/ę/ł/ń/ó/ś/ź/ż), `DetailViewModel` launches a background `Dispatchers.IO` task that searches Filmweb.pl via its public API (`www.filmweb.pl/api/v1`) and fetches the Polish title, plot, poster, community rating and vote count.
+
+### Is Filmweb a source I need to configure?
+
+No. Filmweb metadata fallback is automatic and does not require an API key. It is implemented by `FilmwebMediaSource` using the global `OkHttpClient`, so it shares `MemoryCookieJar` and `CloudflareBypassInterceptor` with the rest of the app.
+
+### Where is the Filmweb data stored?
+
+Enriched descriptions, posters, ratings and URLs are cached in the `filmweb_cache` Room table (added in Room v14) through `FilmwebCacheRepository`. The next time the same title and year is opened, the detail screen shows the cached Polish metadata instantly.
+
+### Why do I see a "Filmweb: X.X" label on some detail screens?
+
+When Filmweb data is successfully fetched, `DetailScreen` adds a `Filmweb: X.X` label next to the year / duration / TMDB rating row. If the label is missing, either TMDB already provided a sufficient Polish description or the Filmweb search did not find a match.
+
 ## Live TV & EPG
 
 ### When does the EPG update?

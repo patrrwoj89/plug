@@ -39,7 +39,10 @@ data class MediaItem(
     val introStartMs: Long? = null,
     val introEndMs: Long? = null,
     val outroStartMs: Long? = null,
-    val outroEndMs: Long? = null
+    val outroEndMs: Long? = null,
+    val filmwebRating: String? = null,
+    val filmwebVoteCount: String? = null,
+    val filmwebUrl: String? = null
 ) {
     enum class Type { MOVIE, SERIES, EPISODE, CHANNEL, AUDIO }
 }

@@ -63,6 +63,12 @@ All notable changes to Polish Media Hub are documented in this file.
   - `AnimeRepository` wraps `AniListMediaRepository` and `KitsuMediaSource`; if AniList returns empty (network error, timeout, 429), it silently falls back to Kitsu.
   - Maps Kitsu anime to `MediaItem` with `malId` and `aniListId` parsed from `include=mappings` relationships.
   - Added a `kitsu` entry to `legal_sources.json`.
+- **Filmweb.pl metadata fallback** (`FilmwebMediaSource`, `FederatedMediaRepository`, `FilmwebCacheRepository`, Room v14)
+  - New `FilmwebMediaSource` implementing `MediaSource` and using the global `OkHttpClient` with `MemoryCookieJar` and `CloudflareBypassInterceptor`.
+  - Searches `www.filmweb.pl/api/v1/films/search` and `/live/search`, then fetches title, Polish plot, poster, rating and vote count from `/film/{id}/info`, `/description`, `/preview` and `/rating`.
+  - `FederatedMediaRepository.enrichWithFilmweb(item)` is called from `DetailViewModel` on `Dispatchers.IO` when the TMDB description is empty, too short or lacks Polish diacritics.
+  - Enriched metadata (description, poster, `filmwebRating`, `filmwebVoteCount`, `filmwebUrl`) is cached in the new `filmweb_cache` Room table via `FilmwebCacheRepository` for instant future detail loads.
+  - `DetailScreen` displays a `Filmweb: X.X` label next to the year/duration/rating row when Filmweb data is available.
 
 #### Security
 - **Encrypted sensitive settings** (`EncryptedSettingsManager`, `ApiConfigRepository`)
