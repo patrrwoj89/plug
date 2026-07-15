@@ -152,7 +152,19 @@ class TorrentHttpServer @Inject constructor(
                 writeResponse(socket, statusCode, "OK", responseHeaders, null)
                 val input = TorrentInputStream(handle, fileInfo, file, start, end)
                 input.use { stream ->
-                    stream.copyTo(socket.getOutputStream())
+                    val out = socket.getOutputStream()
+                    val buffer = ByteArray(65536)
+                    while (true) {
+                        val read = stream.read(buffer)
+                        if (read == -1) break
+                        if (read > 0) {
+                            out.write(buffer, 0, read)
+                            out.flush()
+                        } else {
+                            Thread.sleep(20)
+                        }
+                    }
+                    out.flush()
                 }
             }
         } catch (e: Exception) {

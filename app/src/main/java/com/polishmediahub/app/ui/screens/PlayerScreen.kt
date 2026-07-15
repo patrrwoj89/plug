@@ -67,6 +67,7 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManagerProvider
@@ -119,9 +120,19 @@ fun PlayerScreen(
                 .setSelectUndeterminedTextLanguage(true)
                 .build()
         }
+        val isP2PStream = !videoUrl.isNullOrBlank() &&
+            (videoUrl.contains("127.0.0.1") || videoUrl.contains("localhost", ignoreCase = true))
+        val loadControl = if (isP2PStream) {
+            DefaultLoadControl.Builder()
+                .setBufferDurationsMs(15_000, 60_000, 2_500, 10_000)
+                .build()
+        } else {
+            DefaultLoadControl.Builder().build()
+        }
         ExoPlayer.Builder(context)
             .setMediaSourceFactory(mediaSourceFactory)
             .setTrackSelector(trackSelector)
+            .setLoadControl(loadControl)
             .setRenderersFactory(DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON))
             .build()
             .apply { playWhenReady = true }
