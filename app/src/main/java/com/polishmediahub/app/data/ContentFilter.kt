@@ -23,8 +23,6 @@ object ContentFilter {
         "AO" to 18, "X" to 18, "MATURE" to 18, "ADULT" to 18
     )
 
-    private val ADULT_KEYWORDS = setOf("R18", "R18+", "NC-17", "AO", "X", "MATURE", "ADULT", "TV-MA", "18+")
-
     fun filter(items: List<MediaItem>, profile: ProfileEntity?): List<MediaItem> =
         items.filter { isAllowed(it, profile) }
 
@@ -37,31 +35,22 @@ object ContentFilter {
     fun isAllowed(item: MediaItem, profile: ProfileEntity?): Boolean {
         if (profile == null) return true
 
+        // NSFW switch blocks any item explicitly flagged as adult.
         if (!profile.allowNsfw && item.isAdult) return false
+
+        val maxLevel = level(profile.maxAgeRating) ?: return true
 
         val ageRating = item.ageRating?.trim()?.uppercase()
         if (!ageRating.isNullOrBlank()) {
-            if (!profile.allowNsfw && isAdultRating(ageRating)) return false
-            val maxLevel = level(profile.maxAgeRating)
-            if (maxLevel != null) {
-                val itemLevel = level(ageRating)
-                if (itemLevel != null && itemLevel > maxLevel) return false
-                if (itemLevel == null && item.isAdult && maxLevel < 18) return false
-            }
-        } else if (!profile.allowNsfw && item.isAdult) {
-            return false
+            val itemLevel = level(ageRating)
+            if (itemLevel != null && itemLevel > maxLevel) return false
         }
+
+        // If the rating is unknown but the item is flagged adult, enforce the age cap:
+        // only profiles with an adult-level cap (18+) may see it.
+        if (item.isAdult && maxLevel < 18) return false
 
         return true
-    }
-
-    private fun isAdultRating(rating: String): Boolean {
-        val upper = rating.uppercase()
-        if (ADULT_KEYWORDS.any { upper.contains(it) }) return true
-        return when (upper) {
-            "R", "NC-17", "R18", "R18+", "AO", "X", "MATURE", "ADULT", "TV-MA", "18", "18+" -> true
-            else -> false
-        }
     }
 
     private fun level(rating: String?): Int? {
