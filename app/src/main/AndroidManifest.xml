@@ -67,7 +67,7 @@
         <provider
             android:name=".search.TVHubSearchSuggestionProvider"
             android:authorities="com.polishmediahub.app.search.TVHubSearchSuggestionProvider"
-            android:exported="false" />
+            android:exported="true" />
 
         <provider
             android:name="androidx.startup.InitializationProvider"

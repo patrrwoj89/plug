@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.SearchRecentSuggestions
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -17,16 +18,21 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.runtime.getValue
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import com.polishmediahub.app.MainActivity
 import com.polishmediahub.app.R
+import com.polishmediahub.app.data.SearchHistoryRepository
+import com.polishmediahub.app.data.SettingsRepository
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.ui.components.EmptyState
 import com.polishmediahub.app.ui.components.ErrorState
@@ -37,12 +43,29 @@ import com.polishmediahub.app.ui.theme.Spacing
 import com.polishmediahub.app.ui.theme.TVHubTheme
 import com.polishmediahub.app.ui.viewmodel.SearchResultsViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class SearchActivity : ComponentActivity() {
 
+    @Inject lateinit var settingsRepository: SettingsRepository
+    @Inject lateinit var searchHistoryRepository: SearchHistoryRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (Intent.ACTION_VIEW == intent.action) {
+            val deepLink = intent.dataString
+            if (!deepLink.isNullOrBlank()) {
+                startMainActivity(deepLink)
+                finish()
+                return
+            }
+        }
 
         val query = if (Intent.ACTION_SEARCH == intent.action) {
             intent.getStringExtra(SearchManager.QUERY) ?: ""
@@ -51,11 +74,22 @@ class SearchActivity : ComponentActivity() {
         }
 
         if (query.isNotBlank()) {
-            SearchRecentSuggestions(
-                this,
-                TVHubSearchSuggestionProvider.AUTHORITY,
-                TVHubSearchSuggestionProvider.MODE
-            ).saveRecentQuery(query, null)
+            lifecycleScope.launch {
+                withContext(Dispatchers.IO) {
+                    try {
+                        if (settingsRepository.saveSearchHistory.first()) {
+                            searchHistoryRepository.add(query)
+                            SearchRecentSuggestions(
+                                this@SearchActivity,
+                                TVHubSearchSuggestionProvider.AUTHORITY,
+                                TVHubSearchSuggestionProvider.MODE
+                            ).saveRecentQuery(query, null)
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to save search query: ${e.message}")
+                    }
+                }
+            }
         }
 
         setContent {
@@ -63,16 +97,24 @@ class SearchActivity : ComponentActivity() {
                 SearchResultsScreen(
                     query = query,
                     onResult = { item ->
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("polishmediahub://detail/${item.id}"))
-                            .setClass(this, com.polishmediahub.app.MainActivity::class.java)
-                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                        startActivity(intent)
+                        startMainActivity("polishmediahub://detail/${item.id}")
                         finish()
                     },
                     onBack = { finish() }
                 )
             }
         }
+    }
+
+    private fun startMainActivity(deepLink: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deepLink))
+            .setClass(this, MainActivity::class.java)
+            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        startActivity(intent)
+    }
+
+    companion object {
+        private const val TAG = "SearchActivity"
     }
 }
 
@@ -84,6 +126,12 @@ private fun SearchResultsScreen(
     viewModel: SearchResultsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(query) {
+        if (query.isNotBlank()) {
+            viewModel.search(query)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -103,7 +151,10 @@ private fun SearchResultsScreen(
                     Spacer(modifier = Modifier.height(Spacing.md))
                 }
             }
-            uiState.error != null -> ErrorState(message = uiState.error ?: "", onRetry = { viewModel.search(query) })
+            uiState.error != null -> ErrorState(
+                message = uiState.error ?: "",
+                onRetry = { viewModel.search(query) }
+            )
             uiState.results.isEmpty() -> EmptyState(message = stringResource(id = R.string.no_featured_content))
             else -> {
                 LazyColumn(
