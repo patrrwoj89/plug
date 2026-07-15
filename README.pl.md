@@ -48,7 +48,12 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 
 - **ExoPlayer / Media3** z autodetekcją HLS, DASH i progresywnych strumieni.
 - **Odtwarzanie DRM**: `MediaItem` przenosi `drmLicenseUrl`, `drmScheme` i `drmHeaders`; ExoPlayer konfiguruje `DrmConfiguration` dla Widevine/PlayReady/ClearKey.
-- **Polskie audio / napisy**: ExoPlayer preferuje utwory `pl`, depriorytyzuje Audiodeskrypcję i pokazuje pełne etykiety językowe w panelu odtwarzacza.
+- **Polskie audio / napisy** z inteligentnym wyborem ścieżek i normalizacją głośności:
+  - ExoPlayer preferuje utwory `pl`, depriorytyzuje Audiodeskrypcję i pokazuje pełne etykiety językowe.
+  - Nowe ustawienia w DataStore: `preferredAudioType` (Polski Lektor / Dubbing), `nightModeEnabled` oraz `dialogueBoostGainmB` (0–3000 mB).
+  - Tryb Dubbing preferuje ścieżki wielokanałowe (`5.1`, `E-AC3`, `DTS`); tryb Lektor preferuje stereo/mono z flagą lektorską. `ROLE_FLAG_DESCRIBES_VIDEO` zawsze ma najniższy priorytet.
+  - Natywny efekt `android.media.audiofx.LoudnessEnhancer` jest wiązany z `audioSessionId` ExoPlayera; gdy Tryb Nocny jest włączony, aplikuje skonfigurowane wzmocnienie, spłaszczając dynamikę i podbijając ciche dialogi. Efekt jest zwalniany przy zamykaniu playera, pauzie i przełączaniu na LibVLC.
+  - Ta sama logika wyboru została przeniesiona do alternatywnego odtwarzacza **LibVLC** (`UniversalVlcPlayer`) dla pełnej parytetowości silników.
 - **Napisy zewnętrzne**: pliki `.vtt` i `.srt`.
 - **Inteligentny Tryb Kinowy**: po włączeniu nakładki automatycznie ukrywają się podczas odtwarzania, a ekran płynnie przyciemnia się; po pauzie nakładka rozjaśnia się i pod suwakiem pojawia się karta informacyjna z tytułem, opisem, gatunkami i głównymi aktorami pobranymi w tle z metadanych TMDB / Trakt.
 - **Logowanie Trakt.tv kodem urządzenia** (`TraktAuthManager`, `TraktPairingSection`): aplikacja na Android TV prosi o kod urządzenia, wyświetla `user_code` i kod QR z adresem aktywacji, a następnie odpytuje `oauth/device/token` do momentu autoryzacji. Tokeny dostępowe i odświeżania są szyfrowane AES-256-GCM w Android Keystore.

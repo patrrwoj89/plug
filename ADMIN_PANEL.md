@@ -87,6 +87,9 @@ Send form fields matching the keys supported by `ApiConfigRepository`. The admin
 | `introEndSeconds` | Default intro end time in seconds (e.g. `90`) |
 | `outroDurationSeconds` | Default outro duration measured from the end, in seconds (e.g. `120`) |
 | `useAlternativePlayer` | `true` or `false` — use the in-process LibVLC engine instead of ExoPlayer |
+| `preferredAudioType` | `lector` or `dubbing` — Polish audio preference |
+| `nightModeEnabled` | `true` or `false` — enable the ExoPlayer `LoudnessEnhancer` for dynamic range compression |
+| `dialogueBoostGainmB` | Night-mode gain in millibels, `0` to `3000` (default `1000` mB) |
 
 Only the fields you actually use need to be present. Empty strings are ignored.
 
@@ -126,7 +129,10 @@ Only the fields you actually use need to be present. Empty strings are ignored.
   "autoSkipIntro": "true",
   "introEndSeconds": "90",
   "outroDurationSeconds": "120",
-  "useAlternativePlayer": "false"
+  "useAlternativePlayer": "false",
+  "preferredAudioType": "lector",
+  "nightModeEnabled": "false",
+  "dialogueBoostGainmB": "1000"
 }
 ```
 

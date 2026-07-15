@@ -56,6 +56,13 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 - **Odtwarzanie strumieni DRM** (`KodiMediaSource`, `PlayerScreen`, `MediaItem`)
   - `MediaItem` przenosi `drmLicenseUrl`, `drmScheme` i `drmHeaders`.
   - ExoPlayer konfiguruje `MediaItem.DrmConfiguration` dla Widevine, PlayReady i ClearKey.
+- **Inteligentny Silnik Wyboru Ścieżek Audio i Natywna Normalizacja Głośności** (`PlayerScreen`, `PlayerViewModel`, `UniversalVlcPlayer`, `SettingsScreen`, `AdminHttpServer`)
+  - Nowe preferencje DataStore: `preferredAudioType` (Polski Lektor / Dubbing), `nightModeEnabled` oraz `dialogueBoostGainmB` (0–3000 mB).
+  - `DefaultTrackSelector` w ExoPlayerze ocenia ścieżki polskie (`pl`/`pol`); tryb Dubbing preferuje kodeki wielokanałowe (`5.1`, `E-AC3`, `DTS`), tryb Lektor preferuje ścieżki stereo/mono z flagą lektorską; `ROLE_FLAG_DESCRIBES_VIDEO` (Audiodeskrypcja) zawsze otrzymuje najniższy priorytet.
+  - Ta sama logika oceny została przeniesiona do `UniversalVlcPlayer` (`mediaPlayer.audioTracks` / `setAudioTrack`) dla pełnej parytetowości silników.
+  - Natywny efekt `android.media.audiofx.LoudnessEnhancer` jest wiązany z `audioSessionId` ExoPlayera; gdy Tryb Nocny jest włączony, ustawiana jest `setTargetGain(dialogueBoostGainmB)`, co spłaszcza dynamikę i podbija ciche dialogi. Efekt jest zwalniany przy zamykaniu playera, pauzie i przełączaniu na LibVLC.
+  - Dodano sekcję "Premium Audio" w `SettingsScreen` oraz bezprzewodowym panelu admina (przełącznik, suwak, selektor) z użyciem `collectAsStateWithLifecycle()`.
+  - ID sesji audio są logowane wyłącznie w `BuildConfig.DEBUG`; w wersji produkcyjnej nie dochodzi do wycieku identyfikatora audio.
 
 #### Źródła
 - **Integracja MDBList** (`MdbListMediaSource`, modele `MdbListApi`)

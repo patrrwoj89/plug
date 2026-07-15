@@ -87,6 +87,9 @@ Wyślij pola formularza odpowiadające kluczom obsługiwanym przez `ApiConfigRep
 | `introEndSeconds` | Domyślny czas końca czołówki w sekundach (np. `90`) |
 | `outroDurationSeconds` | Domyślna długość końcówki liczona od końca filmu w sekundach (np. `120`) |
 | `useAlternativePlayer` | `true` lub `false` — użyj wbudowanego silnika LibVLC zamiast ExoPlayera |
+| `preferredAudioType` | `lector` lub `dubbing` — preferencja polskiego dźwięku |
+| `nightModeEnabled` | `true` lub `false` — włącza `LoudnessEnhancer` ExoPlayera do kompresji dynamiki |
+| `dialogueBoostGainmB` | Wzmocnienie trybu nocnego w mili-decybelach, `0` do `3000` (domyślnie `1000` mB) |
 
 Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignorowane.
 
@@ -126,7 +129,10 @@ Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignoro
   "autoSkipIntro": "true",
   "introEndSeconds": "90",
   "outroDurationSeconds": "120",
-  "useAlternativePlayer": "false"
+  "useAlternativePlayer": "false",
+  "preferredAudioType": "lector",
+  "nightModeEnabled": "false",
+  "dialogueBoostGainmB": "1000"
 }
 ```
 

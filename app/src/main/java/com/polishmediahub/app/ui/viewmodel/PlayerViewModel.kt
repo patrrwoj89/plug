@@ -100,6 +100,15 @@ class PlayerViewModel @Inject constructor(
     private val _useAlternativePlayer = MutableStateFlow(false)
     val useAlternativePlayer: StateFlow<Boolean> = _useAlternativePlayer.asStateFlow()
 
+    private val _preferredAudioType = MutableStateFlow("lector")
+    val preferredAudioType: StateFlow<String> = _preferredAudioType.asStateFlow()
+
+    private val _nightModeEnabled = MutableStateFlow(false)
+    val nightModeEnabled: StateFlow<Boolean> = _nightModeEnabled.asStateFlow()
+
+    private val _dialogueBoostGainmB = MutableStateFlow(1000)
+    val dialogueBoostGainmB: StateFlow<Int> = _dialogueBoostGainmB.asStateFlow()
+
     private val _skipIntroState = MutableStateFlow(SkipIntroState())
     val skipIntroState: StateFlow<SkipIntroState> = _skipIntroState.asStateFlow()
 
@@ -262,6 +271,18 @@ class PlayerViewModel @Inject constructor(
 
         viewModelScope.launch {
             settingsRepository.useAlternativePlayer.collect { _useAlternativePlayer.value = it }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.preferredAudioType.collect { _preferredAudioType.value = it }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.nightModeEnabled.collect { _nightModeEnabled.value = it }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.dialogueBoostGainmB.collect { _dialogueBoostGainmB.value = it }
         }
 
         viewModelScope.launch {

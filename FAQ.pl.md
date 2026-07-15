@@ -274,6 +274,23 @@ Panel w prawym górnym rogu odtwarzacza pokazujący dane diagnostyczne w czasie 
 
 Statystyki są zbierane przez `AnalyticsListener` ExoPlayera i eksponowane w osobnym `StateFlow`. Rekompozycje dotyczą tylko małego panelu statystyk, więc reszta ekranu `PlayerScreen` nie jest odświeżana.
 
+## Premium Audio
+
+### Jak działa inteligentny wybór ścieżki audio?
+
+Polish Media Hub odczytuje wszystkie ścieżki dźwiękowe zgłaszane przez aktywny silnik odtwarzacza i ocenia je na podstawie preferencji `preferredAudioType`:
+
+- Tryb **Polski Lektor** preferuje polskie (`pl` / `pol`) ścieżki stereo/mono, których etykieta lub kodek wskazuje na lektor.
+- Tryb **Polski Dubbing** preferuje wielokanałowe polskie ścieżki (`5.1`, `E-AC3`, `EAC3`, `DTS`, `AC3`) oraz ścieżki wyraźnie oznaczone jako dubbing.
+- Ścieżki oznaczone `ROLE_FLAG_DESCRIBES_VIDEO` (Audiodeskrypcja / AD) zawsze otrzymują najniższy priorytet i są wybierane wyłącznie w ostateczności.
+- Ta sama logika działa zarówno w ExoPlayerze (`DefaultTrackSelector`), jak i w silniku LibVLC (`UniversalVlcPlayer`).
+
+Preferencję zmienisz w **Ustawienia → Premium Audio** lub w bezprzewodowym panelu admina.
+
+### Co to jest Tryb Nocny i Podbicie Dialogów?
+
+**Tryb Nocny** włącza natywny efekt Androida `LoudnessEnhancer` na sesji audio ExoPlayera. Spłaszcza on dynamikę, dzięki czemu ciche dialogi staną się słyszalne, a głośne wybuchy nie obudzą sąsiadów. Suwak **Podbicie dialogów** (0–3000 mB, domyślnie 1000 mB) jest przekazywany do `LoudnessEnhancer.setTargetGain(...)`. Efekt jest automatycznie zwalniany przy pauzie, wyjściu z odtwarzacza lub przełączeniu na silnik LibVLC, więc nie dochodzi do wycieku podsystemu audio.
+
 ## Auto-Play Next
 
 ### Jak działa nakładka następnego odcinka?

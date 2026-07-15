@@ -56,6 +56,13 @@ All notable changes to Polish Media Hub are documented in this file.
 - **DRM stream playback** (`KodiMediaSource`, `PlayerScreen`, `MediaItem`)
   - `MediaItem` carries `drmLicenseUrl`, `drmScheme` and `drmHeaders`.
   - ExoPlayer configured with `MediaItem.DrmConfiguration` for Widevine, PlayReady and ClearKey.
+- **Smart Audio Track Selector & Native Loudness Enhancer** (`PlayerScreen`, `PlayerViewModel`, `UniversalVlcPlayer`, `SettingsScreen`, `AdminHttpServer`)
+  - New DataStore preferences `preferredAudioType` (Polish Lektor / Dubbing), `nightModeEnabled` and `dialogueBoostGainmB` (0–3000 mB).
+  - ExoPlayer `DefaultTrackSelector` now scores Polish (`pl`/`pol`) audio tracks; Dubbing mode prefers multichannel codecs (`5.1`, `E-AC3`, `DTS`), Lektor mode prefers stereo/mono tracks flagged as lektor; `ROLE_FLAG_DESCRIBES_VIDEO` (Audio Description) always gets the lowest priority.
+  - The same scoring is mirrored to `UniversalVlcPlayer` (`mediaPlayer.audioTracks` / `setAudioTrack`) for full player engine parity.
+  - Native `android.media.audiofx.LoudnessEnhancer` is bound to the ExoPlayer `audioSessionId`; when Night Mode is enabled it applies `setTargetGain(dialogueBoostGainmB)` to flatten dynamic range and boost quiet dialogue. The effect is released on player close, pause and LibVLC switch.
+  - Added "Premium Audio" section to `SettingsScreen` and the wireless admin panel (toggle, slider, selector) with `collectAsStateWithLifecycle()`.
+  - Audio session IDs are logged only in `BuildConfig.DEBUG`; no audio ID leaks in release builds.
 
 #### Sources
 - **MDBList integration** (`MdbListMediaSource`, `MdbListApi` models)

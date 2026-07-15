@@ -194,7 +194,10 @@ class AdminHttpServer @Inject constructor(
                         "autoSkipIntro" to autoSkipIntro,
                         "introEndSeconds" to defaultIntroEndSeconds,
                         "outroDurationSeconds" to defaultOutroDurationSeconds,
-                        "useAlternativePlayer" to useAlternativePlayer
+                        "useAlternativePlayer" to useAlternativePlayer,
+                        "preferredAudioType" to preferredAudioType,
+                        "nightModeEnabled" to nightModeEnabled,
+                        "dialogueBoostGainmB" to dialogueBoostGainmB
                     )
                 }
             }.mapValues { (_, flow) -> flow.first().toString() }
@@ -250,6 +253,9 @@ class AdminHttpServer @Inject constructor(
             params["introEndSeconds"]?.toIntOrNull()?.let { settingsRepository.setDefaultIntroEndSeconds(it.coerceIn(1, 600)) }
             params["outroDurationSeconds"]?.toIntOrNull()?.let { settingsRepository.setDefaultOutroDurationSeconds(it.coerceIn(1, 600)) }
             params["useAlternativePlayer"]?.toBooleanStrictOrNull()?.let { settingsRepository.setUseAlternativePlayer(it) }
+            params["preferredAudioType"]?.let { settingsRepository.setPreferredAudioType(it) }
+            params["nightModeEnabled"]?.toBooleanStrictOrNull()?.let { settingsRepository.setNightModeEnabled(it) }
+            params["dialogueBoostGainmB"]?.toIntOrNull()?.let { settingsRepository.setDialogueBoostGainmB(it.coerceIn(0, 3000)) }
             pushAddonSettingsIfKodiConfigured()
         }
         writeResponse(out, 200, "OK", "text/plain", "OK", corsOrigin)
@@ -475,6 +481,13 @@ label .status-dot { margin-left: 0.5rem; }
   <h3>Player Engine</h3>
   <label>Use LibVLC alternative player (true/false)</label>
   <input type="text" name="useAlternativePlayer" placeholder="false">
+  <h3>Premium Audio</h3>
+  <label>Preferred Polish Audio</label>
+  <input type="text" name="preferredAudioType" placeholder="lector or dubbing">
+  <label>Night Mode (true/false)</label>
+  <input type="text" name="nightModeEnabled" placeholder="false">
+  <label>Dialogue Boost (mB, 0-3000)</label>
+  <input type="text" name="dialogueBoostGainmB" placeholder="1000">
   <button type="submit">Save Configuration</button>
   <div id="status" class="status"></div>
 </form>

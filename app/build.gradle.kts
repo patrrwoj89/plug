@@ -136,6 +136,8 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockwebserver)
+    //noinspection UseTomlInstead
+    testImplementation("io.mockk:mockk:1.14.11")
     androidTestImplementation(libs.androidx.junit.ext)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.rules)

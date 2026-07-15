@@ -74,6 +74,7 @@ fun UniversalVlcPlayer(
     videoUrl: String?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    preferredAudioType: String = "lector",
     viewModel: PlayerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -213,7 +214,7 @@ fun UniversalVlcPlayer(
                                     mediaPlayer.getTracks(IMedia.Track.Type.Audio)
                                 )
                                 if (audioOptions.isNotEmpty()) {
-                                    selectedAudioIndex = preferredAudioIndex(audioOptions)
+                                    selectedAudioIndex = preferredAudioIndex(audioOptions, preferredAudioType)
                                     mediaPlayer.selectTrack(audioOptions[selectedAudioIndex].id)
                                     audioLabel = audioOptions[selectedAudioIndex].label
                                 }
@@ -630,7 +631,10 @@ private data class VlcTrackOption(
     val id: String,
     val label: String,
     val language: String,
-    val isAudioDescription: Boolean
+    val isAudioDescription: Boolean,
+    val isDubbing: Boolean,
+    val isLektor: Boolean,
+    val channelCount: Int
 )
 
 private fun parseVlcTracks(tracks: Array<IMedia.Track>?): List<VlcTrackOption> {
@@ -639,6 +643,9 @@ private fun parseVlcTracks(tracks: Array<IMedia.Track>?): List<VlcTrackOption> {
         val language = track.language?.lowercase() ?: "und"
         val description = track.description.orEmpty()
         val isAd = isAudioDescriptionTrack(track)
+        val channelCount = (track as? IMedia.AudioTrack)?.channels ?: 0
+        val isDub = track.isDubbingTrack(channelCount)
+        val isLek = track.isLektorTrack(channelCount)
         val baseLabel = when {
             track.name?.isNotBlank() == true -> track.name
             description.isNotBlank() -> description
@@ -647,13 +654,18 @@ private fun parseVlcTracks(tracks: Array<IMedia.Track>?): List<VlcTrackOption> {
         }
         val roleSuffix = when {
             isAd -> " (Audiodeskrypcja)"
+            isDub -> " (Dubbing)"
+            isLek -> " (Lektor)"
             else -> ""
         }
         VlcTrackOption(
             id = track.id,
             label = "$baseLabel$roleSuffix",
             language = language,
-            isAudioDescription = isAd
+            isAudioDescription = isAd,
+            isDubbing = isDub,
+            isLektor = isLek,
+            channelCount = channelCount
         )
     }
 }
@@ -675,11 +687,38 @@ private fun isAudioDescriptionTrack(track: IMedia.Track): Boolean {
     return false
 }
 
-private fun preferredAudioIndex(options: List<VlcTrackOption>): Int {
-    val plIndex = options.indexOfFirst { it.language in listOf("pl", "pol") && !it.isAudioDescription }
-    if (plIndex != -1) return plIndex
-    val nonAdIndex = options.indexOfFirst { !it.isAudioDescription }
-    return if (nonAdIndex != -1) nonAdIndex else 0
+private fun IMedia.Track.isDubbingTrack(channelCount: Int): Boolean {
+    val text = ((description ?: "") + " " + (name ?: "")).lowercase()
+    return text.contains("dubbing") ||
+        text.contains("dub") ||
+        text.contains("5.1") ||
+        text.contains("6ch") ||
+        text.contains("e-ac3") ||
+        text.contains("eac3") ||
+        text.contains("dts") ||
+        channelCount >= 4
+}
+
+private fun IMedia.Track.isLektorTrack(channelCount: Int): Boolean {
+    val text = ((description ?: "") + " " + (name ?: "")).lowercase()
+    return text.contains("lektor") ||
+        text.contains("lector") ||
+        (channelCount in 1..2 && !isDubbingTrack(channelCount))
+}
+
+private fun preferredAudioIndex(options: List<VlcTrackOption>, preferredAudioType: String): Int {
+    val nonAd = options.filter { !it.isAudioDescription }
+    val pl = nonAd.filter { it.language in listOf("pl", "pol") }
+    val candidates = if (pl.isNotEmpty()) pl else nonAd
+    val preferred = when {
+        preferredAudioType.contains("dub", ignoreCase = true) -> candidates.filter { it.isDubbing }
+        preferredAudioType.contains("lektor", ignoreCase = true) ||
+            preferredAudioType.contains("lector", ignoreCase = true) -> candidates.filter { it.isLektor }
+        else -> candidates
+    }
+    val chosen = preferred.firstOrNull() ?: candidates.firstOrNull()
+    if (chosen != null) return options.indexOf(chosen)
+    return if (options.isNotEmpty()) 0 else -1
 }
 
 private fun preferredSubtitleIndex(options: List<VlcTrackOption>): Int {

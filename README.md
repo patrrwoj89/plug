@@ -48,7 +48,12 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 
 - **ExoPlayer / Media3** with HLS, DASH and progressive stream detection.
 - **DRM playback**: `MediaItem` carries `drmLicenseUrl`, `drmScheme` and `drmHeaders`; ExoPlayer is configured with the correct `DrmConfiguration` for Widevine/PlayReady/ClearKey.
-- **Polish audio / subtitle support**: ExoPlayer prefers `pl` tracks, deprioritizes Audio Description and exposes full language labels in player controls.
+- **Polish audio / subtitle support** with smart track selection and loudness normalization:
+  - ExoPlayer prefers `pl` tracks, deprioritizes Audio Description and exposes full language labels.
+  - New settings `preferredAudioType` (Polish Lektor / Dubbing) and `nightModeEnabled` with `dialogueBoostGainmB` (0–3000 mB) stored in DataStore.
+  - Dubbing mode prefers multichannel tracks (`5.1`, `E-AC3`, `DTS`); Lektor mode prefers stereo/mono tracks with lektor flags. `ROLE_FLAG_DESCRIBES_VIDEO` always gets the lowest priority.
+  - Native `android.media.audiofx.LoudnessEnhancer` is bound to the ExoPlayer `audioSessionId`; when Night Mode is enabled it applies the configured gain to flatten dynamic range and boost quiet dialogue. The effect is released on player close, pause or LibVLC switch.
+  - The same scoring is mirrored to the **LibVLC alternative player** (`UniversalVlcPlayer`) for engine parity.
 - **External subtitles**: `.vtt` and `.srt` URLs.
 - **Cinema Dimming Mode**: when enabled, overlays auto-hide while playing and the screen smoothly dims; on pause an animated info card below the slider shows title, description, genres and top cast members fetched from TMDB/Trakt.
 - **Trakt.tv device-code login** (`TraktAuthManager`, `TraktPairingSection`): the TV app requests a device code, shows the `user_code` and a QR code pointing to the activation URL, and polls `oauth/device/token` until you authorize it. The access/refresh tokens are encrypted with AES-256-GCM in the Android Keystore.

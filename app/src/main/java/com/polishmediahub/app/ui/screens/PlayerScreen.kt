@@ -5,9 +5,11 @@ package com.polishmediahub.app.ui.screens
 import android.app.Activity
 import android.app.PictureInPictureParams
 import android.graphics.Typeface
+import android.media.audiofx.LoudnessEnhancer
 import android.os.Build
 import android.util.Rational
 import android.util.TypedValue
+import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.graphics.Color as AndroidColor
@@ -94,6 +96,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.session.MediaSession
 import androidx.media3.ui.PlayerView
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.R
 import com.polishmediahub.app.data.torrent.TorrentStatus
 import com.polishmediahub.app.model.MediaItem
@@ -135,6 +138,9 @@ fun PlayerScreen(
     val pendingSeekToMs by viewModel.pendingSeekToMs.collectAsStateWithLifecycle()
     val forceAutoPlayOverlay by viewModel.forceAutoPlayOverlay.collectAsStateWithLifecycle()
     val useAlternativePlayer by viewModel.useAlternativePlayer.collectAsStateWithLifecycle()
+    val preferredAudioType by viewModel.preferredAudioType.collectAsStateWithLifecycle()
+    val nightModeEnabled by viewModel.nightModeEnabled.collectAsStateWithLifecycle()
+    val dialogueBoostGainmB by viewModel.dialogueBoostGainmB.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val density = LocalDensity.current
@@ -144,6 +150,7 @@ fun PlayerScreen(
             mediaItem = item,
             videoUrl = resolvedUrl ?: item?.videoUrl,
             onBack = { onNavigate(Screen.Home) },
+            preferredAudioType = preferredAudioType,
             modifier = modifier
         )
         return
@@ -307,6 +314,9 @@ fun PlayerScreen(
         subtitleVerticalOffset = subtitleVerticalOffset,
         cinemaMode = cinemaMode,
         cinemaInfo = cinemaInfo,
+        preferredAudioType = preferredAudioType,
+        nightModeEnabled = nightModeEnabled,
+        dialogueBoostGainmB = dialogueBoostGainmB,
         modifier = modifier
     )
 }
@@ -345,6 +355,9 @@ private fun PlayerContent(
     subtitleVerticalOffset: Float,
     cinemaMode: Boolean,
     cinemaInfo: com.polishmediahub.app.ui.viewmodel.PlayerViewModel.CinemaInfo,
+    preferredAudioType: String,
+    nightModeEnabled: Boolean,
+    dialogueBoostGainmB: Int,
     modifier: Modifier = Modifier
 ) {
     var controlsVisible by remember { mutableStateOf(!isInPipMode) }
@@ -401,7 +414,61 @@ private fun PlayerContent(
         controlsVisible = !isInPipMode
     }
 
-    LaunchedEffect(exoPlayer, nextEpisode, autoPlayCancelled, isLive, isSeriesLike) {
+    val loudnessEnhancer = remember { mutableStateOf<LoudnessEnhancer?>(null) }
+
+    DisposableEffect(exoPlayer, nightModeEnabled) {
+        val listener = object : Player.Listener {
+            override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                if (audioSessionId == 0) return
+                loudnessEnhancer.value?.release()
+                loudnessEnhancer.value = null
+                if (!nightModeEnabled) return
+                try {
+                    val enhancer = LoudnessEnhancer(audioSessionId)
+                    enhancer.setTargetGain(dialogueBoostGainmB)
+                    enhancer.setEnabled(true)
+                    loudnessEnhancer.value = enhancer
+                } catch (e: Exception) {
+                    if (BuildConfig.DEBUG) Log.e("PlayerScreen", "LoudnessEnhancer init failed", e)
+                }
+            }
+        }
+        exoPlayer.addListener(listener)
+        if (exoPlayer.audioSessionId != 0) {
+            listener.onAudioSessionIdChanged(exoPlayer.audioSessionId)
+        }
+        onDispose {
+            exoPlayer.removeListener(listener)
+            loudnessEnhancer.value?.release()
+            loudnessEnhancer.value = null
+        }
+    }
+
+    LaunchedEffect(nightModeEnabled, dialogueBoostGainmB, loudnessEnhancer.value) {
+        val enhancer = loudnessEnhancer.value ?: return@LaunchedEffect
+        try {
+            if (nightModeEnabled) {
+                enhancer.setTargetGain(dialogueBoostGainmB)
+                enhancer.setEnabled(true)
+            } else {
+                enhancer.setEnabled(false)
+                enhancer.release()
+                loudnessEnhancer.value = null
+            }
+        } catch (e: Exception) {
+            if (BuildConfig.DEBUG) Log.e("PlayerScreen", "LoudnessEnhancer update failed", e)
+        }
+    }
+
+    fun applySmartAudioSelection() {
+        if (audioOptions.isEmpty()) return
+        val index = audioOptions.smartAudioIndex(preferredAudioType)
+        selectedAudioIndex = index
+        exoPlayer.applyAudioOption(index, audioOptions)
+        audioLabel = audioOptions.getOrNull(index)?.label ?: ""
+    }
+
+    LaunchedEffect(exoPlayer, nextEpisode, autoPlayCancelled, isLive, isSeriesLike, preferredAudioType) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
@@ -424,8 +491,7 @@ private fun PlayerContent(
                 audioOptions = tracks.audioOptions()
                 subtitleOptions = tracks.textOptions()
                 if (selectedAudioIndex == -1 && audioOptions.isNotEmpty()) {
-                    selectedAudioIndex = audioOptions.preferredAudioIndex()
-                    exoPlayer.applyAudioOption(selectedAudioIndex, audioOptions)
+                    applySmartAudioSelection()
                 }
                 selectedAudioIndex = exoPlayer.findSelectedAudioIndex(audioOptions)
                 audioLabel = audioOptions.getOrNull(selectedAudioIndex)?.label ?: ""
@@ -438,9 +504,7 @@ private fun PlayerContent(
         audioOptions = tracks.audioOptions()
         subtitleOptions = tracks.textOptions()
         if (audioOptions.isNotEmpty()) {
-            selectedAudioIndex = audioOptions.preferredAudioIndex()
-            exoPlayer.applyAudioOption(selectedAudioIndex, audioOptions)
-            audioLabel = audioOptions[selectedAudioIndex].label
+            applySmartAudioSelection()
         }
 
         while (true) {
@@ -453,6 +517,12 @@ private fun PlayerContent(
                 onPlayNextEpisode(currentPosition, duration)
             }
             delay(500)
+        }
+    }
+
+    LaunchedEffect(preferredAudioType, exoPlayer) {
+        if (audioOptions.isNotEmpty()) {
+            applySmartAudioSelection()
         }
     }
 
@@ -1087,7 +1157,10 @@ private data class TrackOption(
     val format: Format,
     val label: String,
     val language: String,
-    val isAudioDescription: Boolean
+    val isAudioDescription: Boolean,
+    val isDubbing: Boolean,
+    val isLektor: Boolean,
+    val channelCount: Int
 )
 
 private fun Tracks.audioOptions(): List<TrackOption> {
@@ -1099,7 +1172,19 @@ private fun Tracks.audioOptions(): List<TrackOption> {
                 val label = format.trackLabel()
                 val language = format.language?.lowercase() ?: "und"
                 val isAd = (format.roleFlags and C.ROLE_FLAG_DESCRIBES_VIDEO) != 0
-                TrackOption(group.mediaTrackGroup, index, format, label, language, isAd)
+                val isDub = format.isDubbingTrack()
+                val isLek = format.isLektorTrack()
+                TrackOption(
+                    group.mediaTrackGroup,
+                    index,
+                    format,
+                    label,
+                    language,
+                    isAd,
+                    isDub,
+                    isLek,
+                    format.channelCount
+                )
             }
         }
 }
@@ -1112,7 +1197,17 @@ private fun Tracks.textOptions(): List<TrackOption> {
                 val format = group.getTrackFormat(index)
                 val label = format.trackLabel()
                 val language = format.language?.lowercase() ?: "und"
-                TrackOption(group.mediaTrackGroup, index, format, label, language, isAudioDescription = false)
+                TrackOption(
+                    group.mediaTrackGroup,
+                    index,
+                    format,
+                    label,
+                    language,
+                    isAudioDescription = false,
+                    isDubbing = false,
+                    isLektor = false,
+                    channelCount = 0
+                )
             }
         }
 }
@@ -1138,11 +1233,40 @@ private fun Format.trackLabel(): String {
     return "$base$role"
 }
 
-private fun List<TrackOption>.preferredAudioIndex(): Int {
-    val plIndex = indexOfFirst { it.language == "pl" && !it.isAudioDescription }
-    if (plIndex != -1) return plIndex
-    val nonAdIndex = indexOfFirst { !it.isAudioDescription }
-    return if (nonAdIndex != -1) nonAdIndex else 0
+private fun List<TrackOption>.smartAudioIndex(preferredAudioType: String): Int {
+    val nonAd = filter { !it.isAudioDescription }
+    val pl = nonAd.filter { it.language in listOf("pl", "pol") }
+    val candidates = if (pl.isNotEmpty()) pl else nonAd
+    val preferred = when {
+        preferredAudioType.contains("dub", ignoreCase = true) -> candidates.filter { it.isDubbing }
+        preferredAudioType.contains("lektor", ignoreCase = true) ||
+            preferredAudioType.contains("lector", ignoreCase = true) -> candidates.filter { it.isLektor }
+        else -> candidates
+    }
+    val chosen = preferred.firstOrNull() ?: candidates.firstOrNull()
+    if (chosen != null) return indexOf(chosen)
+    return if (isNotEmpty()) 0 else -1
+}
+
+private fun Format.isDubbingTrack(): Boolean {
+    if ((roleFlags and C.ROLE_FLAG_DUB) != 0) return true
+    val text = ((label ?: "") + " " + (codecs ?: "")).lowercase()
+    return text.contains("dubbing") ||
+        text.contains("dub") ||
+        text.contains("5.1") ||
+        text.contains("6ch") ||
+        text.contains("e-ac3") ||
+        text.contains("eac3") ||
+        text.contains("dts") ||
+        channelCount >= 4
+}
+
+private fun Format.isLektorTrack(): Boolean {
+    if ((roleFlags and C.ROLE_FLAG_ALTERNATE) != 0) return true
+    val text = ((label ?: "") + " " + (codecs ?: "")).lowercase()
+    return text.contains("lektor") ||
+        text.contains("lector") ||
+        (channelCount in 1..2 && !isDubbingTrack())
 }
 
 private fun ExoPlayer.applyAudioOption(index: Int, options: List<TrackOption>) {

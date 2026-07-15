@@ -274,6 +274,23 @@ A panel in the top-right corner of the player that shows real-time diagnostic da
 
 The stats are collected through an ExoPlayer `AnalyticsListener` and exposed in a separate `StateFlow`. Only the small stats panel recomposes, so the rest of `PlayerScreen` is not affected.
 
+## Premium Audio
+
+### How does smart audio track selection work?
+
+Polish Media Hub reads every audio track reported by the active player engine and scores it with your `preferredAudioType` preference:
+
+- **Polish Lektor** mode prefers stereo/mono Polish (`pl` / `pol`) tracks whose label or codec hints at a lektor track.
+- **Polish Dubbing** mode prefers multichannel Polish tracks (`5.1`, `E-AC3`, `EAC3`, `DTS`, `AC3`) and tracks explicitly labeled as dubbing.
+- Tracks marked `ROLE_FLAG_DESCRIBES_VIDEO` (Audio Description / AD) always get the lowest priority and are only used as a last resort.
+- The same logic runs in both the ExoPlayer (`DefaultTrackSelector`) and LibVLC (`UniversalVlcPlayer`) engines.
+
+You can switch the preference in **Settings → Premium Audio** or from the wireless admin panel.
+
+### What is Night Mode and Dialogue Boost?
+
+**Night Mode** enables Android's native `LoudnessEnhancer` on the ExoPlayer audio session. It flattens the dynamic range so quiet dialogue becomes audible and loud explosions do not wake the neighbours. The **Dialogue Boost** slider (0–3000 mB, default 1000 mB) is passed to `LoudnessEnhancer.setTargetGain(...)`. The effect is automatically released when you pause, leave the player or switch to the LibVLC engine, so the audio subsystem does not leak.
+
 ## Auto-Play Next
 
 ### How does the next-episode overlay work?

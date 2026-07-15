@@ -68,6 +68,15 @@ class SettingsViewModel @Inject constructor(
     val useAlternativePlayer: StateFlow<Boolean> = settingsRepository.useAlternativePlayer
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = false)
 
+    val preferredAudioType: StateFlow<String> = settingsRepository.preferredAudioType
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = "lector")
+
+    val nightModeEnabled: StateFlow<Boolean> = settingsRepository.nightModeEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = false)
+
+    val dialogueBoostGainmB: StateFlow<Int> = settingsRepository.dialogueBoostGainmB
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = 1000)
+
     val isFirstLaunch: StateFlow<Boolean?> = settingsRepository.isFirstLaunch
         .stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = null)
 
@@ -119,6 +128,9 @@ class SettingsViewModel @Inject constructor(
     fun setDefaultIntroEndSeconds(value: Int) = viewModelScope.launch { settingsRepository.setDefaultIntroEndSeconds(value) }
     fun setDefaultOutroDurationSeconds(value: Int) = viewModelScope.launch { settingsRepository.setDefaultOutroDurationSeconds(value) }
     fun setUseAlternativePlayer(value: Boolean) = viewModelScope.launch { settingsRepository.setUseAlternativePlayer(value) }
+    fun setPreferredAudioType(value: String) = viewModelScope.launch { settingsRepository.setPreferredAudioType(value) }
+    fun setNightModeEnabled(value: Boolean) = viewModelScope.launch { settingsRepository.setNightModeEnabled(value) }
+    fun setDialogueBoostGainmB(value: Int) = viewModelScope.launch { settingsRepository.setDialogueBoostGainmB(value) }
 
     fun setMdbListApiKey(value: String) = viewModelScope.launch { apiConfigRepository.setMdbListApiKey(value) }
     fun setTraktClientId(value: String) = viewModelScope.launch { apiConfigRepository.setTraktClientId(value) }

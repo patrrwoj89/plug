@@ -15,8 +15,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.input.key.onKeyEvent
+import android.view.KeyEvent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.runtime.getValue
@@ -46,6 +51,7 @@ import com.polishmediahub.app.ui.viewmodel.PinViewModel
 import com.polishmediahub.app.ui.viewmodel.ProfileViewModel
 import com.polishmediahub.app.ui.viewmodel.SettingsViewModel
 import com.polishmediahub.app.ui.viewmodel.TraktPairingViewModel
+import kotlin.math.roundToInt
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -75,6 +81,9 @@ fun SettingsScreen(
     val defaultIntroEndSeconds by viewModel.defaultIntroEndSeconds.collectAsStateWithLifecycle()
     val defaultOutroDurationSeconds by viewModel.defaultOutroDurationSeconds.collectAsStateWithLifecycle()
     val useAlternativePlayer by viewModel.useAlternativePlayer.collectAsStateWithLifecycle()
+    val preferredAudioType by viewModel.preferredAudioType.collectAsStateWithLifecycle()
+    val nightModeEnabled by viewModel.nightModeEnabled.collectAsStateWithLifecycle()
+    val dialogueBoostGainmB by viewModel.dialogueBoostGainmB.collectAsStateWithLifecycle()
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
     val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
     val lastEpgSync by viewModel.lastEpgSync.collectAsStateWithLifecycle()
@@ -208,6 +217,73 @@ fun SettingsScreen(
             subtitle = stringResource(id = R.string.settings_use_alternative_player_subtitle),
             checked = useAlternativePlayer,
             onCheckedChange = viewModel::setUseAlternativePlayer
+        )
+
+        Text(
+            text = stringResource(id = R.string.settings_audio_premium_title),
+            style = AppTypography.headline,
+            modifier = Modifier.padding(top = Spacing.md)
+        )
+
+        val audioTypeOptions = listOf(
+            stringResource(id = R.string.settings_preferred_audio_lektor) to "lector",
+            stringResource(id = R.string.settings_preferred_audio_dubbing) to "dubbing"
+        )
+        val audioTypeDisplay = audioTypeOptions.find { it.second == preferredAudioType }?.first
+            ?: audioTypeOptions.first().first
+        SettingsSelector(
+            title = stringResource(id = R.string.settings_preferred_audio_type),
+            value = audioTypeDisplay,
+            options = audioTypeOptions.map { it.first },
+            onSelect = { label ->
+                audioTypeOptions.find { it.first == label }?.second?.let(viewModel::setPreferredAudioType)
+            }
+        )
+
+        SettingsToggle(
+            title = stringResource(id = R.string.settings_night_mode),
+            subtitle = stringResource(id = R.string.settings_night_mode_subtitle),
+            checked = nightModeEnabled,
+            onCheckedChange = viewModel::setNightModeEnabled
+        )
+
+        Text(
+            text = stringResource(id = R.string.settings_dialogue_boost),
+            style = AppTypography.title
+        )
+        Text(
+            text = stringResource(id = R.string.settings_dialogue_boost_subtitle),
+            style = AppTypography.caption,
+            color = AppColor.OnSurfaceVariant
+        )
+        Text(
+            text = "$dialogueBoostGainmB mB",
+            style = AppTypography.caption,
+            color = AppColor.OnSurface
+        )
+        Slider(
+            value = dialogueBoostGainmB.toFloat(),
+            onValueChange = { viewModel.setDialogueBoostGainmB(it.roundToInt().coerceIn(0, 3000)) },
+            valueRange = 0f..3000f,
+            steps = 29,
+            modifier = Modifier
+                .fillMaxWidth(0.5f)
+                .focusProperties { canFocus = true }
+                .focusable()
+                .onKeyEvent { event ->
+                    if (event.nativeKeyEvent.action != KeyEvent.ACTION_DOWN) return@onKeyEvent false
+                    when (event.nativeKeyEvent.keyCode) {
+                        KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                            viewModel.setDialogueBoostGainmB((dialogueBoostGainmB + 100).coerceIn(0, 3000))
+                            true
+                        }
+                        KeyEvent.KEYCODE_DPAD_LEFT -> {
+                            viewModel.setDialogueBoostGainmB((dialogueBoostGainmB - 100).coerceIn(0, 3000))
+                            true
+                        }
+                        else -> false
+                    }
+                }
         )
 
         Text(

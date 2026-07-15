@@ -230,4 +230,12 @@
     <string name="health_status_never">Nigdy</string>
     <string name="health_last_check">Ostatnie sprawdzenie: %1$s</string>
     <string name="health_check_now">Sprawdź stan źródeł teraz</string>
+    <string name="settings_audio_premium_title">Premium Audio</string>
+    <string name="settings_preferred_audio_type">Preferowany polski dźwięk</string>
+    <string name="settings_preferred_audio_lektor">Polski Lektor</string>
+    <string name="settings_preferred_audio_dubbing">Polski Dubbing</string>
+    <string name="settings_night_mode">Tryb Nocny (normalizacja głośności)</string>
+    <string name="settings_night_mode_subtitle">Spłaszcza dynamikę, podbija ciche dialogi i tłumi głośne efekty</string>
+    <string name="settings_dialogue_boost">Podbicie dialogów</string>
+    <string name="settings_dialogue_boost_subtitle">Wzmocnienie stosowane przez normalizator głośności w trybie nocnym, w mili-decybelach</string>
 </resources>
