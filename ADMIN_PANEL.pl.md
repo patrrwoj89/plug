@@ -1,0 +1,165 @@
+# Polish Media Hub — Panel administracyjny
+
+Wbudowany **Panel administracyjny** pozwala konfigurować wszystkie źródła z telefonu, tabletu lub komputera w tej samej sieci lokalnej co TV. Nie musisz wpisywać długich URL-i klawiaturą ekranową.
+
+*English version: [`ADMIN_PANEL.md`](ADMIN_PANEL.md)*
+
+## Otwieranie panelu administracyjnego
+
+1. W aplikacji TV otwórz **Admin** w panelu bocznym.
+2. Na ekranie zobaczysz:
+   - kod QR,
+   - pełny URL (np. `http://192.168.1.42:8123/admin`),
+   - krótką instrukcję.
+3. Zeskanuj QR telefonem / czytnikiem QR lub wpisz URL w przeglądarce w tej samej sieci Wi-Fi.
+
+## Jak działa serwer
+
+- `AdminHttpServer` to lekki serwer oparty na `ServerSocket` działający w korutynie `Dispatchers.IO`.
+- Jest uruchamiany po otwarciu ekranu **Admin** i zatrzymywany po jego zamknięciu.
+- Port przydzielany jest dynamicznie (`ServerSocket(0)`), aby uniknąć konfliktów z innymi aplikacjami lub usługami systemowymi.
+- Serwer binduje się do lokalnego IP sieciowego wykrytego przez `NetworkAddressHelper` (zazwyczaj Wi-Fi lub ethernet).
+- Czysty HTTP do IP TV jest dozwolony przez konfigurację bezpieczeństwa sieci, ponieważ ruch pozostaje w LAN.
+
+## Endpointy
+
+| Metoda | Ścieżka | Przeznaczenie |
+|--------|---------|---------------|
+| GET | `/admin` | Serwuje responsywną stronę administratora. |
+| GET | `/api/config` | Zwraca aktualne wartości `ApiConfigRepository` jako JSON. |
+| POST | `/api/config` | Odbiera wartości form-encoded i zapisuje je w `ApiConfigRepository` (DataStore). |
+| POST | `/api/plugin` | Odbiera URL manifestu / skryptu wtyczki i zapisuje przez `PluginRepository`. |
+
+## Konfigurowalne źródła (POST `/api/config`)
+
+Wyślij pola formularza odpowiadające kluczom obsługiwanym przez `ApiConfigRepository`. Strona web administratora już używa tych nazw:
+
+| Pole | Opis |
+|------|------|
+| `kodiUrl` | Endpoint Kodi JSON-RPC, np. `http://192.168.1.10:8080/jsonrpc` |
+| `webSourceConfig` | Tablica JSON obiektów `WebSourceConfig` (przykład poniżej) |
+| `cloudstreamRepoUrls` | URL-e repozytoriów Cloudstream / Aniyomi, po jednym na linię |
+| `iptvSourceUrls` | URL-e playlist IPTV M3U/M3U8, po jednym na linię |
+| `stremioAddons` | URL-e dodatków Stremio, po jednym na linię |
+| `jellyfinUrl` / `jellyfinToken` | URL serwera Jellyfin i token API |
+| `plexUrl` / `plexToken` | URL serwera Plex i token |
+| `embyUrl` / `embyToken` | URL serwera Emby i token API |
+| `forceTranscode` | `true` lub `false` |
+| `maxDirectPlayBitrate` | Maksymalny bitrate w bps, np. `20000000` |
+| `subsonicUrl` / `subsonicUser` / `subsonicPassword` | Dane Subsonic / Airsonic |
+| `podcastFeeds` | URL-e kanałów RSS podcastów, po jednym na linię |
+| `deezerProxyUrl` | URL proxy Deezer (np. `https://your-worker.workers.dev`) |
+| `tmdbApiKey` | Klucz API TMDB |
+| `aniListToken` | Token dostępu AniList |
+| `traktClientId` | Client ID Trakt |
+| `debridApiKey` / `debridProvider` | Token Debrid i provider (`real_debrid`, `torbox`) |
+
+Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignorowane.
+
+### Pełny przykład JSON (do użycia bezpośrednio z API)
+
+```json
+{
+  "tmdbApiKey": "your-tmdb-key",
+  "aniListToken": "your-anilist-token",
+  "traktClientId": "your-trakt-client-id",
+  "debridApiKey": "your-debrid-token",
+  "debridProvider": "real_debrid",
+  "iptvSourceUrls": "https://example.com/playlist.m3u\nhttps://example.com/playlist.m3u8",
+  "stremioAddons": "https://addon.youtube.com/stremio/\nhttps://addon.ted.com/stremio/",
+  "kodiUrl": "http://192.168.1.10:8080/jsonrpc",
+  "webSourceConfig": "[{ \"id\": \"example\", \"name\": \"Example Web Source\", \"baseUrl\": \"https://example.com\", \"catalogUrl\": \"https://example.com/catalog\", \"itemSelector\": \"a.movie\", \"titleSelector\": \"h2\", \"descriptionSelector\": \".desc\", \"posterSelector\": \"img\", \"posterAttribute\": \"src\", \"linkSelector\": \"a.movie\", \"headers\": { \"User-Agent\": \"Mozilla/5.0\" } }]",
+  "cloudstreamRepoUrls": "https://example.com/repo.json\nhttps://example.com/index.min.json",
+  "jellyfinUrl": "http://192.168.1.10:8096",
+  "jellyfinToken": "your-token",
+  "plexUrl": "http://192.168.1.10:32400",
+  "plexToken": "your-plex-token",
+  "embyUrl": "http://192.168.1.10:8096",
+  "embyToken": "your-emby-token",
+  "subsonicUrl": "http://192.168.1.10:4040",
+  "subsonicUser": "admin",
+  "subsonicPassword": "secret",
+  "podcastFeeds": "https://example.com/feed.xml\nhttps://nasa.gov/rss/dyn/NASAcast_Podcast.rss",
+  "deezerProxyUrl": "https://your-worker.workers.dev"
+}
+```
+
+Uwaga: rzeczywisty endpoint HTTP oczekuje danych `application/x-www-form-urlencoded`, a nie surowego JSON. Powyższy JSON pokazany jest dla przejrzystości.
+
+## Zdalna synchronizacja ustawień Kodi
+
+Gdy zapiszesz token Debrid lub Trakt w panelu administracyjnym, aplikacja próbuje automatycznie przesłać go do skonfigurowanego Kodi:
+
+- Wywoływana jest metoda JSON-RPC `Settings.SetSettingValue` dla `plugin.video.fanfilm`.
+- Aktualizowane są ustawienia `realdebrid_token` i `trakt_token`.
+- Wymaga skonfigurowanego i osiągalnego `kodiUrl`.
+
+## Dodawanie wtyczki (POST `/api/plugin`)
+
+Wtyczkę możesz dodać przesyłając pole formularza `url`:
+
+```
+POST /api/plugin
+Content-Type: application/x-www-form-urlencoded
+
+url=https://example.com/plugins/myplugin/manifest.json
+```
+
+Manifest może być `PluginManifest` (dla QuickJS), `repo.json` / `plugins.json` Cloudstream lub `index.min.json` Aniyomi. Wtyczki binarne (`.cs3`, `.cs4`, `.apk`) mogą być również wskazane bezpośrednim URL-em pobierania; `PluginRepository` pobierze i załaduje je przez `DynamicPluginLoader`.
+
+### Przykładowy manifest QuickJS
+
+```json
+{
+  "id": "myplugin",
+  "name": "My Plugin",
+  "version": "1.0.0",
+  "description": "Optional description",
+  "sources": [
+    {
+      "type": "quickjs",
+      "id": "quickjs:myplugin",
+      "name": "My QuickJS Source",
+      "enabled": true,
+      "config": {
+        "scriptUrl": "https://example.com/plugins/myplugin/plugin.js"
+      }
+    }
+  ]
+}
+```
+
+### Raw QuickJS script
+
+Manifest lub wpis wtyczki może zawierać także pole `script` zamiast `scriptUrl`. Raw script przekazywany jest do `QuickJsMediaSource.configure(script)`.
+
+Szczegóły API JavaScript oraz ładowania binarnego znajdziesz w [PLUGIN_GUIDE.md](PLUGIN_GUIDE.md) / [PLUGIN_GUIDE.pl.md](PLUGIN_GUIDE.pl.md).
+
+## Reaktywne aktualizacje
+
+`ApiConfigRepository` i `PluginRepository` eksponują `Flow`. Po zapisaniu konfiguracji z panelu web:
+
+- UI TV aktualizuje się automatycznie,
+- `FederatedMediaRepository` przebudowuje aktywne źródła,
+- `RecommendationsWorker` może zostać wyzwolony do odświeżenia rekomendacji launchera,
+- tokeny Kodi są przesyłane do skonfigurowanej instancji Kodi.
+
+## Onboarding pierwszego uruchomienia
+
+Nowe profile widzą ekran **Essential Addon Setup**. Możesz przygotować `legal_sources.json` w `app/src/main/assets/` z tymi samymi kluczami; kreator onboardingu załaduje wybrane pakiety do `ApiConfigRepository`. To przydatne dla buildów OEM lub współdzielonych konfiguracji domowych.
+
+## Rozwiązywanie problemów
+
+| Problem | Prawdopodobna przyczyna | Rozwiązanie |
+|---------|------------------------|-------------|
+| Kod QR prowadzi do `ERR_CONNECTION_REFUSED` | Telefon i TV są w różnych sieciach lub serwer się zatrzymał. | Ponownie otwórz **Admin**; upewnij się, że oba urządzenia są w tej samej sieci Wi-Fi i URL zawiera lokalne IP TV. |
+| URL zawiera `0.0.0.0` lub `127.0.0.1` | `NetworkAddressHelper` nie znalazł interfejsu innego niż loopback. | Podłącz TV do Wi-Fi / ethernet i wyłącz VPN tunelujący cały ruch. |
+| Konfiguracja zapisuje się, ale UI się nie zmienia | Repozytorium `Flow` może nie być zbierane przez ekran. | Wyjdź z ekranu i wróć; zrestartuj aplikację. |
+| Wtyczka nie pojawia się w Wyszukiwarce / Home | Wtyczka mogła rzucić wyjątek podczas ewaluacji lub ładowania. | Sprawdź `logcat` pod kątem błędów QuickJS lub DEX; zweryfikuj, że URL-e zwracają poprawne dane. |
+| Ustawienia Kodi nie są przesyłane | Kodi jest offline lub ID wtyczki się różni. | Sprawdź `kodiUrl` i upewnij się, że docelowa wtyczka używa kluczy `realdebrid_token` / `trakt_token`. |
+
+## Uwagi bezpieczeństwa
+
+- Panel jest celowo prosty i działa na HTTP w lokalnej sieci. Nie wystawiaj TV bezpośrednio na publicznym internecie.
+- Globalna blokada PIN w **Ustawienia** chroni także ekran Admin na samym TV.
+- Czysty ruch HTTP jest dozwolony tylko dla `localhost`, `127.0.0.1` i hostów LAN w `network_security_config.xml`.

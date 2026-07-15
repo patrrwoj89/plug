@@ -2,6 +2,8 @@
 
 The built-in **Admin Panel** lets you configure all sources from a phone, tablet or computer on the same local network as the TV. You do not have to type long URLs with the on-screen keyboard.
 
+*Polska wersja: [`ADMIN_PANEL.pl.md`](ADMIN_PANEL.pl.md)*
+
 ## Opening the admin panel
 
 1. In the TV app, open **Admin** from the sidebar.
@@ -25,34 +27,49 @@ The built-in **Admin Panel** lets you configure all sources from a phone, tablet
 |--------|------|---------|
 | GET | `/admin` | Serves the responsive HTML admin page. |
 | GET | `/api/config` | Returns the current `ApiConfigRepository` values as JSON. |
-| POST | `/api/config` | Receives JSON and saves it into `ApiConfigRepository` (DataStore). |
-| POST | `/api/plugin` | Receives a QuickJS plugin manifest / script and stores it through `PluginRepository`. |
+| POST | `/api/config` | Receives form-encoded values and saves them into `ApiConfigRepository` (DataStore). |
+| POST | `/api/plugin` | Receives a plugin manifest / script URL and stores it through `PluginRepository`. |
 
 ## Configurable sources (POST `/api/config`)
 
-Send a JSON object with the keys supported by `ApiConfigRepository`. The keys map roughly to the UI fields in the admin page:
+Send form fields matching the keys supported by `ApiConfigRepository`. The admin web page already uses these names:
+
+| Field | Description |
+|-------|-------------|
+| `kodiUrl` | Kodi JSON-RPC endpoint, e.g. `http://192.168.1.10:8080/jsonrpc` |
+| `webSourceConfig` | JSON array of `WebSourceConfig` objects (see example below) |
+| `cloudstreamRepoUrls` | Cloudstream / Aniyomi repository URLs, one per line |
+| `iptvSourceUrls` | IPTV M3U/M3U8 playlist URLs, one per line |
+| `stremioAddons` | Stremio add-on base URLs, one per line |
+| `jellyfinUrl` / `jellyfinToken` | Jellyfin server URL and API token |
+| `plexUrl` / `plexToken` | Plex server URL and token |
+| `embyUrl` / `embyToken` | Emby server URL and API token |
+| `forceTranscode` | `true` or `false` |
+| `maxDirectPlayBitrate` | Max bitrate in bps, e.g. `20000000` |
+| `subsonicUrl` / `subsonicUser` / `subsonicPassword` | Subsonic / Airsonic credentials |
+| `podcastFeeds` | Podcast RSS feed URLs, one per line |
+| `deezerProxyUrl` | Deezer proxy URL (e.g. `https://your-worker.workers.dev`) |
+| `tmdbApiKey` | TMDB API key |
+| `aniListToken` | AniList access token |
+| `traktClientId` | Trakt client ID |
+| `debridApiKey` / `debridProvider` | Debrid token and provider (`real_debrid`, `torbox`) |
+
+Only the fields you actually use need to be present. Empty strings are ignored.
+
+### Full JSON example (for direct API use)
 
 ```json
 {
+  "tmdbApiKey": "your-tmdb-key",
+  "aniListToken": "your-anilist-token",
+  "traktClientId": "your-trakt-client-id",
+  "debridApiKey": "your-debrid-token",
+  "debridProvider": "real_debrid",
+  "iptvSourceUrls": "https://example.com/playlist.m3u\nhttps://example.com/playlist.m3u8",
+  "stremioAddons": "https://addon.youtube.com/stremio/\nhttps://addon.ted.com/stremio/",
   "kodiUrl": "http://192.168.1.10:8080/jsonrpc",
-  "webSources": [
-    {
-      "name": "Example Web Source",
-      "baseUrl": "https://example.com",
-      "itemSelector": "a.movie",
-      "titleSelector": "h2",
-      "descriptionSelector": ".desc",
-      "posterSelector": "img",
-      "linkSelector": "a.movie",
-      "nextPageSelector": ".next",
-      "headers": {
-        "User-Agent": "Mozilla/5.0"
-      }
-    }
-  ],
-  "cloudstreamRepo": "https://example.com/repo.json",
-  "m3uUrl": "https://example.com/playlist.m3u",
-  "epgUrl": "https://example.com/epg.xml",
+  "webSourceConfig": "[{ \"id\": \"example\", \"name\": \"Example Web Source\", \"baseUrl\": \"https://example.com\", \"catalogUrl\": \"https://example.com/catalog\", \"itemSelector\": \"a.movie\", \"titleSelector\": \"h2\", \"descriptionSelector\": \".desc\", \"posterSelector\": \"img\", \"posterAttribute\": \"src\", \"linkSelector\": \"a.movie\", \"headers\": { \"User-Agent\": \"Mozilla/5.0\" } }]",
+  "cloudstreamRepoUrls": "https://example.com/repo.json\nhttps://example.com/index.min.json",
   "jellyfinUrl": "http://192.168.1.10:8096",
   "jellyfinToken": "your-token",
   "plexUrl": "http://192.168.1.10:32400",
@@ -62,32 +79,35 @@ Send a JSON object with the keys supported by `ApiConfigRepository`. The keys ma
   "subsonicUrl": "http://192.168.1.10:4040",
   "subsonicUser": "admin",
   "subsonicPassword": "secret",
-  "tmdbApiKey": "your-tmdb-key",
-  "aniListToken": "your-anilist-token",
-  "traktClientId": "your-trakt-client-id",
-  "traktAccessToken": "your-trakt-access-token",
-  "podcastRssUrls": ["https://example.com/feed.xml"],
-  "debridProvider": "REAL_DEBRID",
-  "realDebridAccessToken": "...",
-  "realDebridRefreshToken": "..."
+  "podcastFeeds": "https://example.com/feed.xml\nhttps://nasa.gov/rss/dyn/NASAcast_Podcast.rss",
+  "deezerProxyUrl": "https://your-worker.workers.dev"
 }
 ```
 
-Only the fields you actually use need to be present. Empty strings are ignored.
+Note: the actual HTTP endpoint expects `application/x-www-form-urlencoded` form fields, not raw JSON. The JSON example above is shown for clarity.
 
-## Adding a QuickJS plugin (POST `/api/plugin`)
+## Kodi remote settings sync
 
-You can add a plugin in two ways:
+When you save a Debrid or Trakt token in the admin panel, the app attempts to push it to a configured Kodi instance:
 
-### 1. By manifest URL
+- `Settings.SetSettingValue` is called over JSON-RPC for `plugin.video.fanfilm`.
+- `realdebrid_token` and `trakt_token` settings are updated automatically.
+- This requires `kodiUrl` to be configured and reachable.
 
-```json
-{
-  "manifestUrl": "https://example.com/plugins/myplugin/manifest.json"
-}
+## Adding a plugin (POST `/api/plugin`)
+
+You can add a plugin by submitting a `url` form field:
+
+```
+POST /api/plugin
+Content-Type: application/x-www-form-urlencoded
+
+url=https://example.com/plugins/myplugin/manifest.json
 ```
 
-The manifest must match the `PluginManifest` format:
+The manifest can be a `PluginManifest` (for QuickJS plugins), a Cloudstream `repo.json` / `plugins.json` or an Aniyomi `index.min.json`. Binary plugins (`.cs3`, `.cs4`, `.apk`) can also be referenced by their direct download URL; `PluginRepository` will fetch and load them via `DynamicPluginLoader`.
+
+### QuickJS manifest example
 
 ```json
 {
@@ -109,19 +129,11 @@ The manifest must match the `PluginManifest` format:
 }
 ```
 
-### 2. By raw script
+### Raw QuickJS script
 
-```json
-{
-  "id": "myplugin",
-  "name": "My Plugin",
-  "script": "function search(q) { ... }\nfunction resolve(id) { ... }"
-}
-```
+A manifest or plugin entry can also contain a raw `script` field instead of `scriptUrl`. The raw script is passed to `QuickJsMediaSource.configure(script)`.
 
-The raw script is passed to `QuickJsMediaSource.configure(script)`.
-
-See [PLUGIN_GUIDE.md](PLUGIN_GUIDE.md) for the JavaScript API.
+See [PLUGIN_GUIDE.md](PLUGIN_GUIDE.md) for the JavaScript API and binary plugin details.
 
 ## Reactive updates
 
@@ -129,7 +141,12 @@ See [PLUGIN_GUIDE.md](PLUGIN_GUIDE.md) for the JavaScript API.
 
 - the TV UI updates,
 - `FederatedMediaRepository` rebuilds active sources,
-- `RecommendationsWorker` can be triggered to refresh launcher recommendations.
+- `RecommendationsWorker` can be triggered to refresh launcher recommendations,
+- Kodi tokens are pushed to the configured Kodi add-on.
+
+## First-launch onboarding
+
+New profiles see the **Essential Addon Setup** screen. You can pre-configure `legal_sources.json` (in `app/src/main/assets/`) with the same keys; the onboarding wizard loads selected packages into `ApiConfigRepository`. This is useful for OEM builds or shared household setups.
 
 ## Troubleshooting
 
@@ -138,7 +155,8 @@ See [PLUGIN_GUIDE.md](PLUGIN_GUIDE.md) for the JavaScript API.
 | QR code leads to `ERR_CONNECTION_REFUSED` | The TV and phone are on different networks, or the server stopped. | Re-open **Admin**; verify both devices are on the same Wi-Fi and the URL uses the TV's LAN IP. |
 | The URL contains `0.0.0.0` or `127.0.0.1` | `NetworkAddressHelper` could not find a non-loopback interface. | Connect the TV to Wi-Fi / ethernet and disable any VPN that tunnels all traffic. |
 | Config saves but UI does not change | The repository `Flow` may not be collected by the screen. | Navigate away and back to the screen; restart the app. |
-| Plugin does not appear in Search/Home | The plugin may have thrown during evaluation. | Check `logcat` for QuickJS errors; verify `httpFetch` URLs return valid data. |
+| Plugin does not appear in Search/Home | The plugin may have thrown during evaluation or loading. | Check `logcat` for QuickJS or DEX loading errors; verify URLs return valid data. |
+| Kodi settings are not pushed | Kodi is offline or the add-on ID differs. | Verify `kodiUrl` and that the target add-on uses `realdebrid_token` / `trakt_token`. |
 
 ## Security notes
 

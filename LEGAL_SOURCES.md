@@ -2,6 +2,8 @@
 
 This document lists **legal, publicly available or self-hostable sources** that can be used with the app for testing and personal use. It intentionally does **not** include piracy trackers, unauthorized IPTV playlists, or unlicensed scrapers.
 
+*Polska wersja: [`LEGAL_SOURCES.pl.md`](LEGAL_SOURCES.pl.md)*
+
 ## BitTorrent / jlibtorrent
 
 Use only for content you have the right to share or download.
@@ -56,7 +58,7 @@ For Polish channels, check whether the broadcaster provides a public EPG feed or
 | Pluto TV | Kodi official repo | Free ad-supported TV |
 | Archive.org | community add-ons | Public domain content |
 
-## Music / Audio
+## Music / Audio / Podcasts
 
 | Source | URL | Notes |
 |--------|-----|-------|
@@ -67,6 +69,12 @@ For Polish channels, check whether the broadcaster provides a public EPG feed or
 | Internet Archive audio | https://archive.org/details/audio | Public domain / CC |
 | SomaFM | https://somafm.com | Free internet radio |
 | Radio Paradise | https://www.radioparadise.com | Free internet radio |
+| NASAcast Podcasts | https://www.nasa.gov/nasa-on-the-hub | Public domain podcasts |
+| Legal podcast RSS | use source's own feed | Only use feeds you have the right to access |
+
+### Deezer proxy
+
+The `DeezerAudioSource` uses a user-provided `deezerProxyUrl` (for example a Cloudflare Worker). The proxy must expose the endpoints expected by `DeezerAudioSource` and must comply with Deezer's Terms of Service. The app does not contain any Deezer keys or circumvent DRM.
 
 ## Anime (official services)
 
@@ -105,6 +113,16 @@ The app publishes two system channels on supported launchers:
 
 Only content the user has added through legal sources will appear on the launcher. No content is pushed without the user's configured sources.
 
+## Legal starter packages (`legal_sources.json`)
+
+The app ships `app/src/main/assets/legal_sources.json` with curated, no-rights-required starting points. The **Essential Setup** wizard and the **Load legal sample sources** button in Admin can load them automatically:
+
+- **Free Internet TV** — public IPTV M3U playlists and an XMLTV EPG URL.
+- **Music & Podcasts** — sample podcast RSS feeds and a placeholder `deezerProxyUrl`.
+- **Public Web Catalogs** — official Stremio add-ons (YouTube, TED) and an empty `webSources` list for user-defined crawlers.
+
+These sample sources are intended only as a starting point; you are responsible for verifying that each source is legal in your region.
+
 ## Testing / CI commands
 
 ```bash
@@ -137,3 +155,4 @@ Only scrape sites that explicitly allow it (check `robots.txt` and ToS) or use p
 - BitTorrent support is intended for legally distributable content (e.g. public domain, Creative Commons, Linux ISOs, content you own the rights to).
 - QuickJS plugins and web scraping can only access sources you configure; respect each source's `robots.txt` and Terms of Service.
 - EPG data must be from a legal source you have the right to use.
+- Cloudstream / Aniyomi plugins and Deezer proxies are only legal if the source data and proxy service are legal for your use.

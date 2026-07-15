@@ -1,0 +1,278 @@
+# Polish Media Hub — Frequently Asked Questions
+
+## Ogólne
+
+### Czy aplikacja jest legalna? Czy zawiera treści?
+
+Nie. Polish Media Hub to **agregator / odtwarzacz mediów** (shell). Nie zawiera żadnych filmów, seriali, kanałów IPTV, torrentów ani scraperów. To Ty dodajesz własne legalne źródła (Kodi, Jellyfin, Plex, Emby, M3U, wtyczki QuickJS itp.), a aplikacja je odtwarza. To Twoja odpowiedzialność, aby używać treści, do których masz prawo. Zobacz [LEGAL_SOURCES.md](LEGAL_SOURCES.md) / [LEGAL_SOURCES.pl.md](LEGAL_SOURCES.pl.md) dla listy legalnych punktów wyjścia.
+
+### Na jakich urządzeniach działa?
+
+Urządzenia Android TV i Google TV (armeabi-v7a / arm64-v8a) z Androidem 6.0+ (`minSdk = 23`). Interfejs jest zoptymalizowany pod nawigację pilotem D-Pad, nie pod ekrany dotykowe telefonów.
+
+### Czy działa na telefonach / tabletach?
+
+UI jest zbudowany dla telewizorów. Może działać na tabletach, ale nie jest zoptymalizowany pod dotyk.
+
+## Pierwsze uruchomienie i onboarding
+
+### Co to jest ekran Essential Addon Setup?
+
+Po pierwszym uruchomieniu profilu kreator **Essential Setup** prosi o wybranie trzech legalnych pakietów startowych:
+
+- **Darmowa Telewizja internetowa** — ładuje publiczne playlisty IPTV M3U i URL XMLTV EPG z `legal_sources.json`.
+- **Muzyka i Podcasty** — ładuje przykładowe kanały RSS podcastów i (jeśli skonfigurowano) URL proxy Deezer.
+- **Katalogi Publiczne Web** — ładuje oficjalne dodatki Stremio i skonfigurowane crawlery web.
+
+Wybrane pakiety są aplikowane w tle, zapisywane w DataStore, a następnie aplikacja otwiera ekran główny. Możesz pominąć lub zmienić wybór później w **Admin**.
+
+### Jak zresetować pierwszą konfigurację?
+
+Wyczyść dane aplikacji lub odinstaluj / zainstaluj ponownie. Flaga `isFirstLaunch` jest przechowywana w DataStore; nie ma przycisku resetu w aplikacji, aby uniknąć przypadkowej utraty danych.
+
+## Źródła i treści
+
+### Jak dodać źródła?
+
+1. Otwórz **Admin** w panelu bocznym.
+2. Zeskanuj kod QR telefonem lub otwórz `http://<IP_TV>:<port>/admin` w przeglądarce w tej samej sieci.
+3. Wklej URL / konfigurację JSON dla wybranego źródła i zapisz.
+
+Szczegółowe opisy endpointów i przykłady JSON znajdziesz w [ADMIN_PANEL.md](ADMIN_PANEL.md) / [ADMIN_PANEL.pl.md](ADMIN_PANEL.pl.md).
+
+### Jakie źródła są obsługiwane?
+
+- Kodi JSON-RPC z DRM, przeglądaniem katalogów wtyczek, wykrywaniem LAN i zdalnym zapisem ustawień.
+- Repozytoria Cloudstream (`repo.json` / `plugins.json`) i binarne wtyczki `.cs3` / `.cs4`.
+- Rozszerzenia Aniyomi `.apk` ładowane dynamicznie.
+- Wtyczki QuickJS `.js`.
+- Web scraping przez konfigurację JSON (Jsoup + opcjonalny fallback do QuickJS).
+- IPTV M3U + XMLTV EPG.
+- Jellyfin, Plex, Emby, Subsonic/Airsonic.
+- Dodatki Stremio (tylko legalne/oficjalne).
+- TMDB, AniList, Trakt metadata.
+- Podcasty RSS, radio internetowe M3U/PLS, proxy Deezer.
+- Legalny BitTorrent (`.torrent` / magnet) dla treści, do których masz prawo lub które są wolno rozpowszechnialne.
+
+### Czy mogę użyć NAS / domowego serwera?
+
+Tak. Kodi, Jellyfin, Plex, Emby, Subsonic oraz zwykłe endpointy M3U/XMLTV w sieci LAN są w pełni obsługiwane. Czysty HTTP do `localhost`, `127.0.0.1` i hostów LAN jest włączony w konfiguracji bezpieczeństwa sieci.
+
+### Gdzie znaleźć legalne playlisty M3U / IPTV?
+
+Zobacz sekcję **IPTV / M3U** w [LEGAL_SOURCES.md](LEGAL_SOURCES.md) / [LEGAL_SOURCES.pl.md](LEGAL_SOURCES.pl.md). Plik `legal_sources.json` w aplikacji zawiera także wyselekcjonowane publiczne punkty wyjścia, które można załadować podczas onboarding-u lub z panelu Admin.
+
+### Czy aplikacja może scrapować dowolną stronę?
+
+Tylko strony, do których scrapowania masz prawo. Szanuj `robots.txt` i regulaminy. Konfiguracja źródła web używa selektorów Jsoup i może fallbackować do QuickJS dla stron dynamicznych.
+
+### Czym są wtyczki Cloudstream / Aniyomi?
+
+Cloudstream i Aniyomi to istniejące ekosystemy wtyczek na Android TV / mobile. Polish Media Hub może ładować ich pliki binarne bezpośrednio do pamięci przez `DexClassLoader` (bez systemowego instalatora):
+
+- `.cs3` / `.cs4` dla Cloudstream.
+- `.apk` dla rozszerzeń Aniyomi.
+
+Klasy wtyczek są adaptowane do kontraktu `MediaSource` aplikacji i dzielą globalny `OkHttpClient`, więc dziedziczą `CookieJar`, obsługę `User-Agent`/`Referer` oraz bypass Cloudflare.
+
+## Profile
+
+### Jak utworzyć nowy profil?
+
+UI zarządzania profilami znajduje się na górze **panelu bocznego**. Wybranie aktualnego profilu otwiera picker. API tworzenia / zarządzania profilami udostępnia `ProfileRepository`; przyszła aktualizacja UI doda bezpośredni przycisk „Dodaj profil" w oknie.
+
+### Co to jest `default_profile`?
+
+Po pierwszej instalacji automatycznie tworzy się profil domyślny o nazwie „Default". Cała istniejąca historia oglądania, biblioteka, lista obserwowanych i listy własne są migrowane do tego profilu przy aktualizacji bazy danych.
+
+### Czy profile są chronione PIN-em?
+
+Każdy profil może mieć `isPinLocked = true` i 4-cyfrowy `pinCode`. Po wybraniu zablokowanego profilu wyświetlany jest `PinScreen`. Weryfikacja PIN-u odbywa się przez `ProfileRepository.verifyPin()` i jest obecnie per-profil (globalny PIN dla Settings/Admin nadal istnieje w `PinRepository`).
+
+### Czy historia oglądania jest współdzielona między profilami?
+
+Nie. Każdy profil ma własne wiersze `WatchedEntity`, `SavedMediaEntity`, `CustomListEntity` i `AudioHistoryEntity`. Przełączenie profilu natychmiast filtruje wiersz „Kontynuuj oglądanie" na Home, Bibliotekę, listę Obserwowanych i listy własne.
+
+### Czy ekran główny Android TV aktualizuje się przy zmianie profilu?
+
+Tak. `TvLauncherManager` nasłuchuje `ProfileRepository.currentProfile`, czyści `WatchNextPrograms` i publikuje ponownie niedokończone treści nowego profilu.
+
+## Nowoczesny panel boczny
+
+### Dlaczego panel boczny znika?
+
+**Nowoczesny panel boczny** celowo zwija się do małej pływającej pigułki podczas przeglądania treści. D-Pad LEFT na skrajnym lewym elemencie go otwiera. Jeśli zostawisz panel otwarty bez interakcji na 1500 ms, automatycznie się zwinie.
+
+### Jak otworzyć panel boczny bez przechodzenia do skrajnego lewego elementu?
+
+Na ekranie głównym możesz nacisnąć **BACK**, gdy panel jest zwinięty. D-Pad LEFT na dowolnym zaznaczonym elemencie w lewej kolumnie również działa.
+
+## BitTorrent
+
+### Czy mogę streamować torrenty?
+
+Tak, ale **tylko legalne treści** (domena publiczna, Creative Commons, obrazy ISO Linuxa, treści, które stworzyłeś lub do których masz prawa). Polish Media Hub używa `jlibtorrent` z pobieraniem sekwencyjnym i lokalnym serwerem proxy HTTP (`TorrentHttpServer`), dzięki czemu ExoPlayer streamuje podczas pobierania kawałków.
+
+### Gdzie trafiają pobrane pliki?
+
+Dane torrent zapisywane są w prywatnym katalogu cache aplikacji. Lokalny proxy HTTP czyta z częściowo pobranego pliku. Aplikacja domyślnie nie seeduje; ustawienia seedowania mogą zostać dodane w przyszłości.
+
+### Jak dodać torrent?
+
+Przejdź do **Torrents** w panelu bocznym, wklej magnet URI lub URL `.torrent` i potwierdź. Engine wykona announce, zbuforuje początek i przekaże URL `http://127.0.0.1:<port>/stream?infoHash=...&file=...` do odtwarzacza.
+
+## Wtyczki QuickJS
+
+### Jak napisać wtyczkę?
+
+Zobacz [PLUGIN_GUIDE.md](PLUGIN_GUIDE.md) / [PLUGIN_GUIDE.pl.md](PLUGIN_GUIDE.pl.md). Wtyczka to plik JavaScript, który udostępnia funkcje takie jak `search(query)`, `categories()`, `featured()` i `resolve(id)`. Runtime udostępnia globalną funkcję `httpFetch(url, headersJson)` zwracającą `{code, body, headers, error}`.
+
+### Czy wtyczka może dodać nagłówki dla ExoPlayera?
+
+Tak. Zwróć obiekt `headers` w `MediaItem`. Odtwarzacz przekaże te nagłówki (np. `User-Agent`, `Referer`) do `DefaultHttpDataSource.Factory` w ExoPlayerze.
+
+### Czym wtyczki Cloudstream / Aniyomi różnią się od QuickJS?
+
+QuickJS to JavaScript wykonywany w silniku wbudowanym w aplikację. Wtyczki Cloudstream/Aniyomi to skompilowane pliki DEX/APK ładowane dynamicznie przez `DexClassLoader` i adaptowane refleksyjnie. Oba rodzaje wytwarzają obiekty `MediaItem` i mogą dostarczać nagłówki dla ExoPlayera.
+
+## EPG / Telewizja na żywo
+
+### EPG jest puste, co zrobić?
+
+Dodaj playlistę M3U i URL XMLTV EPG w **Admin** lub podczas **Essential Setup**. Następnie otwórz **EPG**. Parser obsługuje tagi `<channel>`, `<programme>`, `<title>`, `<desc>`, `<date>`, `<category>` i `<icon>`.
+
+### Czy mogę oglądać TV na żywo bez EPG?
+
+Tak, kanały IPTV są również wyświetlane na ekranie **IPTV**. EPG jest opcjonalne i zapewnia widok siatki oś czasu.
+
+## Launcher Android TV
+
+### Dlaczego nie widzę Polish Media Hub na ekranie głównym?
+
+Na obsługiwanych launcherach Android TV / Google TV aplikacja publikuje kanał **Watch Next** i kanał rekomendacji **Preview**. Systemowy launcher decyduje, czy i jak wyświetlać kanały. Upewnij się, że aplikacja była otwarta co najmniej raz i `RecommendationsWorker` wykonał się.
+
+### Czy kanał Watch Next respektuje profile?
+
+Tak. Jest powiązany z `WatchHistoryRepository` aktywnego profilu. Zmiana profilu czy stare kafelki i publikuje niedokończone elementy nowego profilu.
+
+## Audio / Napisy / Muzyka
+
+### Dlaczego automatycznie włącza się ścieżka AD (Audiodeskrypcja)?
+
+Nie powinno się tak dziać. ExoPlayer preferuje polskie audio, ale depriorytyzuje ścieżki oznaczone `ROLE_FLAG_DESCRIBES_VIDEO` (Audio Description). Możesz ręcznie przełączać ścieżki audio w panelu odtwarzacza; pełne etykiety, np. „Polski (Lektor)", są wyświetlane, gdy są dostępne.
+
+### Czy mogę załadować zewnętrzne napisy?
+
+Tak. `PlayerScreen` obsługuje URL-e napisów `.vtt` i `.srt`. Język napisów domyślnie to polski, chyba że element multimedialny określa inny. W Ustawieniach możesz zmienić rozmiar, kolor i przesunięcie pionowe napisów; zmiany są stosowane na żywo.
+
+### Skąd biorą się podcasty i radio?
+
+- **Podcasty**: kanały RSS skonfigurowane w **Admin** (`podcastFeeds`) lub załadowane podczas onboarding-u.
+- **Radio**: playlisty M3U / PLS. `RadioRepository` współdzieli pole `iptvSourceUrls`, więc każdy URL M3U/PLS może pojawić się w sekcji Muzyka.
+- **Deezer**: URL proxy `deezerProxyUrl` podany w Admin. Proxy musi udostępniać endpointy oczekiwane przez `DeezerAudioSource`.
+
+### Czy wyniki Deezer są mieszane z wynikami wideo?
+
+Nie. `DeezerAudioSource` implementuje `AudioSource` i **nie** jest rejestrowany w `SourceRegistry`. Ładuje dane tylko do ekranu **Muzyka**, izolując muzykę od federacji wideo i limitów zapytań.
+
+## Nerd Stats w odtwarzaczu
+
+### Co to jest nakładka Nerd Stats?
+
+Panel w prawym górnym rogu odtwarzacza pokazujący dane diagnostyczne w czasie rzeczywistym: aktualna rozdzielczość + fps, aktywne kodeki wideo/audio, bieżący bitrate oraz pominięte / jank klatki. Włączasz ją w **Ustawienia → Pokaż statystyki ładowania**.
+
+### Czy to wpływa na wydajność?
+
+Statystyki są zbierane przez `AnalyticsListener` ExoPlayera i eksponowane w osobnym `StateFlow`. Rekompozycje dotyczą tylko małego panelu statystyk, więc reszta ekranu `PlayerScreen` nie jest odświeżana.
+
+## Auto-Play Next
+
+### Jak działa nakładka następnego odcinka?
+
+Dla seriali, gdy do końca odcinka pozostaje 15 sekund, pojawia się półprzezroczysta nakładka z metadata następnego odcinka i licznikiem 15 → 0. Możesz nacisnąć **Odtwórz teraz**, aby pominąć napisy końcowe, lub **Anuluj** / **BACK**, aby dokończyć obecny odcinek.
+
+### Czy to działa dla filmów?
+
+Nie, nakładka jest uruchamiana tylko dla `MediaItem.Type.SERIES` / odcinków.
+
+## Spoiler Blur
+
+### Dlaczego opis odcinka jest rozmyty?
+
+Gdy **Ustawienia → Rozmycie spoilerów** jest włączone, opisy odcinków, które nie były jeszcze oglądane przez aktywny profil, są rozmywane, aby uniknąć spoilerów. Naciśnij **SELECT** / **D-Pad Center** na opisie, aby go odsłonić na czas seansu.
+
+### Skąd aplikacja wie, że odcinek był oglądany?
+
+Sprawdza `WatchHistoryRepository` dla pozycji odtwarzania większej niż próg dla danego `profileId`.
+
+## Kodi
+
+### Czy aplikacja może automatycznie wykryć mój serwer Kodi?
+
+Tak, jeśli Twoje Kodi ogłasza usługę `_xbmc-jsonrpc._tcp` przez mDNS/Bonjour. `KodiDiscoveryManager` nasłuchuje przez Android NSD i automatycznie aktualizuje URL Kodi w `ApiConfigRepository`.
+
+### Czy mogę wysłać tokeny Real-Debrid / Trakt do wtyczek Kodi?
+
+Tak. Panel Admin zapisuje tokeny debrid / trakt. `KodiMediaSource.setAddonSetting()` wywołuje `Settings.SetSettingValue` przez JSON-RPC i przesyła je do pliku ustawień wybranej wtyczki Kodi.
+
+### Czy Kodi DRM działa?
+
+Tak. Gdy Kodi zwraca strumień z metadanymi DRM, aplikacja tworzy `MediaItem.DrmConfiguration` dla Widevine, PlayReady lub ClearKey przed przekazaniem strumienia do ExoPlayera.
+
+## Cloudflare / Źródła web
+
+### Co jeśli źródło web jest chronione przez Cloudflare?
+
+Aplikacja zawiera **stos obejścia Cloudflare**:
+
+- `MemoryCookieJar` przechowuje ciasteczka per host.
+- `CloudflareBypassInterceptor` wykrywa 403/503 i uruchamia headless `WebView` (`HeadlessWebSolver`), aby rozwiązać wyzwanie.
+- Po uzyskaniu `cf_clearance` interceptor ponawia oryginalne żądanie.
+- Taki sam `User-Agent` i `Referer` są używane w całym łańcuchu.
+
+### Czy potrafi rozpakować spakowany JavaScript?
+
+Tak. `JsUnpacker` dekoduje powszechne skrypty spakowane formatem `eval(function(p,a,c,k,...) )` i wyciąga URL-e strumieni, które następnie przekazywane są do ExoPlayera z właściwymi nagłówkami.
+
+## Panel administracyjny i kod QR
+
+### Kod QR się nie skanuje.
+
+Upewnij się, że telefon i TV są w tej samej sieci Wi-Fi. QR zawiera lokalny IP TV i dynamiczny port `AdminHttpServer` (np. `http://192.168.1.42:8123/admin`). Jeśli IP to `0.0.0.0` lub `127.0.0.1`, adapter sieciowy nie został rozpoznany.
+
+### Czy panel administracyjny jest bezpieczny?
+
+Panel działa celowo na czystym HTTP w lokalnej sieci. Nie należy wystawiać TV bezpośrednio na publicznym internecie. Globalna blokada PIN w **Ustawienia** zabezpiecza także ekran Admin na samym TV.
+
+## Raportowanie awarii
+
+### Co się dzieje, gdy aplikacja ulegnie awarii?
+
+Nieobsługiwane wyjątki są łapane przez `GlobalExceptionHandler`. Ślad stosu jest zapisywany, a `CrashReportActivity` uruchamiana w osobnym procesie `:crashreport`. Zawieszony proces jest ubijany, więc TV nie wraca natychmiast do launchera. Ekran awarii oferuje:
+
+- **Uruchom ponownie aplikację** — czyści log awarii i startuje `MainActivity`.
+- **Wyczyść pamięć podręczną i zrestartuj** — usuwa cache aplikacji i zoptymalizowany katalog DEX wtyczek, a następnie restartuje.
+
+### Czy raportowanie awarii zapętli się, jeśli sam ekran awarii ulegnie awarii?
+
+Nie. `GlobalExceptionHandler` nie jest instalowany wewnątrz procesu `:crashreport`, co zapobiega rekurencyjnemu łapaniu wyjątków.
+
+## Development i budowanie
+
+### Jak zbudować ze źródeł?
+
+```bash
+export ANDROID_HOME=/path/to/android-sdk
+./gradlew :app:assembleDebug :app:lintDebug :app:testDebugUnitTest
+```
+
+### Jak uruchomić testy zrzutów ekranu?
+
+```bash
+./gradlew :app:recordPaparazziDebug   # generowanie / aktualizacja baseline'ów
+./gradlew :app:verifyPaparazziDebug   # porównanie z baseline'ami
+```
+
+### Gdzie zgłosić błąd?
+
+Otwórz issue w repozytorium z krokami reprodukcji i, jeśli dotyczy, z konfiguracją źródła, którego używasz.

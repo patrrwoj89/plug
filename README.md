@@ -1,40 +1,81 @@
 # Polish Media Hub
 
-A modern Android TV / Google TV media hub built with Jetpack Compose for TV. It aggregates movies, series, live IPTV channels, music and podcasts from user-supplied, legal sources through a unified, D-Pad friendly interface.
+A modern Android TV / Google TV media hub built with Jetpack Compose for TV. It aggregates movies, series, live IPTV channels, music, podcasts and internet radio from user-supplied, legal sources through a unified, D-Pad friendly interface.
 
 The app is **personal-use only** and does **not** ship any pre-bundled pirated content, trackers, unauthorized IPTV playlists or unlicensed scrapers. All streams, torrents and media sources must be added by the user and used in compliance with local law and the source's Terms of Service.
 
+*Polish version / Wersja polska: [`README.pl.md`](README.pl.md)*
+
 ## Features
 
-- **TV-first UI** with `androidx.tv.material3`, D-Pad focus handling, scale/glow outlines and sidebar navigation.
-- **Federated media sources**:
-  - **Kodi** JSON-RPC integration (movies, TV shows, artwork decoding).
-  - **Cloudstream** plugin-style repositories.
+### Core playback & sources
+
+- **TV-first UI** with `androidx.tv.material3`, D-Pad focus handling, scale/glow outlines and the **Modern Sidebar**.
+- **Federated media sources** aggregated through `FederatedMediaRepository` and `SourceRegistry`:
+  - **Kodi** JSON-RPC integration with DRM stream support, plugin directory browsing (`Files.GetDirectory`), automatic LAN discovery (`KodiDiscoveryManager`) and remote setting updates (`Settings.SetSettingValue`).
+  - **Cloudstream** plugin-style repositories and **Aniyomi** `.apk` extensions loaded dynamically via `DexClassLoader`.
   - **QuickJS plugins** (`.js`) with built-in `httpFetch` network bridge, headers and async evaluation.
   - **Web scraping** configuration via JSON with validation and dynamic fallback to QuickJS.
   - **IPTV/M3U** with XMLTV EPG support and a professional **EPG Timeline Grid**.
-  - **Jellyfin, Plex, Emby, Subsonic/Airsonic, Stremio, AniList, TMDB, Trakt, podcasts (RSS)** and more.
+  - **Jellyfin, Plex, Emby, Subsonic/Airsonic, Stremio, AniList, TMDB, Trakt, podcasts (RSS)**, internet radio and Deezer proxy.
 - **BitTorrent streaming** via `jlibtorrent` with sequential download, local HTTP proxy and buffering UI.
-- **EPG Timeline Grid** (Jetpack Compose): bidirectional scrolling, frozen channel column, 30-minute time header, duration-proportional programme tiles, current-time marker, D-Pad focus and top detail panel with progress.
-- **Polish audio / subtitle support**: ExoPlayer prefers `pl` tracks, deprioritizes Audio Description, and exposes full language labels in player controls.
+- **Music & audio**:
+  - Native podcast RSS parser (`PodcastRssParser`) with iTunes tags and enclosure audio URLs.
+  - M3U/PLS internet radio repository (`RadioRepository`).
+  - Deezer proxy integration through an isolated `DeezerAudioSource`.
+  - Per-profile audio history in Room.
+
+### TV UI / UX
+
+- **Modern Sidebar Scaffold**: floating collapsed pill, Haze blur overlay drawer, no layout jitter, auto-collapse after 1500 ms of inactivity, D-Pad LEFT opens the menu from the leftmost item.
+- **Essential Addon Setup** onboarding screen for first-launch profiles: one-click loading of legal starter packages (IPTV/EPG, music/podcasts, public web catalogs) via `EssentialSetupScreen` and `EssentialSetupViewModel`.
+- **Auto-Play Next** overlay for series: 15-second countdown with next-episode metadata, "Play now" / "Cancel" D-Pad buttons, BACK behaves like Cancel.
+- **Spoiler Blur**: unwatched episode plot descriptions are blurred on the detail screen and can be revealed with D-Pad Center/SELECT.
+- **Subtitle settings in player**: size, color and vertical offset stored in DataStore and applied live to `SubtitleView`.
+- **Nerd Stats Overlay**: optional real-time panel with resolution, fps, active codecs, current bitrate and dropped/jank frames.
+
+### Player & media
+
+- **ExoPlayer / Media3** with HLS, DASH and progressive stream detection.
+- **DRM playback**: `MediaItem` carries `drmLicenseUrl`, `drmScheme` and `drmHeaders`; ExoPlayer is configured with the correct `DrmConfiguration` for Widevine/PlayReady/ClearKey.
+- **Polish audio / subtitle support**: ExoPlayer prefers `pl` tracks, deprioritizes Audio Description and exposes full language labels in player controls.
+- **External subtitles**: `.vtt` and `.srt` URLs.
+- **Stream headers**: `User-Agent`, `Referer`, `Cookie` and custom headers forwarded to `DefaultHttpDataSource.Factory`.
+
+### Network & anti-bot
+
+- **Cloudflare bypass**: headless `WebView` solver (`HeadlessWebSolver`), `MemoryCookieJar`, `CloudflareBypassInterceptor` and a native P.A.C.K.E.R. unpacker (`JsUnpacker`).
+- **CDA decoder** for extracting `data-video-id` from `cda.pl` links.
+- Global `OkHttpClient` shared across repositories and plugin code.
+
+### Admin & configuration
+
 - **Wireless admin panel** served by a local HTTP server with QR code (ZXing) for easy source configuration from a phone or computer.
-- **Android TV / Google TV launcher integration**:
-  - **Watch Next** channel for resume playback.
-  - **Preview/recommendations channel** updated daily by `WorkManager`.
+- **First-launch onboarding** lets new users pick legal starter source packages.
+
+### Android TV integration
+
+- **Watch Next** channel for resume playback.
+- **Preview/recommendations channel** updated daily by `WorkManager`.
+- **Global search** with a dedicated `SearchActivity` and `SearchRecentSuggestionsProvider`.
+
+### Security, stability & profiles
+
+- **Multi-user profiles** with per-profile history, library, watchlist, custom lists and audio history; profile switcher in the sidebar and optional PIN lock per profile.
 - **PIN lock** for Settings and Admin screens.
 - **Download support** for audio and video via `WorkManager`.
-- **Multi-user profiles** with per-profile history, library, watchlist and custom lists; profile switcher in the sidebar and optional PIN lock per profile.
-- **Global Android TV search** with a dedicated `SearchActivity` and `SearchRecentSuggestionsProvider`.
+- **Global Crash Report Center**: uncaught exceptions are caught by `GlobalExceptionHandler`, a stack trace is saved and `CrashReportActivity` (in a separate `:crashreport` process) offers restart or "clear cache & restart" without returning to the Android launcher.
 - **Screenshot / Compose Preview tests** with Paparazzi and instrumented D-Pad tests.
 
 ## Documentation
 
-- [`README.md`](README.md) — this overview.
-- [`FAQ.md`](FAQ.md) — frequently asked questions.
-- [`CHANGELOG.md`](CHANGELOG.md) — release history and latest changes.
-- [`PLUGIN_GUIDE.md`](PLUGIN_GUIDE.md) — how to write and adapt QuickJS plugins.
-- [`ADMIN_PANEL.md`](ADMIN_PANEL.md) — wireless configuration via the local web admin panel and QR code.
-- [`LEGAL_SOURCES.md`](LEGAL_SOURCES.md) — curated legal/public/self-hostable sources.
+- [`README.md`](README.md) — this overview (English).
+- [`README.pl.md`](README.pl.md) — overview in Polish.
+- [`FAQ.md`](FAQ.md) / [`FAQ.pl.md`](FAQ.pl.md) — frequently asked questions.
+- [`CHANGELOG.md`](CHANGELOG.md) / [`CHANGELOG.pl.md`](CHANGELOG.pl.md) — release history and latest changes.
+- [`PLUGIN_GUIDE.md`](PLUGIN_GUIDE.md) / [`PLUGIN_GUIDE.pl.md`](PLUGIN_GUIDE.pl.md) — how to write and adapt QuickJS, Cloudstream and Aniyomi plugins.
+- [`ADMIN_PANEL.md`](ADMIN_PANEL.md) / [`ADMIN_PANEL.pl.md`](ADMIN_PANEL.pl.md) — wireless configuration via the local web admin panel and QR code.
+- [`LEGAL_SOURCES.md`](LEGAL_SOURCES.md) / [`LEGAL_SOURCES.pl.md`](LEGAL_SOURCES.pl.md) — curated legal/public/self-hostable sources.
 
 ## Tech stack
 
@@ -51,7 +92,8 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - ZXing 3.5.3 for QR codes
 - `androidx.tvprovider:tvprovider:1.1.0` for Android TV channels
 - Paparazzi 2.0.0-alpha05 for snapshot tests
-- `minSdk = 23`, `targetSdk` set in `app/build.gradle.kts`
+- `dev.chrisbanes.haze:haze-android` for the frosted-glass sidebar
+- `minSdk = 23`, `targetSdk = 36`
 
 ## Build
 
@@ -74,27 +116,43 @@ APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 app/src/main/java/com/polishmediahub/app/
 ├── data/                 # Repositories, data sources, persistence
 │   ├── local/            # Room entities/DAOs (MediaDatabase, ProfileEntity, etc.)
-│   ├── remote/           # TMDB, Trakt, AniList, Jellyfin, Plex, Emby, Subsonic, Stremio, IPTV
-│   ├── source/           # Kodi, Web, Cloudstream, FederatedMediaRepository, SourceRegistry
-│   ├── plugin/           # QuickJsEngine, QuickJsMediaSource, PluginManifest, PluginRepository
+│   ├── remote/           # TMDB, Trakt, AniList, Jellyfin, Plex, Emby, Subsonic, Stremio, IPTV, Deezer, podcast/radio
+│   ├── source/           # Kodi, Web, Cloudstream, FederatedMediaRepository, SourceRegistry, GlobalExceptionHandler
+│   ├── plugin/           # QuickJsEngine, PluginManifest, PluginRepository, DynamicPluginLoader, ReflectiveMediaSource
+│   ├── audio/            # AudioSource, DeezerAudioSource, PodcastSource, RadioRepository, AudioHistoryRepository
 │   ├── torrent/          # TorrentEngine, TorrentHttpServer, TorrentMediaSource
 │   ├── iptv/             # EPG parser/repository
 │   ├── tv/               # TvLauncherManager, WatchNextHelper, RecommendationsWorker
+│   ├── legal/            # LegalSourcesRepository / legal_sources.json sample sources
 │   └── ProfileRepository.kt
 ├── di/                   # Hilt modules
-├── model/                # MediaItem, Category and shared data classes
+├── model/                # MediaItem, Category, AudioTrack and shared data classes
 ├── navigation/           # Screen sealed class, TVNavHost, TVApp
 ├── search/               # Android TV search provider / activity
 ├── ui/
-│   ├── components/       # TVCard, FocusableSurface, Sidebar, EmptyState, ErrorState, etc.
-│   ├── screens/          # Home, Search, Detail, Player, Settings, Library, Watchlist, Admin, EPG, Torrents, Music, Downloads, Custom Lists
+│   ├── components/       # TVCard, FocusableSurface, ModernSidebarBlurPanel, Sidebar, etc.
+│   ├── screens/          # Home, Search, Detail, Player, Settings, Library, Watchlist, Admin, EPG, Torrents, Music, Downloads, Custom Lists, EssentialSetup, CrashReportActivity
 │   ├── theme/            # AppColor, AppTypography, Spacing, Radius, TVHubTheme
 │   └── viewmodel/        # Hilt ViewModels
 ├── MainActivity.kt
-└── TVHubApplication.kt
+├── CrashReportActivity.kt
+├── TVHubApplication.kt
+└── ...
 ```
 
 ## Configuration
+
+### First launch
+
+The first time a profile is created, the app shows the **Essential Setup** screen. Pick the legal starter packages you want:
+
+- **Free Internet TV** — public IPTV M3U playlists + XMLTV EPG.
+- **Music & Podcasts** — podcast RSS feeds and Deezer proxy.
+- **Public Web Catalogs** — official Stremio add-ons and configured web source crawlers.
+
+Selected sources are loaded on `Dispatchers.IO`, saved to DataStore and Room, and the app navigates to Home.
+
+### Admin panel
 
 Most sources are configured through the **Admin** screen or the wireless web panel:
 
@@ -105,26 +163,27 @@ Most sources are configured through the **Admin** screen or the wireless web pan
 Supported configurable sources:
 
 - **IPTV**: M3U playlists and XMLTV EPG URLs.
-- **Kodi**: JSON-RPC endpoint (`http://host:port/jsonrpc`).
-- **Cloudstream**: repository JSON URLs.
+- **Kodi**: JSON-RPC endpoint with optional automatic LAN discovery.
+- **Cloudstream / Aniyomi**: repository index or binary plugin files loaded dynamically.
 - **Web**: JSON config with selectors for title, description, poster, stream link.
 - **QuickJS plugins**: manifest URL or `.js` plugin text.
 - **Jellyfin / Plex / Emby / Subsonic**: server URL + token/user credentials.
 - **Stremio**: addon URLs.
 - **TMDB / AniList / Trakt**: API keys / tokens.
 - **Podcasts**: RSS feed URLs.
-- **Debrid**: OAuth link (stub ready for provider-specific implementation).
+- **Deezer**: proxy URL.
+- **Debrid**: OAuth link.
 
-Sample legal starter sources can be loaded from the Admin panel via **Load legal sample sources**.
+Sample legal starter sources can be loaded from the Admin panel via **Load legal sample sources** or during first-launch onboarding.
 
 ## Multi-User Profiles
 
 The app supports multiple household profiles stored in Room:
 
 - Each profile has `id`, `name`, `avatarUrl`, `isPinLocked` and `pinCode`.
-- `WatchedEntity`, `SavedMediaEntity` and `CustomListEntity` carry a `profileId` foreign key.
+- `WatchedEntity`, `SavedMediaEntity`, `CustomListEntity` and `AudioHistoryEntity` carry a `profileId` foreign key.
 - `ProfileRepository` exposes `currentProfile` as a `StateFlow` and persists the selected profile in DataStore.
-- `WatchHistoryRepository`, `SavedMediaRepository` and `CustomListsRepository` automatically filter reads/writes by the active profile using `flatMapLatest`.
+- `WatchHistoryRepository`, `SavedMediaRepository`, `CustomListsRepository` and `AudioHistoryRepository` automatically filter reads/writes by the active profile using `flatMapLatest`.
 - The top of `Sidebar` shows the active profile (avatar or initial), opens a profile picker, and prompts for the PIN when switching to a locked profile.
 - `TvLauncherManager` clears the Android TV **Watch Next** row on profile switch and re-publishes the new profile's history.
 
@@ -160,17 +219,37 @@ Plugins are `.js` files evaluated in a shared `QuickJsEngine`:
 - Constructor-injected singleton lifecycle with explicit `dispose()` to destroy native contexts.
 - `QuickJsMediaSource.mapToMediaItem` carries optional HTTP headers (`User-Agent`, `Referer`) through to ExoPlayer's `DefaultHttpDataSource.Factory`.
 
+## Dynamic binary plugin loading
+
+Cloudstream (`.cs3` / `.cs4`) and Aniyomi (`.apk`) plugins can be loaded without an Android system installer:
+
+- `PluginRepository` fetches the binary to `context.cacheDir/plugins/`.
+- `DynamicPluginLoader` creates an optimized DEX output directory under `codeCacheDir/plugins_dex` and instantiates `DexClassLoader` with the app class loader as parent.
+- Loaded classes are adapted through `ReflectiveMediaSource` to the app's `MediaSource` contract.
+- Plugin results feed `PluginMediaSource` and appear in Search, Home and the federated dashboard.
+- Cleanup removes optimized DEX files when a plugin is disabled or removed.
+
 ## Polish audio / subtitle handling
 
 - `DefaultTrackSelector` prefers `pl` for audio and text tracks.
 - If multiple Polish audio tracks exist (Lektor, Dubbing, Audio Description), the AD role is deprioritized.
 - Full track labels are extracted from Media3 and shown in `PlayerControls` so the user can switch precisely with the D-Pad.
+- Subtitle size, color and vertical offset are configurable in Settings and applied live.
 
 ## Android TV launcher integration
 
 - `TvLauncherManager` writes to `TvContractCompat.WatchNextPrograms` and a dedicated `PreviewChannel`.
 - `RecommendationsWorker` runs once per day (or on app start) to refresh featured content on the home screen.
 - Clicking a launcher tile opens `MainActivity` via deep links (`polishmediahub://play/{id}` or `polishmediahub://detail/{id}`) and resumes playback from the saved position.
+
+## Crash reporting
+
+Unhandled exceptions are caught by `GlobalExceptionHandler`:
+
+- The stack trace is saved to `filesDir/last_crash.txt`.
+- `CrashReportActivity` is started in a separate `:crashreport` process so the failing process can be killed without losing the report.
+- The user can choose **Restart app** or **Clear cache and restart** (which removes `cacheDir` contents and the optimized `plugins_dex` directory).
+- The crash reporter does not install the exception handler in its own process, preventing crash loops.
 
 ## Testing
 
