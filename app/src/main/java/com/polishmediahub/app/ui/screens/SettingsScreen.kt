@@ -1,6 +1,8 @@
 package com.polishmediahub.app.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Switch
@@ -23,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.polishmediahub.app.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,6 +39,8 @@ import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Radius
 import com.polishmediahub.app.ui.theme.Spacing
+import com.polishmediahub.app.data.remote.health.HealthStatus
+import com.polishmediahub.app.data.remote.health.SourceHealth
 import com.polishmediahub.app.ui.viewmodel.LastEpgSyncState
 import com.polishmediahub.app.ui.viewmodel.PinViewModel
 import com.polishmediahub.app.ui.viewmodel.ProfileViewModel
@@ -73,6 +80,7 @@ fun SettingsScreen(
     val lastEpgSync by viewModel.lastEpgSync.collectAsStateWithLifecycle()
     val profiles by profileViewModel.profiles.collectAsStateWithLifecycle()
     val currentProfile by profileViewModel.currentProfile.collectAsStateWithLifecycle()
+    val sourceHealth by viewModel.sourceHealth.collectAsStateWithLifecycle()
     var pinVerified by remember { mutableStateOf(false) }
     var pinError by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -306,6 +314,17 @@ fun SettingsScreen(
             keyboardOptions = KeyboardOptions.Default
         )
 
+        Text(
+            text = stringResource(id = R.string.settings_source_health),
+            style = AppTypography.headline,
+            modifier = Modifier.padding(top = Spacing.md)
+        )
+
+        SourceHealthSection(
+            status = sourceHealth,
+            onCheckNow = { viewModel.checkSourceHealthNow() }
+        )
+
         Spacer(modifier = Modifier.height(Spacing.lg))
 
         val syncStatusText = remember(lastEpgSync) { formatEpgSyncStatus(context, lastEpgSync) }
@@ -477,4 +496,82 @@ private fun formatTraktSyncStatus(context: android.content.Context, state: com.p
         else -> if (state.at > 0L) state.status else ""
     }
     return context.getString(R.string.trakt_last_sync, date, status)
+}
+
+private fun formatHealthCheckDate(timestamp: Long): String {
+    return SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(timestamp))
+}
+
+@Composable
+private fun SourceHealthSection(
+    status: HealthStatus?,
+    onCheckNow: () -> Unit
+) {
+    if (status == null) {
+        Text(
+            text = stringResource(id = R.string.health_status_no_data),
+            style = AppTypography.caption,
+            color = AppColor.OnSurfaceVariant
+        )
+    } else {
+        val date = if (status.lastCheckAt > 0L) {
+            formatHealthCheckDate(status.lastCheckAt)
+        } else {
+            stringResource(id = R.string.health_status_never)
+        }
+        Text(
+            text = stringResource(id = R.string.health_last_check, date),
+            style = AppTypography.caption,
+            color = AppColor.OnSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(Spacing.sm))
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            status.sources.forEach { source ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .background(
+                                color = when (source.status) {
+                                    SourceHealth.ONLINE -> AppColor.Success
+                                    SourceHealth.OFFLINE -> AppColor.Error
+                                    else -> AppColor.OnSurfaceMuted
+                                },
+                                shape = CircleShape
+                            )
+                    )
+                    Text(
+                        text = source.label,
+                        style = AppTypography.title,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = when (source.status) {
+                            SourceHealth.ONLINE -> stringResource(id = R.string.health_status_online)
+                            SourceHealth.OFFLINE -> stringResource(id = R.string.health_status_offline)
+                            else -> stringResource(id = R.string.health_status_unconfigured)
+                        },
+                        style = AppTypography.caption,
+                        color = when (source.status) {
+                            SourceHealth.ONLINE -> AppColor.Success
+                            SourceHealth.OFFLINE -> AppColor.Error
+                            else -> AppColor.OnSurfaceMuted
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(Spacing.sm))
+    TvButton(onClick = onCheckNow) {
+        Text(
+            text = stringResource(id = R.string.health_check_now),
+            color = AppColor.Black,
+            style = AppTypography.button
+        )
+    }
 }

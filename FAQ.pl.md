@@ -61,6 +61,10 @@ Szczegółowe opisy endpointów i przykłady JSON znajdziesz w [ADMIN_PANEL.md](
 - Podcasty RSS, radio internetowe M3U/PLS, proxy Deezer.
 - Legalny BitTorrent (`.torrent` / magnet) dla treści, do których masz prawo lub które są wolno rozpowszechnialne.
 
+### Jak sprawdzić, czy moje źródła są online?
+
+Aplikacja co 4 godziny uruchamia w tle **Source Health-Check**. Wysyła lekkie żądanie do każdego skonfigurowanego źródła (Kodi, Jellyfin, Plex, Emby, Subsonic, URL-e IPTV/EPG, Stremio, Cloudstream, źródła web oraz proxy Deezer) z timeoutem 3 sekund. Wyniki wyświetlane są jako kolorowe kropki w ekranie **Ustawienia → Status źródeł** oraz w bezprzewodowym panelu admina: **zielony** = online, **czerwony** = offline/błąd, **szary** = nieskonfigurowane. Możesz też nacisnąć **Sprawdź stan źródeł teraz**, aby wymusić natychmiastowe sprawdzenie.
+
 ## MDBList
 
 ### Jak dodać MDBList?

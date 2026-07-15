@@ -7,6 +7,11 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 ### Dodano
 
 #### UI / UX
+- **Silnik monitorowania zdrowia źródeł w tle** (`HealthCheckWorker`, `HealthCheckEngine`, `HealthStatus`, `SourceHealth`)
+  - `CoroutineWorker` uruchamiany co 4 godziny na `Dispatchers.IO` sprawdza dostępność wszystkich skonfigurowanych źródeł (Kodi, IPTV M3U, EPG, Plex, Jellyfin, Emby, Subsonic, proxy Deezer, kanały RSS podcastów, dodatki Stremio, repozytoria Cloudstream i bazowe URL-e źródeł web).
+  - Używa lekkich endpointów specyficznych dla źródła (`JSONRPC.Version`, `/System/Info/Public`, `/identity`, `/rest/ping.view` itp.) z timeoutem 3 sekund.
+  - Status poszczególnych źródeł (`ONLINE`, `OFFLINE`, `UNCONFIGURED`) jest przechowywany jako JSON w DataStore i wyświetlany jako kolorowe kropki w `SettingsScreen` (`SourceHealthSection`) oraz w bezprzewodowym panelu admina.
+  - Wszystkie połączenia HTTP i dedykowany `OkHttpClient` (dispatcher/pula połączeń) są sprzątane w bloku `finally`; w kompilacjach release nie logowane są URL-e ani dane uwierzytelniające.
 - **Płynne animacje przejść współdzielonych elementów** dla plakatów filmów (`TVNavHost`, `TVCard`, `DetailScreen`)
   - `NavHost` jest owinięty w `SharedTransitionLayout`, który dostarcza `SharedTransitionScope` dla każdego ekranu.
   - `MediaCard` i główny plakat na ekranie szczegółów używają `Modifier.sharedElement` z `rememberSharedContentState(key = "poster_${item.id}")` oraz `AnimatedVisibilityScope` z docelowych `composable` — plakat płynnie animuje się z siatki/rzędu do ekranu szczegółów i z powrotem podczas nawigacji D-Padem.

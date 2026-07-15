@@ -225,4 +225,12 @@
     <string name="settings_auto_skip_intro_subtitle">Show skip buttons during intro and outro segments</string>
     <string name="settings_intro_end_seconds">Intro end (seconds)</string>
     <string name="settings_outro_duration_seconds">Outro duration from end (seconds)</string>
+    <string name="settings_source_health">Source Health</string>
+    <string name="health_status_online">Online</string>
+    <string name="health_status_offline">Offline</string>
+    <string name="health_status_unconfigured">Unconfigured</string>
+    <string name="health_status_no_data">No health data yet. Run a check.</string>
+    <string name="health_status_never">Never</string>
+    <string name="health_last_check">Last check: %1$s</string>
+    <string name="health_check_now">Check source health now</string>
 </resources>

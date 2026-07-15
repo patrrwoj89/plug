@@ -5,12 +5,16 @@ import androidx.lifecycle.viewModelScope
 import android.content.Context
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.SettingsRepository
+import com.polishmediahub.app.data.remote.health.HealthCheckWorker
+import com.polishmediahub.app.data.remote.health.HealthStatus
 import com.polishmediahub.app.data.remote.trakt.TraktSyncWorker
+import kotlinx.serialization.json.Json
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -90,6 +94,17 @@ class SettingsViewModel @Inject constructor(
     ) { at, status, error -> LastTraktSyncState(at, status, error) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = LastTraktSyncState())
 
+    val sourceHealth: StateFlow<HealthStatus?> = apiConfigRepository.healthStatuses
+        .map { jsonString ->
+            if (jsonString.isBlank()) return@map null
+            try {
+                Json.decodeFromString(HealthStatus.serializer(), jsonString)
+            } catch (e: Exception) {
+                null
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = null)
+
     fun setDarkTheme(value: Boolean) = viewModelScope.launch { settingsRepository.setDarkTheme(value) }
     fun setAutoplayTrailers(value: Boolean) = viewModelScope.launch { settingsRepository.setAutoplayTrailers(value) }
     fun setSaveSearchHistory(value: Boolean) = viewModelScope.launch { settingsRepository.setSaveSearchHistory(value) }
@@ -110,6 +125,8 @@ class SettingsViewModel @Inject constructor(
     fun setTraktAccessToken(value: String) = viewModelScope.launch { apiConfigRepository.setTraktAccessToken(value) }
 
     fun syncTraktNow() = viewModelScope.launch { TraktSyncWorker.startImmediate(context) }
+
+    fun checkSourceHealthNow() = viewModelScope.launch { HealthCheckWorker.startImmediate(context) }
 }
 
 data class LastTraktSyncState(

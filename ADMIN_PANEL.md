@@ -37,6 +37,17 @@ The URL contains a unique per-process pairing token. All API endpoints require t
 | POST | `/api/config` | Receives form-encoded values and saves them into `ApiConfigRepository` (DataStore). Requires `?token=...`. |
 | POST | `/api/plugin` | Receives a plugin manifest / script URL and stores it through `PluginRepository`. Requires `?token=...`. |
 | POST | `/api/trakt/sync` | Triggers an immediate Trakt two-way sync (`TraktSyncWorker.startImmediate`). Requires `?token=...`. |
+| GET | `/api/health` | Returns the current background source health-check result as JSON. Requires `?token=...`. |
+
+## Source health indicators
+
+The admin page shows a **Source Health** section with a colored dot for each configured source:
+
+- **green** = `ONLINE` (the last background probe received HTTP 200 from the source's lightweight health endpoint within 3 seconds)
+- **red** = `OFFLINE` (network error, timeout or non-2xx HTTP response)
+- **gray** = `UNCONFIGURED` (empty URL/field)
+
+The same status dots appear next to each source input field. The worker runs every 4 hours, but you can also trigger an immediate check from **Settings → Source Health** on the TV.
 
 ## Configurable sources (POST `/api/config`)
 
@@ -48,6 +59,7 @@ Send form fields matching the keys supported by `ApiConfigRepository`. The admin
 | `webSourceConfig` | JSON array of `WebSourceConfig` objects (see example below) |
 | `cloudstreamRepoUrls` | Cloudstream / Aniyomi repository URLs, one per line |
 | `iptvSourceUrls` | IPTV M3U/M3U8 playlist URLs, one per line |
+| `epgUrl` | XMLTV EPG URL, e.g. `https://example.com/epg.xml` |
 | `stremioAddons` | Stremio add-on base URLs, one per line |
 | `jellyfinUrl` / `jellyfinToken` | Jellyfin server URL and API token |
 | `plexUrl` / `plexToken` | Plex server URL and token |
@@ -91,6 +103,7 @@ Only the fields you actually use need to be present. Empty strings are ignored.
   "debridApiKey": "your-debrid-token",
   "debridProvider": "real_debrid",
   "iptvSourceUrls": "https://example.com/playlist.m3u\nhttps://example.com/playlist.m3u8",
+  "epgUrl": "https://example.com/epg.xml",
   "stremioAddons": "https://addon.youtube.com/stremio/\nhttps://addon.ted.com/stremio/",
   "kodiUrl": "http://192.168.1.10:8080/jsonrpc",
   "webSourceConfig": "[{ \"id\": \"example\", \"name\": \"Example Web Source\", \"baseUrl\": \"https://example.com\", \"catalogUrl\": \"https://example.com/catalog\", \"itemSelector\": \"a.movie\", \"titleSelector\": \"h2\", \"descriptionSelector\": \".desc\", \"posterSelector\": \"img\", \"posterAttribute\": \"src\", \"linkSelector\": \"a.movie\", \"headers\": { \"User-Agent\": \"Mozilla/5.0\" } }]",

@@ -61,6 +61,10 @@ See [ADMIN_PANEL.md](ADMIN_PANEL.md) for detailed endpoint descriptions and JSON
 - Podcasts RSS, internet radio M3U/PLS, Deezer proxy.
 - Legal BitTorrent (`.torrent` / magnet) for content you own or that is freely distributable.
 
+### How do I check whether my sources are online?
+
+The app runs a background **Source Health-Check** every 4 hours. It sends a lightweight request to each configured source (Kodi, Jellyfin, Plex, Emby, Subsonic, IPTV/EPG URLs, Stremio, Cloudstream, web sources and the Deezer proxy) with a 3-second timeout. Results are shown as colored dots on the **Settings → Source Health** screen and in the wireless admin panel: **green** = online, **red** = offline/error, **gray** = not configured. You can also tap **Check source health now** in Settings to trigger an immediate check.
+
 ## MDBList
 
 ### How do I add MDBList?

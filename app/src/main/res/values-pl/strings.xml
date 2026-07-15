@@ -222,4 +222,12 @@
     <string name="settings_auto_skip_intro_subtitle">Pokazuj przyciski pomijania podczas czołówki i końcówki</string>
     <string name="settings_intro_end_seconds">Koniec czołówki (sekundy)</string>
     <string name="settings_outro_duration_seconds">Długość końcówki od końca (sekundy)</string>
+    <string name="settings_source_health">Status źródeł</string>
+    <string name="health_status_online">Działa</string>
+    <string name="health_status_offline">Offline</string>
+    <string name="health_status_unconfigured">Nieskonfigurowane</string>
+    <string name="health_status_no_data">Brak danych o stanie źródeł. Uruchom sprawdzanie.</string>
+    <string name="health_status_never">Nigdy</string>
+    <string name="health_last_check">Ostatnie sprawdzenie: %1$s</string>
+    <string name="health_check_now">Sprawdź stan źródeł teraz</string>
 </resources>

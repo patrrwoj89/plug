@@ -7,6 +7,11 @@ All notable changes to Polish Media Hub are documented in this file.
 ### Added
 
 #### UI / UX
+- **Background Source Health-Check Engine** (`HealthCheckWorker`, `HealthCheckEngine`, `HealthStatus`, `SourceHealth`)
+  - `CoroutineWorker` runs every 4 hours on `Dispatchers.IO` and checks reachability of all configured sources (Kodi, IPTV M3U, EPG, Plex, Jellyfin, Emby, Subsonic, Deezer proxy, podcast feeds, Stremio addons, Cloudstream repos and web source base URLs).
+  - Uses source-specific lightweight endpoints (`JSONRPC.Version`, `/System/Info/Public`, `/identity`, `/rest/ping.view`, etc.) with a 3-second timeout.
+  - Per-source status (`ONLINE`, `OFFLINE`, `UNCONFIGURED`) is stored as JSON in DataStore and displayed as colored dots in `SettingsScreen` (`SourceHealthSection`) and in the wireless admin panel.
+  - All HTTP connections and the dedicated `OkHttpClient` dispatcher/connection pool are cleaned up in `finally`; no URLs or credentials are logged in release builds.
 - **Shared Element Transitions for movie posters** (`TVNavHost`, `TVCard`, `DetailScreen`)
   - `NavHost` is wrapped in a `SharedTransitionLayout` to provide a `SharedTransitionScope` to every screen.
   - `MediaCard` and the detail main poster use `Modifier.sharedElement` with `rememberSharedContentState(key = "poster_${item.id}")` and the `AnimatedVisibilityScope` from `composable` destinations so the poster animates smoothly from the grid/row to the detail screen and back during D-Pad navigation.

@@ -59,6 +59,8 @@ class ApiConfigRepository @Inject constructor(
     val lastTraktSyncStatus: Flow<String> = plainStringFlow(KEY_LAST_TRAKT_SYNC_STATUS)
     val lastTraktSyncError: Flow<String?> = context.apiConfigDataStore.data.map { it[KEY_LAST_TRAKT_SYNC_ERROR] }
 
+    val healthStatuses: Flow<String> = plainStringFlow(KEY_HEALTH_STATUSES)
+
     suspend fun setTmdbApiKey(value: String) = edit(KEY_TMDB, value)
     suspend fun setAniListToken(value: String) = edit(KEY_ANILIST, value)
     suspend fun setTraktClientId(value: String) = edit(KEY_TRAKT_ID, value)
@@ -139,6 +141,8 @@ class ApiConfigRepository @Inject constructor(
         context.apiConfigDataStore.edit { it[key] = value }
     }
 
+    suspend fun setHealthStatuses(value: String) = edit(KEY_HEALTH_STATUSES, value)
+
     companion object {
         private val KEY_TMDB = stringPreferencesKey("tmdb_api_key")
         private val KEY_ANILIST = stringPreferencesKey("anilist_token")
@@ -176,6 +180,7 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_LAST_TRAKT_SYNC_AT = longPreferencesKey("last_trakt_sync_at")
         private val KEY_LAST_TRAKT_SYNC_STATUS = stringPreferencesKey("last_trakt_sync_status")
         private val KEY_LAST_TRAKT_SYNC_ERROR = stringPreferencesKey("last_trakt_sync_error")
+        private val KEY_HEALTH_STATUSES = stringPreferencesKey("health_statuses")
 
         private val SENSITIVE_STRING_KEYS = setOf(
             KEY_TMDB,

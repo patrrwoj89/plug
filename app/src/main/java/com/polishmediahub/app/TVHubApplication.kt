@@ -3,6 +3,7 @@ package com.polishmediahub.app
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.polishmediahub.app.data.remote.health.HealthCheckWorker
 import com.polishmediahub.app.data.remote.iptv.IptvUpdateWorker
 import com.polishmediahub.app.data.remote.trakt.TraktSyncWorker
 import com.polishmediahub.app.data.source.GlobalExceptionHandler
@@ -35,6 +36,8 @@ class TVHubApplication : Application(), Configuration.Provider {
             IptvUpdateWorker.schedule(this)
             IptvUpdateWorker.startImmediate(this)
             TraktSyncWorker.schedule(this)
+            HealthCheckWorker.schedule(this)
+            HealthCheckWorker.startImmediate(this)
         }
     }
 

@@ -137,6 +137,7 @@ class AdminHttpServer @Inject constructor(
                     method == "POST" && path == "/api/plugin" -> handlePluginPost(body, out, allowedOrigin)
                     method == "POST" && path == "/api/trakt/sync" -> handleTraktSync(out, allowedOrigin)
                     method == "GET" && path == "/api/config" -> serveConfig(out, allowedOrigin)
+                    method == "GET" && path == "/api/health" -> serveHealth(out, allowedOrigin)
                     else -> writeResponse(out, 404, "Not Found", "text/plain", "Not Found", allowedOrigin)
                 }
             }
@@ -163,6 +164,7 @@ class AdminHttpServer @Inject constructor(
                     "debridApiKey" to debridApiKey,
                     "debridProvider" to debridProvider,
                     "iptvSourceUrls" to iptvSourceUrls,
+                    "epgUrl" to epgUrl,
                     "stremioAddons" to stremioAddons,
                     "kodiUrl" to kodiUrl,
                     "webSourceConfig" to webSourceConfig,
@@ -205,6 +207,13 @@ class AdminHttpServer @Inject constructor(
         }
     }
 
+    private fun serveHealth(out: java.io.OutputStream, corsOrigin: String?) {
+        runBlocking(Dispatchers.IO) {
+            val raw = apiConfigRepository.healthStatuses.first()
+            val body = raw.ifBlank { "{\"lastCheckAt\":0,\"sources\":[]}" }
+            writeResponse(out, 200, "OK", "application/json", body, corsOrigin)
+        }
+    }
 
     private fun handleConfigPost(body: String, out: java.io.OutputStream, corsOrigin: String?) {
         val params = parseForm(body)
@@ -216,6 +225,7 @@ class AdminHttpServer @Inject constructor(
             params["debridApiKey"]?.let { apiConfigRepository.setDebridApiKey(it) }
             params["debridProvider"]?.let { apiConfigRepository.setDebridProvider(it) }
             params["iptvSourceUrls"]?.let { apiConfigRepository.setIptvSourceUrls(it) }
+            params["epgUrl"]?.let { apiConfigRepository.setEpgUrl(it) }
             params["stremioAddons"]?.let { apiConfigRepository.setStremioAddons(it) }
             params["kodiUrl"]?.let { apiConfigRepository.setKodiUrl(it) }
             pushAddonSettingsIfKodiConfigured()
@@ -385,32 +395,43 @@ button:hover { background: #29b6f6; }
 .status { margin-top: 1rem; padding: 0.5rem; border-radius: 4px; display: none; }
 .status.ok { background: #1b5e20; display: block; }
 .status.err { background: #b71c1c; display: block; }
+.health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.5rem; margin-top: 1rem; }
+.health-item { display: flex; align-items: center; gap: 0.5rem; background: #222; padding: 0.5rem; border-radius: 4px; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.status-dot.online { background: #4dff8c; }
+.status-dot.offline { background: #ff4d4d; }
+.status-dot.unconfigured { background: #808080; }
+label .status-dot { margin-left: 0.5rem; }
 </style>
 </head>
 <body>
 <h1>Polish Media Hub - Admin</h1>
 <p>Configure sources and plugins from your phone or computer.</p>
+<h2>Source Health</h2>
+<div id="healthStatus" class="health-grid"></div>
 <p id="epgStatus" class="status"></p>
 <form id="configForm">
-  <label>Kodi URL</label>
+  <label>Kodi URL <span class="status-dot unconfigured" id="status-kodiUrl"></span></label>
   <input type="text" name="kodiUrl" placeholder="http://192.168.1.10:8080">
-  <label>Web Source Config (JSON)</label>
+  <label>Web Source Config (JSON) <span class="status-dot unconfigured" id="status-webSourceConfig"></span></label>
   <textarea name="webSourceConfig" placeholder='[{"id":"example",...}]'></textarea>
-  <label>Cloudstream Repo URLs (one per line)</label>
+  <label>Cloudstream Repo URLs (one per line) <span class="status-dot unconfigured" id="status-cloudstreamRepoUrls"></span></label>
   <textarea name="cloudstreamRepoUrls"></textarea>
-  <label>IPTV / M3U URLs (one per line)</label>
+  <label>IPTV / M3U URLs (one per line) <span class="status-dot unconfigured" id="status-iptvSourceUrls"></span></label>
   <textarea name="iptvSourceUrls"></textarea>
-  <label>Stremio Addons (one per line)</label>
+  <label>EPG URL <span class="status-dot unconfigured" id="status-epgUrl"></span></label>
+  <input type="text" name="epgUrl" placeholder="https://example.com/epg.xml">
+  <label>Stremio Addons (one per line) <span class="status-dot unconfigured" id="status-stremioAddons"></span></label>
   <textarea name="stremioAddons"></textarea>
-  <label>Jellyfin URL</label>
+  <label>Jellyfin URL <span class="status-dot unconfigured" id="status-jellyfinUrl"></span></label>
   <input type="text" name="jellyfinUrl">
   <label>Jellyfin Token</label>
   <input type="text" name="jellyfinToken">
-  <label>Plex URL</label>
+  <label>Plex URL <span class="status-dot unconfigured" id="status-plexUrl"></span></label>
   <input type="text" name="plexUrl">
   <label>Plex Token</label>
   <input type="text" name="plexToken">
-  <label>Emby URL</label>
+  <label>Emby URL <span class="status-dot unconfigured" id="status-embyUrl"></span></label>
   <input type="text" name="embyUrl">
   <label>Emby Token</label>
   <input type="text" name="embyToken">
@@ -418,15 +439,15 @@ button:hover { background: #29b6f6; }
   <input type="text" name="forceTranscode" placeholder="false">
   <label>Max Direct Play Bitrate (bps)</label>
   <input type="text" name="maxDirectPlayBitrate" placeholder="20000000">
-  <label>Subsonic URL</label>
+  <label>Subsonic URL <span class="status-dot unconfigured" id="status-subsonicUrl"></span></label>
   <input type="text" name="subsonicUrl">
   <label>Subsonic User</label>
   <input type="text" name="subsonicUser">
   <label>Subsonic Password</label>
   <input type="text" name="subsonicPassword">
-  <label>Podcast RSS Feeds (one per line)</label>
+  <label>Podcast RSS Feeds (one per line) <span class="status-dot unconfigured" id="status-podcastFeeds"></span></label>
   <textarea name="podcastFeeds"></textarea>
-  <label>Deezer Proxy URL</label>
+  <label>Deezer Proxy URL <span class="status-dot unconfigured" id="status-deezerProxyUrl"></span></label>
   <input type="text" name="deezerProxyUrl" placeholder="https://your-worker.workers.dev">
   <label>MDBList API Key</label>
   <input type="password" name="mdbListApiKey" placeholder="Get it at mdblist.com/preferences/#api">
@@ -533,7 +554,58 @@ async function loadTraktStatus() {
   } catch (e) { console.error(e); }
 }
 document.getElementById('traktSyncBtn').addEventListener('click', syncTrakt);
+async function loadHealth() {
+  try {
+    const res = await fetch(api('/api/health'));
+    const data = await res.json();
+    const container = document.getElementById('healthStatus');
+    if (!data.sources || data.sources.length === 0) {
+      container.innerHTML = '<p>No health data yet. Wait for the next background check or open Settings on the TV.</p>';
+      return;
+    }
+    const fieldMap = {
+      kodi: 'kodiUrl',
+      epg: 'epgUrl',
+      jellyfin: 'jellyfinUrl',
+      plex: 'plexUrl',
+      emby: 'embyUrl',
+      subsonic: 'subsonicUrl',
+      deezer: 'deezerProxyUrl'
+    };
+    const grouped = {};
+    data.sources.forEach(s => {
+      const prefix = s.id.split('_')[0];
+      const field = fieldMap[prefix];
+      if (field) {
+        if (!grouped[field]) grouped[field] = [];
+        grouped[field].push(s);
+      }
+    });
+    Object.keys(grouped).forEach(field => {
+      const dot = document.getElementById('status-' + field);
+      if (dot) {
+        const sources = grouped[field];
+        if (sources.every(s => s.status === 'UNCONFIGURED')) {
+          dot.className = 'status-dot unconfigured';
+        } else if (sources.every(s => s.status === 'ONLINE' || s.status === 'UNCONFIGURED')) {
+          dot.className = 'status-dot online';
+        } else if (sources.some(s => s.status === 'OFFLINE')) {
+          dot.className = 'status-dot offline';
+        } else {
+          dot.className = 'status-dot unconfigured';
+        }
+      }
+    });
+    container.innerHTML = data.sources.map(s => {
+      const cls = s.status === 'ONLINE' ? 'online' : (s.status === 'OFFLINE' ? 'offline' : 'unconfigured');
+      const label = (s.label || s.id) + (s.error ? ' (' + s.error + ')' : '');
+      return '<div class="health-item"><span class="status-dot ' + cls + '"></span><span>' + label + '</span></div>';
+    }).join('');
+  } catch (e) { console.error(e); }
+}
+document.getElementById('traktSyncBtn').addEventListener('click', syncTrakt);
 loadConfig();
+loadHealth();
 loadEpgStatus();
 loadTraktStatus();
 </script>
