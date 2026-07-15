@@ -9,15 +9,20 @@ The built-in **Admin Panel** lets you configure all sources from a phone, tablet
 1. In the TV app, open **Admin** from the sidebar.
 2. The screen shows:
    - a QR code,
-   - the full URL (e.g. `http://192.168.1.42:8123/admin`),
+   - the full URL (e.g. `http://192.168.1.42:8123/admin?token=abcd1234…`),
    - short instructions.
 3. Scan the QR with your phone camera or any QR reader, or type the URL into a browser on the same Wi-Fi network.
+
+The URL contains a unique per-process pairing token. All API endpoints require this token via the `?token=...` query parameter and return `403 Forbidden` if it is missing or incorrect.
 
 ## How the server works
 
 - `AdminHttpServer` is a lightweight `ServerSocket` based server running in a `Dispatchers.IO` coroutine.
 - It is started when the **Admin** screen is opened and stopped when the screen is destroyed.
 - The port is allocated dynamically (`ServerSocket(0)`) to avoid conflicts with other apps or system services.
+- On startup the server generates a random UUID pairing token and appends it to the admin URL (`/admin?token=...`).
+- All `/api/*` endpoints verify the `?token=...` query parameter; missing/invalid tokens receive HTTP `403 Forbidden`.
+- The built-in admin HTML reads the token from the page URL and appends it to every `/api/*` fetch, so you do not have to type it manually.
 - Server errors are logged with `Log.w(...)` instead of being silently swallowed, so admin interactions can be debugged.
 - The server binds to the local network IP discovered by `NetworkAddressHelper` (usually Wi-Fi or ethernet).
 - Cleartext HTTP to the TV IP is permitted by the network security config because the traffic stays on the LAN.
@@ -27,10 +32,10 @@ The built-in **Admin Panel** lets you configure all sources from a phone, tablet
 | Method | Path | Purpose |
 |--------|------|---------|
 | GET | `/admin` | Serves the responsive HTML admin page. |
-| GET | `/api/config` | Returns the current `ApiConfigRepository` values as JSON. |
-| POST | `/api/config` | Receives form-encoded values and saves them into `ApiConfigRepository` (DataStore). |
-| POST | `/api/plugin` | Receives a plugin manifest / script URL and stores it through `PluginRepository`. |
-| POST | `/api/trakt/sync` | Triggers an immediate Trakt two-way sync (`TraktSyncWorker.startImmediate`). |
+| GET | `/api/config` | Returns the current `ApiConfigRepository` values as JSON. Requires `?token=...`. |
+| POST | `/api/config` | Receives form-encoded values and saves them into `ApiConfigRepository` (DataStore). Requires `?token=...`. |
+| POST | `/api/plugin` | Receives a plugin manifest / script URL and stores it through `PluginRepository`. Requires `?token=...`. |
+| POST | `/api/trakt/sync` | Triggers an immediate Trakt two-way sync (`TraktSyncWorker.startImmediate`). Requires `?token=...`. |
 
 ## Configurable sources (POST `/api/config`)
 
@@ -129,10 +134,10 @@ When you save a Debrid or Trakt token in the admin panel, the app attempts to pu
 
 ## Adding a plugin (POST `/api/plugin`)
 
-You can add a plugin by submitting a `url` form field:
+You can add a plugin by submitting a `url` form field. The request must include the pairing token from the admin URL as a query parameter:
 
 ```
-POST /api/plugin
+POST /api/plugin?token=YOUR_TOKEN
 Content-Type: application/x-www-form-urlencoded
 
 url=https://example.com/plugins/myplugin/manifest.json

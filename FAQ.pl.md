@@ -369,7 +369,7 @@ Upewnij się, że telefon i TV są w tej samej sieci Wi-Fi. QR zawiera lokalny I
 
 ### Czy panel administracyjny jest bezpieczny?
 
-Panel działa celowo na czystym HTTP w lokalnej sieci. Nie należy wystawiać TV bezpośrednio na publicznym internecie. Globalna blokada PIN w **Ustawienia** zabezpiecza także ekran Admin na samym TV.
+Panel działa celowo na czystym HTTP w lokalnej sieci. Nie należy wystawiać TV bezpośrednio na publicznym internecie. Od tej wersji `AdminHttpServer` generuje unikalny token parowania na sesję i osadza go w URL/QR admina (`/admin?token=...`). Wszystkie endpointy `/api/*` (w tym `/api/plugin` i `/api/config`) odrzucają brakujący lub niepoprawny token kodem HTTP 403, więc atakujący w LAN nie może zainstalować wtyczki bez zeskanowania kodu QR w czasie, gdy ekran Admin jest otwarty. Globalna blokada PIN w **Ustawienia** zabezpiecza także ekran Admin na samym TV.
 
 ## Raportowanie awarii
 
@@ -405,6 +405,14 @@ export ANDROID_HOME=/path/to/android-sdk
 ### Dlaczego plakat filmu animuje się podczas otwierania ekranu szczegółów?
 
 Polish Media Hub używa Jetpack Compose **Shared Element Transitions**. `NavHost` jest owinięty w `SharedTransitionLayout`; plakat w siatce (`MediaCard`) i główny plakat na ekranie szczegółów współdzielą ten sam klucz (`poster_<item_id>`). Po naciśnięciu D-Pad Center/SELECT Compose animuje rozmiar i pozycję plakatu między dwoma ekranami zamiast go wygaszać i ponownie pojawiać.
+
+### Dlaczego fokus skacze na górę siatki w Bibliotece / Do obejrzenia po wciśnięciu BACK?
+
+Nie powinien. `LibraryScreen`, `WatchlistScreen` i `CustomListDetailScreen` mają do `LazyVerticalGrid` dołączone `Modifier.focusGroup()` + `focusRestorer()`. Jeśli fokus wraca do nagłówka zamiast ostatniego kafelka, upewnij się, że masz najnowszą wersję i że nawigacja wraca przez ten sam wpis na stosie.
+
+### Co to jest duży baner na górze Home?
+
+**Hero Featured Banner** wyróżnia pierwszy polecany element. Pokazuje kinowe tło z ciemnymi gradientami, tytuł, rok, odznaki oceny TMDB/Filmweb oraz skupiony przycisk „Odtwórz teraz ▷". Naciśnij D-Pad Center/SELECT na przycisku, aby otworzyć ekran szczegółów.
 
 ### Gdzie zgłosić błąd?
 

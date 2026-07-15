@@ -9,15 +9,20 @@ Wbudowany **Panel administracyjny** pozwala konfigurować wszystkie źródła z 
 1. W aplikacji TV otwórz **Admin** w panelu bocznym.
 2. Na ekranie zobaczysz:
    - kod QR,
-   - pełny URL (np. `http://192.168.1.42:8123/admin`),
+   - pełny URL (np. `http://192.168.1.42:8123/admin?token=abcd1234…`),
    - krótką instrukcję.
 3. Zeskanuj QR telefonem / czytnikiem QR lub wpisz URL w przeglądarce w tej samej sieci Wi-Fi.
+
+URL zawiera unikalny token parowania na sesję. Wszystkie endpointy API wymagają tego tokenu w parametrze `?token=...` i zwracają `403 Forbidden`, gdy jest on nieobecny lub nieprawidłowy.
 
 ## Jak działa serwer
 
 - `AdminHttpServer` to lekki serwer oparty na `ServerSocket` działający w korutynie `Dispatchers.IO`.
 - Jest uruchamiany po otwarciu ekranu **Admin** i zatrzymywany po jego zamknięciu.
 - Port przydzielany jest dynamicznie (`ServerSocket(0)`), aby uniknąć konfliktów z innymi aplikacjami lub usługami systemowymi.
+- Przy starcie serwer generuje losowy token parowania (UUID) i dołącza go do URL admina (`/admin?token=...`).
+- Wszystkie endpointy `/api/*` weryfikują parametr `?token=...`; brakujący lub niepoprawny token otrzymuje HTTP `403 Forbidden`.
+- Wbudowana strona admina odczytuje token z URL i dołącza go do każdego zapytania `/api/*`, więc nie musisz wpisywać go ręcznie.
 - Błędy serwera są logowane przez `Log.w(...)` zamiast być cicho połykane, co ułatwia debugowanie interakcji z panelem.
 - Serwer binduje się do lokalnego IP sieciowego wykrytego przez `NetworkAddressHelper` (zazwyczaj Wi-Fi lub ethernet).
 - Czysty HTTP do IP TV jest dozwolony przez konfigurację bezpieczeństwa sieci, ponieważ ruch pozostaje w LAN.
@@ -27,10 +32,10 @@ Wbudowany **Panel administracyjny** pozwala konfigurować wszystkie źródła z 
 | Metoda | Ścieżka | Przeznaczenie |
 |--------|---------|---------------|
 | GET | `/admin` | Serwuje responsywną stronę administratora. |
-| GET | `/api/config` | Zwraca aktualne wartości `ApiConfigRepository` jako JSON. |
-| POST | `/api/config` | Odbiera wartości form-encoded i zapisuje je w `ApiConfigRepository` (DataStore). |
-| POST | `/api/plugin` | Odbiera URL manifestu / skryptu wtyczki i zapisuje przez `PluginRepository`. |
-| POST | `/api/trakt/sync` | Uruchamia natychmiastową dwukierunkową synchronizację z Trakt (`TraktSyncWorker.startImmediate`). |
+| GET | `/api/config` | Zwraca aktualne wartości `ApiConfigRepository` jako JSON. Wymaga `?token=...`. |
+| POST | `/api/config` | Odbiera wartości form-encoded i zapisuje je w `ApiConfigRepository` (DataStore). Wymaga `?token=...`. |
+| POST | `/api/plugin` | Odbiera URL manifestu / skryptu wtyczki i zapisuje przez `PluginRepository`. Wymaga `?token=...`. |
+| POST | `/api/trakt/sync` | Uruchamia natychmiastową dwukierunkową synchronizację z Trakt (`TraktSyncWorker.startImmediate`). Wymaga `?token=...`. |
 
 ## Konfigurowalne źródła (POST `/api/config`)
 
@@ -129,10 +134,10 @@ Gdy zapiszesz token Debrid lub Trakt w panelu administracyjnym, aplikacja próbu
 
 ## Dodawanie wtyczki (POST `/api/plugin`)
 
-Wtyczkę możesz dodać przesyłając pole formularza `url`:
+Wtyczkę możesz dodać przesyłając pole formularza `url`. Żądanie musi zawierać token parowania z URL admina jako parametr zapytania:
 
 ```
-POST /api/plugin
+POST /api/plugin?token=TWÓJ_TOKEN
 Content-Type: application/x-www-form-urlencoded
 
 url=https://example.com/plugins/myplugin/manifest.json

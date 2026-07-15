@@ -236,6 +236,17 @@ All notable changes to Polish Media Hub are documented in this file.
 
 ### Fixed
 
+- **D-Pad focus restoration on vertical grid screens**
+  - `LibraryScreen`, `WatchlistScreen` and `CustomListDetailScreen` now apply `Modifier.focusGroup()` + `focusRestorer()` to their `LazyVerticalGrid`, so focus returns to the last viewed tile after navigating back from the detail screen.
+- **Hero banner on Home**
+  - `HomeScreen` now uses a dedicated `HeroFeaturedBanner` with a cinematic backdrop, left and bottom black gradients, title, year, TMDB/Filmweb rating badges and a focused D-Pad `TvButton` "Play now ▷".
+- **LibVLC runtime diagnostics**
+  - Replaced two silent empty `catch {}` blocks in `UniversalVlcPlayer` with explicit `Log.e("UniversalVlcPlayer", ...)` logging so playback errors are visible in logcat.
+- **Admin panel plugin endpoint security**
+  - `AdminHttpServer` now generates a unique per-process pairing token at startup and embeds it in the QR/admin URL (`/admin?token=...`).
+  - All `/api/*` endpoints (including `/api/plugin` GET/POST and `/api/config` GET/POST) reject requests with a missing or invalid `?token=...` with HTTP 403 Forbidden, closing the LAN RCE vector for unauthorized plugin installation.
+  - The admin HTML fetches all `/api/*` URLs with the token read from the page query string.
+
 - **Visual polish and sidebar UX**
   - `MediaCard` and `WideCard` (`TVCard`) now clip `AsyncImage` with `RoundedCornerShape(Radius.md)` to eliminate sharp poster/hero corners.
   - Profile avatars in `Sidebar` and `CollapsedSidebarPill` use `ContentScale.Crop` and `fillMaxSize()` inside circular containers to avoid distortion or empty space.

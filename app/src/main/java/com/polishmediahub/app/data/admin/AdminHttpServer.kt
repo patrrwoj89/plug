@@ -25,6 +25,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.URLDecoder
 import java.util.Locale
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -43,10 +44,15 @@ class AdminHttpServer @Inject constructor(
     var port: Int = 0
         private set
 
+    private var pairingToken: String = ""
+
     fun start(): Int = synchronized(this) {
         serverSocket?.let { return port }
         val socket = ServerSocket(0)
         port = socket.localPort
+        if (pairingToken.isBlank()) {
+            pairingToken = UUID.randomUUID().toString()
+        }
         serverSocket = socket
         scope.launch {
             while (!socket.isClosed) {
@@ -72,7 +78,7 @@ class AdminHttpServer @Inject constructor(
         port = 0
     }
 
-    fun adminUrl(ip: String): String = "http://$ip:$port/admin"
+    fun adminUrl(ip: String): String = "http://$ip:$port/admin?token=$pairingToken"
 
     private fun handleClient(client: Socket) {
         try {
@@ -110,6 +116,12 @@ class AdminHttpServer @Inject constructor(
                 } else ""
 
                 val out = socket.getOutputStream()
+                val query = parseQuery(pathWithQuery)
+                val token = query["token"]
+                if (path.startsWith("/api/") && token != pairingToken) {
+                    writeResponse(out, 403, "Forbidden", "text/plain", "Forbidden")
+                    return@use
+                }
                 when {
                     method == "GET" && path == "/admin" -> serveAdminPage(out)
                     method == "POST" && path == "/api/config" -> handleConfigPost(body, out)
@@ -273,6 +285,19 @@ class AdminHttpServer @Inject constructor(
         }.toMap()
     }
 
+    private fun parseQuery(pathWithQuery: String): Map<String, String> {
+        val query = pathWithQuery.substringAfter('?', "")
+        if (query.isBlank()) return emptyMap()
+        return query.split('&').mapNotNull { pair ->
+            val eq = pair.indexOf('=')
+            if (eq > 0) {
+                val key = URLDecoder.decode(pair.substring(0, eq), "UTF-8")
+                val value = URLDecoder.decode(pair.substring(eq + 1), "UTF-8")
+                key to value
+            } else null
+        }.toMap()
+    }
+
     private fun writeResponse(out: java.io.OutputStream, code: Int, status: String, contentType: String, body: String) {
         val bytes = body.toByteArray(Charsets.UTF_8)
         val headers = "HTTP/1.1 $code $status\r\n" +
@@ -386,9 +411,11 @@ button:hover { background: #29b6f6; }
   <button type="submit">Add Plugin</button>
 </form>
 <script>
+const API_TOKEN = new URLSearchParams(window.location.search).get('token') || '';
+function api(path) { return path + '?token=' + encodeURIComponent(API_TOKEN); }
 async function loadConfig() {
   try {
-    const res = await fetch('/api/config');
+    const res = await fetch(api('/api/config'));
     const cfg = await res.json();
     for (const [key, value] of Object.entries(cfg)) {
       const el = document.querySelector('[name="' + key + '"]');
@@ -402,7 +429,7 @@ document.getElementById('configForm').addEventListener('submit', async function(
   const params = new URLSearchParams(form).toString();
   const status = document.getElementById('status');
   try {
-    const res = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params });
+    const res = await fetch(api('/api/config'), { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params });
     if (res.ok) { status.textContent = 'Saved'; status.className = 'status ok'; }
     else { status.textContent = 'Error'; status.className = 'status err'; }
   } catch (err) { status.textContent = err.message; status.className = 'status err'; }
@@ -412,13 +439,13 @@ document.getElementById('pluginForm').addEventListener('submit', async function(
   const form = new FormData(this);
   const params = new URLSearchParams(form).toString();
   try {
-    await fetch('/api/plugin', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params });
+    await fetch(api('/api/plugin'), { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params });
     alert('Plugin added');
   } catch (err) { alert(err.message); }
 });
 async function loadEpgStatus() {
   try {
-    const res = await fetch('/api/config');
+    const res = await fetch(api('/api/config'));
     const cfg = await res.json();
     const at = cfg.lastEpgSyncAt ? new Date(Number(cfg.lastEpgSyncAt)).toLocaleString() : 'Never';
     const status = cfg.lastEpgSyncStatus || '';
@@ -431,14 +458,14 @@ async function loadEpgStatus() {
 }
 async function syncTrakt() {
   try {
-    const res = await fetch('/api/trakt/sync', { method: 'POST' });
+    const res = await fetch(api('/api/trakt/sync'), { method: 'POST' });
     if (res.ok) { alert('Trakt sync scheduled'); }
     else { alert('Trakt sync failed'); }
   } catch (err) { alert(err.message); }
 }
 async function loadTraktStatus() {
   try {
-    const res = await fetch('/api/config');
+    const res = await fetch(api('/api/config'));
     const cfg = await res.json();
     const at = cfg.lastTraktSyncAt ? new Date(Number(cfg.lastTraktSyncAt)).toLocaleString() : 'Never';
     const status = cfg.lastTraktSyncStatus || '';

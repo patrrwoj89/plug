@@ -1,5 +1,6 @@
 package com.polishmediahub.app.ui.screens
 
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,7 +59,10 @@ fun CustomListDetailScreen(
             else -> {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(5),
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .focusGroup()
+                        .focusRestorer(),
                     contentPadding = PaddingValues(vertical = Spacing.md),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                     verticalArrangement = Arrangement.spacedBy(Spacing.md)

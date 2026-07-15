@@ -1,5 +1,6 @@
 package com.polishmediahub.app.ui.screens
 
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.polishmediahub.app.R
@@ -44,7 +46,11 @@ fun LibraryScreen(
     } else {
         LazyVerticalGrid(
             columns = GridCells.Fixed(5),
-            modifier = modifier.fillMaxSize().padding(Spacing.lg),
+            modifier = modifier
+                .fillMaxSize()
+                .padding(Spacing.lg)
+                .focusGroup()
+                .focusRestorer(),
             contentPadding = PaddingValues(vertical = Spacing.md),
             horizontalArrangement = Arrangement.spacedBy(Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)

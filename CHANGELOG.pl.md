@@ -236,6 +236,17 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 
 ### Naprawiono
 
+- **Przywracanie fokusu D-Pada w pionowych siatkach**
+  - `LibraryScreen`, `WatchlistScreen` i `CustomListDetailScreen` mają teraz `Modifier.focusGroup()` + `focusRestorer()` na `LazyVerticalGrid`, więc fokus wraca do ostatnio oglądanego kafelka po powrocie z ekranu szczegółów.
+- **Hero banner na Home**
+  - `HomeScreen` używa dedykowanego `HeroFeaturedBanner` z kinowym tłem, lewym i dolnym gradientem wygaszania do czerni, tytułem, rokiem, odznakami oceny TMDB/Filmweb i skupionym przyciskiem D-Pad „Odtwórz teraz ▷" `TvButton`.
+- **Diagnostyka runtime LibVLC**
+  - W `UniversalVlcPlayer` zamieniono dwa puste bloki `catch {}` na jawne logowanie `Log.e("UniversalVlcPlayer", ...)`, dzięki czemu błędy odtwarzania są widoczne w logcat.
+- **Bezpieczeństwo endpointu wtyczek w panelu Admina**
+  - `AdminHttpServer` generuje teraz unikalny token parowania na sesję i osadza go w URL/QR admina (`/admin?token=...`).
+  - Wszystkie endpointy `/api/*` (w tym `/api/plugin` GET/POST i `/api/config` GET/POST) odrzucają brakujący lub niepoprawny `?token=...` kodem HTTP 403 Forbidden, zamykając wektor ataku RCE przez nieautoryzowaną instalację wtyczek z sieci LAN.
+  - Wbudowana strona admina odczytuje token z URL i dołącza go do każdego zapytania `/api/*`.
+
 - **Dopracowanie wizualne i struktura menu bocznego**
   - `MediaCard` i `WideCard` (`TVCard`) przycinają teraz `AsyncImage` za pomocą `RoundedCornerShape(Radius.md)`, eliminując ostre rogi plakatów.
   - Awatary profili w `Sidebar` i `CollapsedSidebarPill` używają `ContentScale.Crop` i `fillMaxSize()` w okrągłych kontenerach, zapobiegając zniekształceniom i pustym przestrzeniom.

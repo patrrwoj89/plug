@@ -369,7 +369,7 @@ Make sure your phone and the TV are on the same Wi-Fi network. The QR encodes th
 
 ### Is the admin panel secure?
 
-The panel listens only on the local network interface. It does not use TLS, so it should only be used on a trusted home network. The **Settings / Admin** screens can be protected by the global PIN.
+The panel listens only on the local network interface. It does not use TLS, so it should only be used on a trusted home network. Since this build, `AdminHttpServer` generates a unique per-process pairing token and embeds it in the QR/admin URL (`/admin?token=...`). All `/api/*` endpoints (including `/api/plugin` and `/api/config`) reject missing or invalid tokens with HTTP 403, so an attacker on the LAN cannot install plugins without scanning the QR code while the admin screen is open. The **Settings / Admin** screens can also be protected by the global PIN.
 
 ## Crash reporter
 
@@ -405,6 +405,14 @@ export ANDROID_HOME=/path/to/android-sdk
 ### Why does the movie poster animate when I open the details screen?
 
 Polish Media Hub uses Jetpack Compose **Shared Element Transitions**. The `NavHost` is wrapped in a `SharedTransitionLayout`; the poster in the grid (`MediaCard`) and the main poster on the detail screen share the same key (`poster_<item_id>`). When you press D-Pad Center/SELECT, Compose animates the poster's size and position between the two screens instead of fading it out and in.
+
+### Why does focus jump to the top of the Library / Watchlist grid after I press BACK?
+
+It shouldn't. `LibraryScreen`, `WatchlistScreen` and `CustomListDetailScreen` attach `Modifier.focusGroup()` + `focusRestorer()` to their `LazyVerticalGrid`. If focus ever resets to the header instead of the last tile, make sure you are running the latest build and navigation returned through the same back stack entry.
+
+### What is the large banner at the top of Home?
+
+The **Hero Featured Banner** highlights the first featured item. It shows a cinematic backdrop with dark gradients, the title, year, TMDB/Filmweb rating badges and a focused "Play now ▷" button. Press D-Pad Center/SELECT on the button to open the detail screen.
 
 ### Where can I report a bug?
 

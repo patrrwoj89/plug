@@ -33,11 +33,12 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 
 - **Modern Sidebar Scaffold**: floating collapsed pill, Haze blur overlay drawer, no layout jitter, auto-collapse after 1500 ms of inactivity, D-Pad LEFT opens the menu from the leftmost item; menu items are grouped into Discover, Library, Multimedia, Downloads and System sections, and PIN-locked profiles show `Icons.Default.Lock` with a localized content description.
 - **Essential Addon Setup** onboarding screen for first-launch profiles: one-click loading of legal starter packages (IPTV/EPG, music/podcasts, public web catalogs) via `EssentialSetupScreen` and `EssentialSetupViewModel`.
-- **Library, Watchlist and Custom Lists** screens use a 5-column `LazyVerticalGrid` (`CustomListDetailScreen` for the contents of a single custom list).
+- **Library, Watchlist and Custom Lists** screens use a 5-column `LazyVerticalGrid` (`CustomListDetailScreen` for the contents of a single custom list) with `Modifier.focusGroup()` + `focusRestorer()` so D-Pad focus returns to the last viewed tile after navigating back from the detail screen.
 - **D-Pad focus restoration** in horizontal `LazyRow`s (`CategoryRow`) via `Modifier.focusGroup()` + `focusRestorer()`, so focus returns to the last viewed item when moving between rows.
 - **Voice Search** in `SearchScreen`: D-Pad Mic button launches `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` in Polish (`pl-PL`) and inserts the recognized query into the search field.
 - **Auto-Play Next** overlay for series: 15-second countdown with next-episode metadata, "Play now" / "Cancel" D-Pad buttons, BACK behaves like Cancel.
 - **Shared Element Transitions** for movie posters (`TVNavHost`, `TVCard`, `DetailScreen`, `SharedTransitionLayout`): `NavHost` is wrapped in a `SharedTransitionLayout`; `MediaCard` and the detail main poster use the same key with `Modifier.sharedElement` so posters animate smoothly from the grid to detail on D-Pad navigation.
+- **Hero Featured Banner** on `HomeScreen`: cinematic backdrop with left and bottom black gradients, title, year, TMDB/Filmweb rating badges and a focused D-Pad "Play now ▷" `TvButton`.
 - **Spoiler Blur**: unwatched episode plot descriptions are blurred on the detail screen and can be revealed with D-Pad Center/SELECT.
 - **Subtitle settings in player**: size, color and vertical offset stored in DataStore and applied live to `SubtitleView`.
 - **Nerd Stats Overlay**: optional real-time panel with resolution, fps, active codecs, current bitrate and dropped/jank frames.
@@ -64,7 +65,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 
 ### Admin & configuration
 
-- **Wireless admin panel** served by a local HTTP server with QR code (ZXing) for easy source configuration from a phone or computer; the panel and Settings show the last EPG sync timestamp and status.
+- **Wireless admin panel** served by a local HTTP server with QR code (ZXing) for easy source configuration from a phone or computer. A unique per-process pairing token is embedded in the QR/admin URL (`/admin?token=...`) and all `/api/*` endpoints reject missing/invalid tokens with HTTP 403, blocking unauthorized plugin installation over the LAN.
 - **Background EPG/IPTV updater** (`IptvUpdateWorker`) runs every 12 hours (and on cold start) on `Dispatchers.IO` with unmetered/idle/battery-not-low constraints, caches channels and EPG in Room, so the live-TV screen opens instantly.
 - **Trakt.tv device-code pairing**: in `Settings → Trakt Sync` or the admin panel, enter your Trakt client ID and secret, tap **Log in with Trakt**, then scan the QR code or type the on-screen `user_code` at the activation URL on your phone.
 - **Background Trakt.tv sync** (`TraktSyncWorker`) runs every 6 hours with network/battery constraints. You can also trigger an immediate sync from `Settings` or the admin panel.

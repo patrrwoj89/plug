@@ -33,11 +33,12 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 
 - **Nowoczesny panel boczny** — pływająca pigułka, overlay z efektem rozmycia Haze, brak drgania layoutu, automatyczne zwijanie po 1500 ms, otwieranie D-Pad LEFT; pozycje menu pogrupowane w sekcje Odkrywaj, Biblioteka, Multimedia, Pobrane i System, a zablokowane profile wyświetlają ikonę `Icons.Default.Lock` z lokalizowanym opisem.
 - **Ekran pierwszej konfiguracji** (Essential Addon Setup) dla nowych profili: jednym kliknięciem ładuje legalne pakiety startowe (IPTV/EPG, muzyka/podcasty, katalogi web, MDBList) przez `EssentialSetupScreen` i `EssentialSetupViewModel`.
-- **Biblioteka, Do obejrzenia i Listy własne** wyświetlają siatkę 5 kolumn (`CustomListDetailScreen` dla zawartości pojedynczej listy własnej).
+- **Biblioteka, Do obejrzenia i Listy własne** wyświetlają siatkę 5 kolumn (`CustomListDetailScreen` dla zawartości pojedynczej listy własnej) z `Modifier.focusGroup()` + `focusRestorer()`, więc fokus pilota wraca do ostatnio oglądanego kafelka po powrocie z ekranu szczegółów.
 - **Przywracanie fokusu D-Pada** w poziomych `LazyRow` (`CategoryRow`) przez `Modifier.focusGroup()` + `focusRestorer()` — fokus wraca do ostatnio oglądanego kafelka przy przechodzeniu między rzędami.
 - **Wyszukiwanie głosowe** w `SearchScreen`: przycisk D-Pad z mikrofonem uruchamia `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` w języku polskim (`pl-PL`) i wstawia rozpoznaną frazę do pola wyszukiwania.
 - **Nakładka Auto-Play Next** dla seriali: 15-sekundowe odliczanie, metadata następnego odcinka, przyciski „Odtwórz teraz” i „Anuluj”, BACK działa jak Anuluj.
 - **Płynne animacje przejść współdzielonych elementów** (Shared Element Transitions) dla plakatów filmów (`TVNavHost`, `TVCard`, `DetailScreen`, `SharedTransitionLayout`): `NavHost` jest owinięty w `SharedTransitionLayout`; `MediaCard` i główny plakat w `DetailScreen` współdzielą ten sam klucz dzięki `Modifier.sharedElement`, dzięki czemu plakaty płynnie animują się z siatki/rzędu do ekranu szczegółów i z powrotem podczas nawigacji pilotem D-Pad.
+- **Hero Featured Banner** na `HomeScreen`: kinowe tło z lewym i dolnym gradientem wygaszania do czerni, tytuł, rok, odznaki oceny TMDB/Filmweb oraz skupiony przycisk pilota D-Pad „Odtwórz teraz ▷" `TvButton`.
 - **Spoiler Blur** — opisy nieobejrzanych odcinków rozmyte `Modifier.blur(16.dp)`, odkrywane D-Pad Center/SELECT.
 - **Ustawienia napisów w locie**: rozmiar, kolor i przesunięcie pionowe zapisywane w DataStore i aplikane na żywo w `SubtitleView`.
 - **Nakładka Nerd Stats**: panel diagnostyczny w prawym górnym rogu (rozdzielczość, fps, kodeki, bitrate, pominięte klatki).
@@ -64,7 +65,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 
 ### Admin i konfiguracja
 
-- **Bezprzewodowy panel administracyjny** serwowany lokalnie z kodem QR (ZXing) do łatwej konfiguracji źródeł z telefonu lub komputera; panel oraz Ustawienia wyświetlają datę i status ostatniej synchronizacji EPG.
+- **Bezprzewodowy panel administracyjny** serwowany lokalnie z kodem QR (ZXing) do łatwej konfiguracji źródeł z telefonu lub komputera. Unikalny token parowania generowany na sesję jest osadzony w URL admina (`/admin?token=...`), a wszystkie endpointy `/api/*` odrzucają brakujący lub niepoprawny `?token=...` kodem HTTP 403, blokując nieautoryzowaną instalację wtyczek przez LAN.
 - **Tło aktualizowanie EPG/IPTV** (`IptvUpdateWorker`) uruchamia się co 12 godzin (i przy zimnym starcie) na `Dispatchers.IO` z ograniczeniami unmetered/idle/battery-not-low, zapisuje kanały i programy do Room, dzięki czemu ekran telewizji na żywo otwiera się natychmiast.
 - **Parowanie Trakt.tv kodem urządzenia**: w `Ustawienia → Synchronizacja Trakt` lub w panelu admina wpisz **Trakt client ID** i **client secret**, dotknij **Zaloguj się przez Trakt**, a następnie zeskanuj kod QR lub wpisz wyświetlony `user_code` na stronie aktywacji na telefonie.
 - **Tło synchronizacji Trakt.tv** (`TraktSyncWorker`) uruchamia się co 6 godzin z ograniczeniami sieci/baterii. Pobiera historię obejrzanych i listę do obejrzenia z Trakt do Room oraz wysyła lokalne zmiany z powrotem do Trakt. Od czerwca 2026 r. Trakt wymusza paginację na `sync/watched` i `sync/watchlist`; repozytorium odczytuje `X-Pagination-Page-Count` i ładuje wszystkie strony (max 250 na stronę). Można też uruchomić natychmiastową synchronizację z poziomu Ustawień lub panelu admina.

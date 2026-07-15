@@ -1,6 +1,7 @@
 package com.polishmediahub.app.ui.player
 
 
+import android.util.Log
 import android.view.KeyEvent
 import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
@@ -148,7 +149,8 @@ fun UniversalVlcPlayer(
                             textTracks?.firstOrNull()?.id?.let { trackId ->
                                 mediaPlayer.selectTrack(trackId)
                             }
-                        } catch (_: Exception) {
+                        } catch (e: Exception) {
+                            Log.e("UniversalVlcPlayer", "Błąd runtime silnika LibVLC: ${e.message}", e)
                         }
                     }
                     MediaPlayer.Event.Paused -> {
@@ -215,7 +217,8 @@ fun UniversalVlcPlayer(
                 }
                 currentState?.media?.release()
                 currentState?.libVlc?.release()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.e("UniversalVlcPlayer", "Błąd runtime silnika LibVLC: ${e.message}", e)
             }
         }
     }
