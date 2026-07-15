@@ -18,6 +18,8 @@ class PlexApiFactory @Inject constructor(
 
     suspend fun token(): String = apiConfigRepository.plexToken.first()
     suspend fun serverUrl(): String = apiConfigRepository.plexUrl.first().trim().ifBlank { PlexApi.DEFAULT_BASE_URL }
+    suspend fun forceTranscode(): Boolean = apiConfigRepository.forceTranscode.first()
+    suspend fun maxDirectPlayBitrate(): String = apiConfigRepository.maxDirectPlayBitrate.first()
 
     suspend fun create(): PlexApi {
         val baseUrl = serverUrl()

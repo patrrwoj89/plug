@@ -1,13 +1,24 @@
 package com.polishmediahub.app.data.remote.emby
 
+import android.util.Log
 import com.polishmediahub.app.data.source.MediaSource
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
+import com.polishmediahub.app.model.PlaybackState
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 
 class EmbyMediaSource @Inject constructor(
     private val apiFactory: EmbyApiFactory
 ) : MediaSource {
+
+    private companion object {
+        const val REPORT_INTERVAL_MS = 15_000L
+        const val TICKS_PER_MS = 10_000L
+    }
+
+    private val lastReportedAt = AtomicLong(0L)
+    private val lastReportedPosition = AtomicLong(-1L)
 
     override val id: String = "emby"
     override val name: String = "Emby"
@@ -64,7 +75,53 @@ class EmbyMediaSource @Inject constructor(
         val realId = mediaItem.id.removePrefix("emby:")
         val server = serverUrl().removeSuffix("/")
         val token = token()
-        return "$server/Videos/$realId/stream?static=true&api_key=$token"
+        val forceTranscode = apiFactory.forceTranscode()
+        val maxBitrate = apiFactory.maxDirectPlayBitrate().toLongOrNull() ?: Long.MAX_VALUE
+        val shouldTranscode = forceTranscode ||
+            (mediaItem.bitrate != null && mediaItem.bitrate > maxBitrate)
+
+        return if (shouldTranscode) {
+            val maxStreamingBitrate = mediaItem.bitrate?.coerceAtMost(maxBitrate) ?: maxBitrate
+            "$server/Videos/$realId/main.m3u8" +
+                "?static=false" +
+                "&VideoCodec=h264" +
+                "&AudioCodec=aac" +
+                "&MaxStreamingBitrate=$maxStreamingBitrate" +
+                "&api_key=$token"
+        } else {
+            "$server/Videos/$realId/stream?static=true&api_key=$token"
+        }
+    }
+
+    override suspend fun reportProgress(
+        mediaItem: MediaItem,
+        positionMs: Long,
+        durationMs: Long,
+        state: PlaybackState
+    ) {
+        if (!mediaItem.id.startsWith("emby:")) return
+        val now = System.currentTimeMillis()
+        if (state == PlaybackState.PLAYING) {
+            val last = lastReportedAt.get()
+            if (now - last < REPORT_INTERVAL_MS && positionMs == lastReportedPosition.get()) return
+        }
+        lastReportedAt.set(now)
+        lastReportedPosition.set(positionMs)
+
+        try {
+            val realId = mediaItem.id.removePrefix("emby:")
+            api().reportProgress(
+                token = token(),
+                info = PlaybackProgressInfo(
+                    itemId = realId,
+                    positionTicks = positionMs * TICKS_PER_MS,
+                    isPaused = state == PlaybackState.PAUSED,
+                    isStopped = state == PlaybackState.STOPPED
+                )
+            )
+        } catch (e: Exception) {
+            Log.w("EmbyMediaSource", "report progress failed: ${e.message}")
+        }
     }
 
     private suspend fun mapItems(items: List<EmbyItem>): List<MediaItem> =
@@ -93,6 +150,7 @@ class EmbyMediaSource @Inject constructor(
             backdropUrl = backdrop,
             type = type,
             year = item.productionYear?.toString() ?: "",
+            bitrate = item.bitrate,
             videoUrl = streamUrl
         )
     }

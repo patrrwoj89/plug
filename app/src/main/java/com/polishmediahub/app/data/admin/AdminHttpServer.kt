@@ -10,6 +10,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.ServerSocket
@@ -135,18 +138,20 @@ class AdminHttpServer @Inject constructor(
                     "plexToken" to plexToken,
                     "embyUrl" to embyUrl,
                     "embyToken" to embyToken,
+                    "forceTranscode" to forceTranscode,
+                    "maxDirectPlayBitrate" to maxDirectPlayBitrate,
                     "subsonicUrl" to subsonicUrl,
                     "subsonicUser" to subsonicUser,
                     "subsonicPassword" to subsonicPassword,
                     "podcastFeeds" to podcastFeeds
                 )
-            }.mapValues { (_, flow) -> flow.first() }
-            val json = values.entries.joinToString(",\n") { (k, v) ->
-                "\"$k\": \"${v.replace("\\", "\\\\").replace("\"", "\\\"")}\""
-            }
-            writeResponse(out, 200, "OK", "application/json", "{$json}")
+            }.mapValues { (_, flow) -> flow.first().toString() }
+            val jsonObj = JsonObject(values.mapValues { (_, v) -> JsonPrimitive(v) })
+            val json = Json.encodeToString(JsonObject.serializer(), jsonObj)
+            writeResponse(out, 200, "OK", "application/json", json)
         }
     }
+
 
     private fun handleConfigPost(body: String, out: java.io.OutputStream) {
         val params = parseForm(body)
@@ -167,6 +172,8 @@ class AdminHttpServer @Inject constructor(
             params["plexToken"]?.let { apiConfigRepository.setPlexToken(it) }
             params["embyUrl"]?.let { apiConfigRepository.setEmbyUrl(it) }
             params["embyToken"]?.let { apiConfigRepository.setEmbyToken(it) }
+            params["forceTranscode"]?.toBooleanStrictOrNull()?.let { apiConfigRepository.setForceTranscode(it) }
+            params["maxDirectPlayBitrate"]?.let { apiConfigRepository.setMaxDirectPlayBitrate(it) }
             params["subsonicUrl"]?.let { apiConfigRepository.setSubsonicUrl(it) }
             params["subsonicUser"]?.let { apiConfigRepository.setSubsonicUser(it) }
             params["subsonicPassword"]?.let { apiConfigRepository.setSubsonicPassword(it) }
@@ -263,6 +270,10 @@ button:hover { background: #29b6f6; }
   <input type="text" name="embyUrl">
   <label>Emby Token</label>
   <input type="text" name="embyToken">
+  <label>Force Transcode (true/false)</label>
+  <input type="text" name="forceTranscode" placeholder="false">
+  <label>Max Direct Play Bitrate (bps)</label>
+  <input type="text" name="maxDirectPlayBitrate" placeholder="20000000">
   <label>Subsonic URL</label>
   <input type="text" name="subsonicUrl">
   <label>Subsonic User</label>

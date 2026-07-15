@@ -1,13 +1,23 @@
 package com.polishmediahub.app.data.remote.plex
 
+import android.util.Log
 import com.polishmediahub.app.data.source.MediaSource
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
+import com.polishmediahub.app.model.PlaybackState
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 
 class PlexMediaSource @Inject constructor(
     private val apiFactory: PlexApiFactory
 ) : MediaSource {
+
+    private companion object {
+        const val REPORT_INTERVAL_MS = 15_000L
+    }
+
+    private val lastReportedAt = AtomicLong(0L)
+    private val lastReportedPosition = AtomicLong(-1L)
 
     override val id: String = "plex"
     override val name: String = "Plex"
@@ -54,14 +64,66 @@ class PlexMediaSource @Inject constructor(
 
     override suspend fun resolve(mediaItem: MediaItem): String? {
         val realId = mediaItem.id.removePrefix("plex:")
+        val server = serverUrl().removeSuffix("/")
+        val token = token()
+        val forceTranscode = apiFactory.forceTranscode()
+        val maxBitrate = apiFactory.maxDirectPlayBitrate().toLongOrNull() ?: Long.MAX_VALUE
+        val shouldTranscode = forceTranscode ||
+            (mediaItem.bitrate != null && mediaItem.bitrate > maxBitrate)
+
+        if (shouldTranscode) {
+            return "$server/video/:/transcode/universal/start.m3u8" +
+                "?path=/library/metadata/$realId" +
+                "&mediaIndex=0&partIndex=0&protocol=hls&fastSeek=1" +
+                "&directPlay=0&directStream=0&location=lan" +
+                "&subtitleSize=100&audioBoost=100" +
+                "&videoCodec=h264&audioCodec=aac" +
+                "&mediaBufferSize=102400" +
+                "&X-Plex-Token=$token"
+        }
+
         return try {
-            val response = api().getMetadata(realId, token())
+            val response = api().getMetadata(realId, token)
             val metadata = response.mediaContainer?.metadata?.firstOrNull() ?: return null
             val partKey = metadata.media?.firstOrNull()?.parts?.firstOrNull()?.key ?: return null
-            val server = serverUrl().removeSuffix("/")
-            "$server$partKey?X-Plex-Token=${token()}"
+            "$server$partKey?X-Plex-Token=$token"
         } catch (_: Exception) {
             null
+        }
+    }
+
+    override suspend fun reportProgress(
+        mediaItem: MediaItem,
+        positionMs: Long,
+        durationMs: Long,
+        state: PlaybackState
+    ) {
+        if (!mediaItem.id.startsWith("plex:")) return
+        val now = System.currentTimeMillis()
+        if (state == PlaybackState.PLAYING) {
+            val last = lastReportedAt.get()
+            if (now - last < REPORT_INTERVAL_MS && positionMs == lastReportedPosition.get()) return
+        }
+        lastReportedAt.set(now)
+        lastReportedPosition.set(positionMs)
+
+        try {
+            val realId = mediaItem.id.removePrefix("plex:")
+            val stateStr = when (state) {
+                PlaybackState.PLAYING -> "playing"
+                PlaybackState.PAUSED -> "paused"
+                PlaybackState.STOPPED -> "stopped"
+            }
+            api().reportTimeline(
+                ratingKey = realId,
+                key = "/library/metadata/$realId",
+                state = stateStr,
+                time = positionMs,
+                duration = durationMs,
+                token = token()
+            )
+        } catch (e: Exception) {
+            Log.w("PlexMediaSource", "report progress failed: ${e.message}")
         }
     }
 
@@ -82,6 +144,7 @@ class PlexMediaSource @Inject constructor(
             backdropUrl = backdrop,
             type = type,
             year = metadata.year?.toString() ?: "",
+            bitrate = metadata.bitrate?.times(1000)?.toLong(),
             videoUrl = null
         )
     }

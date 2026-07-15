@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -39,6 +40,8 @@ class ApiConfigRepository @Inject constructor(
     val plexToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_PLEX_TOKEN].orEmpty() }
     val embyUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_EMBY_URL].orEmpty() }
     val embyToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_EMBY_TOKEN].orEmpty() }
+    val forceTranscode: Flow<Boolean> = context.apiConfigDataStore.data.map { it[KEY_FORCE_TRANSCODE] ?: false }
+    val maxDirectPlayBitrate: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_MAX_DIRECT_PLAY_BITRATE].orEmpty() }
     val subsonicUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_SUBSONIC_URL].orEmpty() }
     val subsonicUser: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_SUBSONIC_USER].orEmpty() }
     val subsonicPassword: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_SUBSONIC_PASSWORD].orEmpty() }
@@ -64,12 +67,18 @@ class ApiConfigRepository @Inject constructor(
     suspend fun setPlexToken(value: String) = edit(KEY_PLEX_TOKEN, value)
     suspend fun setEmbyUrl(value: String) = edit(KEY_EMBY_URL, value)
     suspend fun setEmbyToken(value: String) = edit(KEY_EMBY_TOKEN, value)
+    suspend fun setForceTranscode(value: Boolean) = edit(KEY_FORCE_TRANSCODE, value)
+    suspend fun setMaxDirectPlayBitrate(value: String) = edit(KEY_MAX_DIRECT_PLAY_BITRATE, value)
     suspend fun setSubsonicUrl(value: String) = edit(KEY_SUBSONIC_URL, value)
     suspend fun setSubsonicUser(value: String) = edit(KEY_SUBSONIC_USER, value)
     suspend fun setSubsonicPassword(value: String) = edit(KEY_SUBSONIC_PASSWORD, value)
     suspend fun setPodcastFeeds(value: String) = edit(KEY_PODCAST_FEEDS, value)
 
     private suspend fun edit(key: Preferences.Key<String>, value: String) {
+        context.apiConfigDataStore.edit { it[key] = value }
+    }
+
+    private suspend fun edit(key: Preferences.Key<Boolean>, value: Boolean) {
         context.apiConfigDataStore.edit { it[key] = value }
     }
 
@@ -94,6 +103,8 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_PLEX_TOKEN = stringPreferencesKey("plex_token")
         private val KEY_EMBY_URL = stringPreferencesKey("emby_url")
         private val KEY_EMBY_TOKEN = stringPreferencesKey("emby_token")
+        private val KEY_FORCE_TRANSCODE = booleanPreferencesKey("force_transcode")
+        private val KEY_MAX_DIRECT_PLAY_BITRATE = stringPreferencesKey("max_direct_play_bitrate")
         private val KEY_SUBSONIC_URL = stringPreferencesKey("subsonic_url")
         private val KEY_SUBSONIC_USER = stringPreferencesKey("subsonic_user")
         private val KEY_SUBSONIC_PASSWORD = stringPreferencesKey("subsonic_password")

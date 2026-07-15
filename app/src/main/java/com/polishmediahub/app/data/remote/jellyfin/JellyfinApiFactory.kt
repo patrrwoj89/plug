@@ -18,6 +18,8 @@ class JellyfinApiFactory @Inject constructor(
 
     suspend fun token(): String = apiConfigRepository.jellyfinToken.first()
     suspend fun serverUrl(): String = apiConfigRepository.jellyfinUrl.first().trim().ifBlank { JellyfinApi.DEFAULT_BASE_URL }
+    suspend fun forceTranscode(): Boolean = apiConfigRepository.forceTranscode.first()
+    suspend fun maxDirectPlayBitrate(): String = apiConfigRepository.maxDirectPlayBitrate.first()
 
     suspend fun create(): JellyfinApi {
         val baseUrl = serverUrl()

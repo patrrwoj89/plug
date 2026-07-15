@@ -1,9 +1,11 @@
 package com.polishmediahub.app.data.source
 
+import android.util.Log
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.MediaRepository
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
+import com.polishmediahub.app.model.PlaybackState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -95,6 +97,24 @@ class FederatedMediaRepository @Inject constructor(
         } catch (e: Exception) {
             android.util.Log.w("FederatedMediaRepository", "resolve failed for ${source.id}: ${e.message}")
             null
+        }
+    }
+
+    override suspend fun reportProgress(
+        mediaItem: MediaItem,
+        positionMs: Long,
+        durationMs: Long,
+        state: PlaybackState
+    ) {
+        ensureConfigured()
+        val prefix = mediaItem.id.substringBefore(":", missingDelimiterValue = "")
+        val source = registry.source(prefix) ?: registry.all.find { mediaItem.id.startsWith("${it.id}:") }
+            ?: return
+        if (!source.isAvailable()) return
+        try {
+            source.reportProgress(mediaItem, positionMs, durationMs, state)
+        } catch (e: Exception) {
+            Log.w("FederatedMediaRepository", "reportProgress failed for ${source.id}: ${e.message}")
         }
     }
 }

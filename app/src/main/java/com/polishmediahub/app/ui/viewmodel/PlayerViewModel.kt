@@ -10,7 +10,9 @@ import com.polishmediahub.app.data.remote.trakt.TraktMediaRepository
 import com.polishmediahub.app.data.torrent.TorrentMediaSource
 import com.polishmediahub.app.data.tv.TvLauncherManager
 import com.polishmediahub.app.model.MediaItem
+import com.polishmediahub.app.model.PlaybackState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -99,12 +101,24 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
+    fun reportPlaybackProgress(positionMs: Long, durationMs: Long, state: PlaybackState) {
+        val current = item.value ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                mediaRepository.reportProgress(current, positionMs, durationMs, state)
+            } catch (_: Exception) {
+                // Ignore network errors; do not interrupt playback.
+            }
+        }
+    }
+
     fun onPlaybackStopped(positionMs: Long, durationMs: Long) {
         val current = item.value ?: return
         viewModelScope.launch {
             tvLauncherManager.onPlaybackStopped(current, positionMs, durationMs)
             val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
             traktMediaRepository.scrobbleStop(current, progress)
+            reportPlaybackProgress(positionMs, durationMs, PlaybackState.STOPPED)
         }
     }
 
@@ -113,6 +127,7 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
             traktMediaRepository.scrobbleStart(current, progress)
+            reportPlaybackProgress(positionMs, durationMs, PlaybackState.PLAYING)
         }
     }
 
@@ -121,6 +136,7 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
             traktMediaRepository.scrobbleStop(current, progress)
+            reportPlaybackProgress(positionMs, durationMs, PlaybackState.PAUSED)
         }
     }
 }

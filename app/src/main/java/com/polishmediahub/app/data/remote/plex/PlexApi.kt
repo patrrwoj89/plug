@@ -3,6 +3,7 @@ package com.polishmediahub.app.data.remote.plex
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -22,6 +23,16 @@ interface PlexApi {
         @Path("id") id: String,
         @Query("X-Plex-Token") token: String
     ): PlexMediaContainer
+
+    @POST(":/timeline")
+    suspend fun reportTimeline(
+        @Query("ratingKey") ratingKey: String,
+        @Query("key") key: String,
+        @Query("state") state: String,
+        @Query("time") time: Long,
+        @Query("duration") duration: Long,
+        @Query("X-Plex-Token") token: String
+    )
 
     companion object {
         const val DEFAULT_BASE_URL = "https://plex.tv/"
@@ -56,6 +67,7 @@ data class PlexMetadata(
     @SerialName("thumb") val thumb: String? = null,
     @SerialName("art") val art: String? = null,
     @SerialName("year") val year: Int? = null,
+    @SerialName("bitrate") val bitrate: Int? = null,
     @SerialName("Media") val media: List<PlexMedia>? = null
 )
 

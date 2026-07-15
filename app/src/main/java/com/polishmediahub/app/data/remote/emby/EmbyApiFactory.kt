@@ -18,6 +18,8 @@ class EmbyApiFactory @Inject constructor(
 
     suspend fun token(): String = apiConfigRepository.embyToken.first()
     suspend fun serverUrl(): String = apiConfigRepository.embyUrl.first().trim().ifBlank { EmbyApi.DEFAULT_BASE_URL }
+    suspend fun forceTranscode(): Boolean = apiConfigRepository.forceTranscode.first()
+    suspend fun maxDirectPlayBitrate(): String = apiConfigRepository.maxDirectPlayBitrate.first()
 
     suspend fun create(): EmbyApi {
         val baseUrl = serverUrl()

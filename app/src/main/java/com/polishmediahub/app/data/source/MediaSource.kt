@@ -2,6 +2,7 @@ package com.polishmediahub.app.data.source
 
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
+import com.polishmediahub.app.model.PlaybackState
 
 /**
  * Unified interface for any content source: local backend, Stremio addon,
@@ -18,4 +19,5 @@ interface MediaSource {
     suspend fun search(query: String): List<MediaItem>
     suspend fun byId(id: String): MediaItem?
     suspend fun resolve(mediaItem: MediaItem): String?
+    suspend fun reportProgress(mediaItem: MediaItem, positionMs: Long, durationMs: Long, state: PlaybackState) {}
 }

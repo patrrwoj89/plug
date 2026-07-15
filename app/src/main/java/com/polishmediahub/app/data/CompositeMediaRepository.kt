@@ -11,6 +11,7 @@ import com.polishmediahub.app.data.torrent.TorrentMediaSource
 import com.polishmediahub.app.data.source.FederatedMediaRepository
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
+import com.polishmediahub.app.model.PlaybackState
 import javax.inject.Inject
 
 class CompositeMediaRepository @Inject constructor(
@@ -53,6 +54,21 @@ class CompositeMediaRepository @Inject constructor(
         else ->
             repositories.firstNotNullOfOrNull { repo -> repo.safeCall { resolve(mediaItem) } }
     } ?: mediaItem.videoUrl
+
+    override suspend fun reportProgress(
+        mediaItem: MediaItem,
+        positionMs: Long,
+        durationMs: Long,
+        state: PlaybackState
+    ) {
+        for (repo in repositories) {
+            try {
+                repo.reportProgress(mediaItem, positionMs, durationMs, state)
+            } catch (e: Exception) {
+                Log.w("CompositeRepo", "reportProgress failed for ${repo::class.java.simpleName}: ${e.message}")
+            }
+        }
+    }
 
     private suspend inline fun <T> MediaRepository.safeCall(block: suspend MediaRepository.() -> T): T? {
         return try {

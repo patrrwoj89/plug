@@ -77,6 +77,7 @@ import androidx.media3.session.MediaSession
 import androidx.media3.ui.PlayerView
 import com.polishmediahub.app.R
 import com.polishmediahub.app.data.torrent.TorrentStatus
+import com.polishmediahub.app.model.PlaybackState
 import com.polishmediahub.app.navigation.Screen
 import com.polishmediahub.app.ui.components.TvIconButton
 import com.polishmediahub.app.ui.theme.AppColor
@@ -209,6 +210,10 @@ fun PlayerScreen(
         },
         onScrobbleStart = { position, duration -> viewModel.scrobbleStart(position, duration) },
         onScrobbleStop = { position, duration -> viewModel.scrobbleStop(position, duration) },
+        onReportProgress = { position, duration, isPlaying ->
+            val state = if (isPlaying) PlaybackState.PLAYING else PlaybackState.PAUSED
+            viewModel.reportPlaybackProgress(position, duration, state)
+        },
         onEnterPip = { activity?.enterPipMode() },
         torrentBuffering = torrentBuffering,
         torrentStatus = torrentStatus,
@@ -225,6 +230,7 @@ private fun PlayerContent(
     onSaveProgress: (Long, Long) -> Unit,
     onScrobbleStart: (Long, Long) -> Unit,
     onScrobbleStop: (Long, Long) -> Unit,
+    onReportProgress: (Long, Long, Boolean) -> Unit,
     torrentBuffering: Int?,
     torrentStatus: TorrentStatus?,
     modifier: Modifier = Modifier
@@ -288,7 +294,10 @@ private fun PlayerContent(
     LaunchedEffect(exoPlayer) {
         while (true) {
             delay(5_000)
-            onSaveProgress(exoPlayer.currentPosition.coerceAtLeast(0L), exoPlayer.duration.coerceAtLeast(0L))
+            val position = exoPlayer.currentPosition.coerceAtLeast(0L)
+            val duration = exoPlayer.duration.coerceAtLeast(0L)
+            onSaveProgress(position, duration)
+            onReportProgress(position, duration, exoPlayer.isPlaying)
         }
     }
 
