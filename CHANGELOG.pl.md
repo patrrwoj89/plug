@@ -228,6 +228,8 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
   - `zxing` zaktualizowano do `3.5.4` (najnowsza stabilna wersja, https://github.com/zxing/zxing/releases).
   - `retrofit` zaktualizowano do `2.12.0` (najnowsza stabilna wersja, https://github.com/square/retrofit/releases/tag/2.12.0).
   - `kotlinx-coroutines-test` zaktualizowano do `1.10.2` (najnowsza stabilna wersja, https://github.com/Kotlin/kotlinx.coroutines/releases/tag/1.10.2).
+  - `appcompat` zaktualizowano do `1.7.1` (najnowsza stabilna wersja, https://developer.android.com/jetpack/androidx/releases/appcompat#1.7.1).
+  - `navigation-compose` zaktualizowano do `2.9.8` (najnowsza stabilna wersja, https://developer.android.com/jetpack/androidx/releases/navigation#2.9.8).
 
 ### Naprawiono
 
