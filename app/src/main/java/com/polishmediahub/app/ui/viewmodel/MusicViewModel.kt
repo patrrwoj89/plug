@@ -42,10 +42,12 @@ class MusicViewModel @Inject constructor(
     fun playTrack(track: AudioTrack, onResolved: (AudioTrack) -> Unit = {}) {
         viewModelScope.launch {
             try {
-                audioHistoryRepository.save(track)
                 val streamUrl = audioRepository.resolve(track)
-                if (!streamUrl.isNullOrBlank()) {
-                    onResolved(track.copy(streamUrl = streamUrl))
+                val resolved = if (!streamUrl.isNullOrBlank()) track.copy(streamUrl = streamUrl) else track
+                audioRepository.cache(resolved)
+                audioHistoryRepository.save(resolved)
+                if (!resolved.streamUrl.isNullOrBlank()) {
+                    onResolved(resolved)
                 }
             } catch (_: Exception) {
                 // Failures are non-fatal; history save is best-effort.

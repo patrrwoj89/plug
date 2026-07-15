@@ -16,6 +16,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -58,6 +59,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.C
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem as ExoMediaItem
 import androidx.media3.common.MimeTypes
@@ -77,6 +80,7 @@ import androidx.media3.session.MediaSession
 import androidx.media3.ui.PlayerView
 import com.polishmediahub.app.R
 import com.polishmediahub.app.data.torrent.TorrentStatus
+import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.model.PlaybackState
 import com.polishmediahub.app.navigation.Screen
 import com.polishmediahub.app.ui.components.TvIconButton
@@ -218,6 +222,7 @@ fun PlayerScreen(
 
     PlayerContent(
         exoPlayer = exoPlayer,
+        mediaItem = item,
         title = item?.title ?: stringResource(id = R.string.app_name),
         onBack = { onNavigate(Screen.Home) },
         onSaveProgress = { position, duration ->
@@ -239,6 +244,7 @@ fun PlayerScreen(
 @Composable
 private fun PlayerContent(
     exoPlayer: ExoPlayer,
+    mediaItem: MediaItem?,
     title: String,
     onBack: () -> Unit,
     onEnterPip: () -> Unit,
@@ -262,6 +268,8 @@ private fun PlayerContent(
     var subtitleLabel by remember { mutableStateOf("Off") }
     var sliderFocused by remember { mutableStateOf(false) }
     var lastInteraction by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    val isLive = mediaItem?.isLive == true
+    val coverUrl = mediaItem?.posterUrl
 
     LaunchedEffect(exoPlayer) {
         val listener = object : Player.Listener {
@@ -342,11 +350,15 @@ private fun PlayerContent(
                         true
                     }
                     KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_BUTTON_R1 -> {
-                        exoPlayer.seekBy(10_000)
+                        if (!isLive) {
+                            exoPlayer.seekBy(10_000)
+                        }
                         true
                     }
                     KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_BUTTON_L1 -> {
-                        exoPlayer.seekBy(-10_000)
+                        if (!isLive) {
+                            exoPlayer.seekBy(-10_000)
+                        }
                         true
                     }
                     KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
@@ -385,6 +397,37 @@ private fun PlayerContent(
             modifier = Modifier.fillMaxSize()
         )
 
+        if (isLive && !coverUrl.isNullOrBlank()) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(coverUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                    alpha = 0.4f
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5f))
+                )
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(coverUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = title,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize(0.6f)
+                        .align(Alignment.Center)
+                )
+            }
+        }
+
         AnimatedVisibility(
             visible = controlsVisible,
             enter = fadeIn(),
@@ -393,6 +436,7 @@ private fun PlayerContent(
             PlayerControls(
                 title = title,
                 isPlaying = isPlaying,
+                isLive = isLive,
                 currentPosition = currentPosition,
                 duration = duration,
                 audioLabel = audioLabel,
@@ -442,6 +486,7 @@ private fun PlayerContent(
 internal fun PlayerControls(
     title: String,
     isPlaying: Boolean,
+    isLive: Boolean,
     currentPosition: Long,
     duration: Long,
     audioLabel: String,
@@ -457,7 +502,7 @@ internal fun PlayerControls(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppColor.Black.copy(alpha = 0.6f))
+            .background(if (isLive) Color.Black.copy(alpha = 0.3f) else AppColor.Black.copy(alpha = 0.6f))
             .padding(Spacing.lg),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
@@ -509,47 +554,56 @@ internal fun PlayerControls(
                     Text(subtitleLabel, style = AppTypography.caption, modifier = Modifier.padding(start = Spacing.xs))
                 }
 
-                Slider(
-                    value = if (duration > 0) currentPosition.toFloat() / duration else 0f,
-                    onValueChange = { fraction ->
-                        if (duration > 0) {
-                            val newMs = (fraction * duration).toLong().coerceIn(0L, duration)
-                            onSeek(newMs)
-                        }
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .focusProperties { canFocus = true }
-                        .focusable()
-                        .onFocusChanged { onSliderFocusChanged(it.isFocused) }
-                        .onKeyEvent { event ->
-                            if (event.nativeKeyEvent.action != KeyEvent.ACTION_DOWN) return@onKeyEvent false
-                            when (event.nativeKeyEvent.keyCode) {
-                                KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                                    if (duration > 0) {
-                                        val newMs = (currentPosition + 5_000L).coerceAtMost(duration)
-                                        onSeek(newMs)
-                                    }
-                                    true
-                                }
-                                KeyEvent.KEYCODE_DPAD_LEFT -> {
-                                    if (duration > 0) {
-                                        val newMs = (currentPosition - 5_000L).coerceAtLeast(0L)
-                                        onSeek(newMs)
-                                    }
-                                    true
-                                }
-                                else -> false
+                if (isLive) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = "Transmisja na żywo",
+                        style = AppTypography.caption,
+                        color = AppColor.OnSurface
+                    )
+                } else {
+                    Slider(
+                        value = if (duration > 0) currentPosition.toFloat() / duration else 0f,
+                        onValueChange = { fraction ->
+                            if (duration > 0) {
+                                val newMs = (fraction * duration).toLong().coerceIn(0L, duration)
+                                onSeek(newMs)
                             }
                         },
-                    valueRange = 0f..1f
-                )
+                        modifier = Modifier
+                            .weight(1f)
+                            .focusProperties { canFocus = true }
+                            .focusable()
+                            .onFocusChanged { onSliderFocusChanged(it.isFocused) }
+                            .onKeyEvent { event ->
+                                if (event.nativeKeyEvent.action != KeyEvent.ACTION_DOWN) return@onKeyEvent false
+                                when (event.nativeKeyEvent.keyCode) {
+                                    KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                                        if (duration > 0) {
+                                            val newMs = (currentPosition + 5_000L).coerceAtMost(duration)
+                                            onSeek(newMs)
+                                        }
+                                        true
+                                    }
+                                    KeyEvent.KEYCODE_DPAD_LEFT -> {
+                                        if (duration > 0) {
+                                            val newMs = (currentPosition - 5_000L).coerceAtLeast(0L)
+                                            onSeek(newMs)
+                                        }
+                                        true
+                                    }
+                                    else -> false
+                                }
+                            },
+                        valueRange = 0f..1f
+                    )
 
-                Spacer(modifier = Modifier.width(Spacing.sm))
-                Text(
-                    text = "${formatMs(currentPosition)} / ${formatMs(duration)}",
-                    style = AppTypography.caption
-                )
+                    Spacer(modifier = Modifier.width(Spacing.sm))
+                    Text(
+                        text = "${formatMs(currentPosition)} / ${formatMs(duration)}",
+                        style = AppTypography.caption
+                    )
+                }
             }
         }
     }

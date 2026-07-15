@@ -8,5 +8,6 @@ interface AudioSource {
     suspend fun isAvailable(): Boolean
     suspend fun browse(): List<AudioTrack>
     suspend fun search(query: String): List<AudioTrack>
+    suspend fun byId(trackId: String): AudioTrack? = null
     suspend fun resolve(track: AudioTrack): String?
 }

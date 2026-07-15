@@ -24,5 +24,6 @@ data class AudioHistoryEntity(
     val coverUrl: String?,
     val streamUrl: String?,
     val durationMs: Long = 0,
+    val positionMs: Long = 0,
     val playedAt: Long = System.currentTimeMillis()
 )

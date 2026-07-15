@@ -6,14 +6,16 @@ import androidx.lifecycle.viewModelScope
 import com.polishmediahub.app.data.MediaRepository
 import com.polishmediahub.app.data.SettingsRepository
 import com.polishmediahub.app.data.WatchHistoryRepository
+import com.polishmediahub.app.data.audio.AudioHistoryRepository
+import com.polishmediahub.app.data.audio.AudioRepository
 import com.polishmediahub.app.data.remote.trakt.TraktMediaRepository
 import com.polishmediahub.app.data.torrent.TorrentMediaSource
 import com.polishmediahub.app.data.tv.TvLauncherManager
+import com.polishmediahub.app.model.AudioTrack
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.model.PlaybackState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +31,8 @@ import javax.inject.Inject
 class PlayerViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val mediaRepository: MediaRepository,
+    private val audioRepository: AudioRepository,
+    private val audioHistoryRepository: AudioHistoryRepository,
     private val torrentMediaSource: TorrentMediaSource,
     private val watchHistoryRepository: WatchHistoryRepository,
     private val tvLauncherManager: TvLauncherManager,
@@ -54,14 +58,33 @@ class PlayerViewModel @Inject constructor(
     private val _preferredQuality = MutableStateFlow("Auto")
     val preferredQuality: StateFlow<String> = _preferredQuality.asStateFlow()
 
+    private var currentAudioTrack: AudioTrack? = null
+
     init {
         viewModelScope.launch {
             val id: String? = savedStateHandle["id"]
             val mediaId = id ?: return@launch
-            _item.value = mediaRepository.byId(mediaId)
-            val current = _item.value
-            if (current != null) {
-                val resolved = mediaRepository.resolveItem(current)
+
+            val mediaItem = loadMediaItem(mediaId)
+            _item.value = mediaItem
+
+            if (mediaItem != null && isAudioItem(mediaItem)) {
+                val audioTrack = currentAudioTrack ?: audioRepository.byId(mediaId)
+                if (audioTrack != null) {
+                    val resolvedStream = audioRepository.resolve(audioTrack)
+                    if (!resolvedStream.isNullOrBlank()) {
+                        _resolvedUrl.value = resolvedStream
+                        currentAudioTrack = audioTrack.copy(streamUrl = resolvedStream)
+                        _item.value = currentAudioTrack!!.toMediaItem()
+                    } else {
+                        _resolvedUrl.value = audioTrack.streamUrl
+                    }
+                    if (mediaItem.isLive.not()) {
+                        _resumePosition.value = audioHistoryRepository.getPosition(mediaId)
+                    }
+                }
+            } else if (mediaItem != null) {
+                val resolved = mediaRepository.resolveItem(mediaItem)
                 _item.value = resolved
                 _resolvedUrl.value = resolved.videoUrl
                 watchHistoryRepository.observePosition(mediaId).collect { position ->
@@ -73,12 +96,11 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             _item.filterNotNull().flatMapLatest { current ->
                 if (current.id.startsWith("magnet:") || current.id.startsWith("torrent:")) {
-                    val infoHash = current.id.substringAfter(":")
                     combine(
                         torrentMediaSource.statusFlow,
                         torrentMediaSource.bufferingProgress
                     ) { statuses, progress ->
-                        statuses[infoHash] to progress[infoHash]
+                        statuses[infoHashFrom(current.id)] to progress[infoHashFrom(current.id)]
                     }
                 } else {
                     flowOf(null to null)
@@ -97,9 +119,15 @@ class PlayerViewModel @Inject constructor(
     fun saveProgress(positionMs: Long, durationMs: Long) {
         val current = item.value ?: return
         viewModelScope.launch {
-            tvLauncherManager.updatePlaybackProgress(current, positionMs, durationMs)
-            val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
-            traktMediaRepository.scrobblePause(current, progress)
+            if (isAudioItem(current)) {
+                currentAudioTrack?.let { track ->
+                    audioHistoryRepository.save(track.copy(durationMs = durationMs), positionMs)
+                }
+            } else {
+                tvLauncherManager.updatePlaybackProgress(current, positionMs, durationMs)
+                val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
+                traktMediaRepository.scrobblePause(current, progress)
+            }
         }
     }
 
@@ -107,7 +135,15 @@ class PlayerViewModel @Inject constructor(
         val current = item.value ?: return
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                mediaRepository.reportProgress(current, positionMs, durationMs, state)
+                if (isAudioItem(current)) {
+                    if (state == PlaybackState.PLAYING || state == PlaybackState.PAUSED) {
+                        currentAudioTrack?.let { track ->
+                            audioHistoryRepository.save(track.copy(durationMs = durationMs), positionMs)
+                        }
+                    }
+                } else {
+                    mediaRepository.reportProgress(current, positionMs, durationMs, state)
+                }
             } catch (_: Exception) {
                 // Ignore network errors; do not interrupt playback.
             }
@@ -117,9 +153,15 @@ class PlayerViewModel @Inject constructor(
     fun onPlaybackStopped(positionMs: Long, durationMs: Long) {
         val current = item.value ?: return
         viewModelScope.launch {
-            tvLauncherManager.onPlaybackStopped(current, positionMs, durationMs)
-            val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
-            traktMediaRepository.scrobbleStop(current, progress)
+            if (isAudioItem(current)) {
+                currentAudioTrack?.let { track ->
+                    audioHistoryRepository.save(track.copy(durationMs = durationMs), positionMs)
+                }
+            } else {
+                tvLauncherManager.onPlaybackStopped(current, positionMs, durationMs)
+                val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
+                traktMediaRepository.scrobbleStop(current, progress)
+            }
             reportPlaybackProgress(positionMs, durationMs, PlaybackState.STOPPED)
         }
     }
@@ -127,8 +169,10 @@ class PlayerViewModel @Inject constructor(
     fun scrobbleStart(positionMs: Long, durationMs: Long) {
         val current = item.value ?: return
         viewModelScope.launch {
-            val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
-            traktMediaRepository.scrobbleStart(current, progress)
+            if (!isAudioItem(current)) {
+                val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
+                traktMediaRepository.scrobbleStart(current, progress)
+            }
             reportPlaybackProgress(positionMs, durationMs, PlaybackState.PLAYING)
         }
     }
@@ -136,9 +180,47 @@ class PlayerViewModel @Inject constructor(
     fun scrobbleStop(positionMs: Long, durationMs: Long) {
         val current = item.value ?: return
         viewModelScope.launch {
-            val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
-            traktMediaRepository.scrobbleStop(current, progress)
+            if (!isAudioItem(current)) {
+                val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
+                traktMediaRepository.scrobbleStop(current, progress)
+            }
             reportPlaybackProgress(positionMs, durationMs, PlaybackState.PAUSED)
         }
     }
+
+    private suspend fun loadMediaItem(mediaId: String): MediaItem? {
+        val mediaItem = mediaRepository.byId(mediaId)
+        if (mediaItem != null) return mediaItem
+
+        val track = audioRepository.byId(mediaId)
+        if (track != null) {
+            currentAudioTrack = track
+            return track.toMediaItem()
+        }
+        return null
+    }
+
+    private fun isAudioItem(mediaItem: MediaItem): Boolean {
+        return mediaItem.type == MediaItem.Type.AUDIO ||
+            mediaItem.id.startsWith("deezer:track:") ||
+            mediaItem.id.startsWith("podcast:") ||
+            mediaItem.id.startsWith("radio:") ||
+            mediaItem.id.startsWith("local_audio:") ||
+            mediaItem.id.startsWith("subsonic:")
+    }
+
+    private fun infoHashFrom(id: String): String = id.substringAfter(":")
+
+    private fun AudioTrack.toMediaItem(): MediaItem = MediaItem(
+        id = id,
+        title = title,
+        subtitle = artist,
+        description = description,
+        posterUrl = coverUrl,
+        backdropUrl = coverUrl,
+        duration = if (durationMs > 0) durationMs.toString() else "",
+        videoUrl = streamUrl,
+        isLive = isLive,
+        type = MediaItem.Type.AUDIO
+    )
 }

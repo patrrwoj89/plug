@@ -25,7 +25,12 @@ class AudioHistoryRepository @Inject constructor(
             audioHistoryDao.observeAll(profile.id)
         }
 
-    suspend fun save(track: AudioTrack) = withContext(Dispatchers.IO) {
+    suspend fun getPosition(trackId: String): Long = withContext(Dispatchers.IO) {
+        val profileId = profileRepository.currentProfile.value?.id ?: return@withContext 0L
+        audioHistoryDao.getPosition(profileId, trackId) ?: 0L
+    }
+
+    suspend fun save(track: AudioTrack, positionMs: Long = 0) = withContext(Dispatchers.IO) {
         val profileId = profileRepository.currentProfile.value?.id ?: return@withContext
         audioHistoryDao.upsert(
             AudioHistoryEntity(
@@ -36,7 +41,9 @@ class AudioHistoryRepository @Inject constructor(
                 album = track.album,
                 coverUrl = track.coverUrl,
                 streamUrl = track.streamUrl,
-                durationMs = track.durationMs
+                durationMs = track.durationMs,
+                positionMs = positionMs,
+                playedAt = System.currentTimeMillis()
             )
         )
     }

@@ -20,6 +20,7 @@ class PlayerControlsScreenshotTest {
                 PlayerControls(
                     title = "English movie",
                     isPlaying = false,
+                    isLive = false,
                     currentPosition = 5_000L,
                     duration = 120_000L,
                     audioLabel = "EN",
@@ -43,6 +44,7 @@ class PlayerControlsScreenshotTest {
                 PlayerControls(
                     title = "Polski film",
                     isPlaying = true,
+                    isLive = false,
                     currentPosition = 10_000L,
                     duration = 60_000L,
                     audioLabel = "PL",

@@ -26,9 +26,10 @@ data class MediaItem(
     val drmLicenseUrl: String? = null,
     val drmScheme: String? = null,
     val drmHeaders: Map<String, String> = emptyMap(),
+    val isLive: Boolean = false,
     val type: Type = Type.MOVIE
 ) {
-    enum class Type { MOVIE, SERIES, EPISODE, CHANNEL }
+    enum class Type { MOVIE, SERIES, EPISODE, CHANNEL, AUDIO }
 }
 
 @Immutable

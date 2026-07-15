@@ -3,7 +3,7 @@ package com.polishmediahub.app.di
 import com.polishmediahub.app.data.audio.AudioSource
 import com.polishmediahub.app.data.audio.LocalAudioSource
 import com.polishmediahub.app.data.audio.PodcastSource
-import com.polishmediahub.app.data.audio.RadioSource
+import com.polishmediahub.app.data.audio.RadioRepository
 import com.polishmediahub.app.data.audio.SubsonicSource
 import com.polishmediahub.app.data.audio.deezer.DeezerAudioSource
 import dagger.Binds
@@ -22,7 +22,7 @@ abstract class AudioSourceModule {
 
     @Binds
     @IntoSet
-    abstract fun bindRadioSource(source: RadioSource): AudioSource
+    abstract fun bindRadioRepository(source: RadioRepository): AudioSource
 
     @Binds
     @IntoSet

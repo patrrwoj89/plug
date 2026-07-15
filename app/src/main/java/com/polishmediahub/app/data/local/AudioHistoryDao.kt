@@ -12,6 +12,9 @@ interface AudioHistoryDao {
     @Query("SELECT * FROM audio_history WHERE profileId = :profileId ORDER BY playedAt DESC")
     fun observeAll(profileId: String): Flow<List<AudioHistoryEntity>>
 
+    @Query("SELECT positionMs FROM audio_history WHERE profileId = :profileId AND trackId = :trackId")
+    suspend fun getPosition(profileId: String, trackId: String): Long?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: AudioHistoryEntity)
 

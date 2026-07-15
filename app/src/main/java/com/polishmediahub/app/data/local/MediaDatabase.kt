@@ -17,7 +17,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ProfileEntity::class,
         AudioHistoryEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class MediaDatabase : RoomDatabase() {
@@ -44,7 +44,8 @@ abstract class MediaDatabase : RoomDatabase() {
             migrationWithEpgRebuild(5, 7),
             migrationFromV6toV7(),
             migrationFromV7toV8(),
-            migrationFromV8toV9()
+            migrationFromV8toV9(),
+            migrationFromV9toV10()
         ).toTypedArray()
 
         private fun migrationWithEpgRebuild(startVersion: Int, endVersion: Int): Migration =
@@ -218,6 +219,13 @@ abstract class MediaDatabase : RoomDatabase() {
                 }
             }
 
+        private fun migrationFromV9toV10(): Migration =
+            object : Migration(9, 10) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    addColumnIfMissing(db, "audio_history", "positionMs", "INTEGER NOT NULL DEFAULT 0")
+                }
+            }
+
         private fun createAudioHistoryTable(db: SupportSQLiteDatabase) {
             db.execSQL(
                 """
@@ -230,6 +238,7 @@ abstract class MediaDatabase : RoomDatabase() {
                     coverUrl TEXT,
                     streamUrl TEXT,
                     durationMs INTEGER NOT NULL,
+                    positionMs INTEGER NOT NULL DEFAULT 0,
                     playedAt INTEGER NOT NULL,
                     PRIMARY KEY(profileId, trackId),
                     FOREIGN KEY(profileId) REFERENCES profiles(id) ON DELETE CASCADE

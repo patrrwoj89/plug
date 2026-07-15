@@ -55,6 +55,17 @@ class DeezerAudioSource @Inject constructor(
         }
     }
 
+    override suspend fun byId(trackId: String): AudioTrack? = withContext(Dispatchers.IO) {
+        if (!trackId.startsWith("deezer:track:")) return@withContext null
+        val deezerId = trackId.removePrefix("deezer:track:").toLongOrNull() ?: return@withContext null
+        try {
+            val base = baseUrl()
+            getTrack(deezerId).toAudioTrack(base)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     override suspend fun resolve(track: AudioTrack): String? = withContext(Dispatchers.IO) {
         if (track.sourceId != id) return@withContext track.streamUrl
         if (!track.streamUrl.isNullOrBlank()) return@withContext track.streamUrl

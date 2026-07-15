@@ -6,6 +6,8 @@ import android.net.Uri
 import android.provider.MediaStore
 import com.polishmediahub.app.model.AudioTrack
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class LocalAudioSource @Inject constructor(
@@ -17,10 +19,15 @@ class LocalAudioSource @Inject constructor(
 
     override suspend fun isAvailable(): Boolean = true
 
-    override suspend fun browse(): List<AudioTrack> = loadAudio()
+    override suspend fun browse(): List<AudioTrack> = withContext(Dispatchers.IO) { loadAudio() }
 
     override suspend fun search(query: String): List<AudioTrack> =
-        loadAudio().filter { it.title.contains(query, ignoreCase = true) || it.artist.contains(query, ignoreCase = true) }
+        browse().filter { it.title.contains(query, ignoreCase = true) || it.artist.contains(query, ignoreCase = true) }
+
+    override suspend fun byId(trackId: String): AudioTrack? {
+        if (!trackId.startsWith("local_audio:")) return null
+        return withContext(Dispatchers.IO) { loadAudio().find { it.id == trackId } }
+    }
 
     override suspend fun resolve(track: AudioTrack): String? = track.streamUrl
 
@@ -45,14 +52,14 @@ class LocalAudioSource @Inject constructor(
                 val id = cursor.getLong(idCol)
                 val contentUri: Uri = ContentUris.withAppendedId(uri, id)
                 tracks += AudioTrack(
-                    id = "$id",
+                    id = "local_audio:$id",
                     title = cursor.getString(titleCol) ?: "",
                     artist = cursor.getString(artistCol) ?: "",
                     album = cursor.getString(albumCol) ?: "",
                     streamUrl = contentUri.toString(),
                     durationMs = cursor.getLong(durationCol),
                     isLocal = true,
-                    sourceId = "local_audio"
+                    sourceId = this@LocalAudioSource.id
                 )
             }
         }
