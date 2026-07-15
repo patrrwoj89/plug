@@ -183,4 +183,20 @@
     <string name="crash_report_restart">Uruchom ponownie aplikację</string>
     <string name="crash_report_clear_cache">Wyczyść pamięć podręczną i zrestartuj</string>
     <string name="crash_report_no_details">Brak dostępnych szczegółów błędu.</string>
+
+    <string name="settings_cinema_mode">Tryb Kinowy</string>
+    <string name="settings_cinema_mode_subtitle">Automatycznie ukrywaj nakładki i pokazuj kartę informacyjną przy pauzie</string>
+    <string name="settings_trakt_client_id">Trakt client ID</string>
+    <string name="settings_trakt_client_id_hint">Pobierz go na trakt.tv/oauth/applications</string>
+    <string name="settings_trakt_access_token">Trakt access token</string>
+    <string name="settings_trakt_access_token_hint">OAuth Bearer token</string>
+    <string name="trakt_sync_section">Synchronizacja Trakt</string>
+    <string name="trakt_sync_now">Zsynchronizuj z Trakt teraz</string>
+    <string name="trakt_last_sync">Ostatnia synchronizacja Trakt: %1$s — %2$s</string>
+    <string name="trakt_sync_status_never">Nigdy</string>
+    <string name="trakt_sync_status_success">Sukces</string>
+    <string name="trakt_sync_status_error">Błąd</string>
+    <string name="genres_label">Gatunki: %1$s</string>
+    <string name="cast_label">Obsada: %1$s</string>
+    <string name="live_broadcast">Transmisja na żywo</string>
 </resources>

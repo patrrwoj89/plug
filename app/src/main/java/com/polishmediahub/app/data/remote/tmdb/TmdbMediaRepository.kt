@@ -55,6 +55,19 @@ class TmdbMediaRepository @Inject constructor(
         null
     }
 
+    suspend fun credits(mediaItem: MediaItem): List<String> = try {
+        val key = apiKey()
+        val tmdbId = mediaItem.tmdbId ?: return emptyList()
+        val response = if (mediaItem.type == MediaItem.Type.MOVIE) {
+            api.movieCredits(tmdbId, key)
+        } else {
+            api.seriesCredits(tmdbId, key)
+        }
+        response.cast.sortedBy { it.order }.map { it.name }
+    } catch (_: Exception) {
+        emptyList()
+    }
+
     suspend fun recommendations(mediaItem: MediaItem): List<MediaItem> = try {
         val numericId = mediaItem.id.removePrefix("tmdb:").toIntOrNull() ?: return emptyList()
         val key = apiKey()
@@ -110,7 +123,8 @@ class TmdbMediaRepository @Inject constructor(
             duration = "",
             rating = voteAverage?.toString() ?: "",
             genres = genres,
-            type = MediaItem.Type.MOVIE
+            type = MediaItem.Type.MOVIE,
+            tmdbId = id
         )
     }
 
@@ -127,7 +141,8 @@ class TmdbMediaRepository @Inject constructor(
             duration = "",
             rating = voteAverage?.toString() ?: "",
             genres = genres,
-            type = MediaItem.Type.SERIES
+            type = MediaItem.Type.SERIES,
+            tmdbId = id
         )
     }
 
@@ -146,7 +161,8 @@ class TmdbMediaRepository @Inject constructor(
             duration = "",
             rating = voteAverage?.toString() ?: "",
             genres = genreNames,
-            type = if (isMovie) MediaItem.Type.MOVIE else MediaItem.Type.SERIES
+            type = if (isMovie) MediaItem.Type.MOVIE else MediaItem.Type.SERIES,
+            tmdbId = id
         )
     }
 }

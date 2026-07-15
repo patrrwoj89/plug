@@ -30,6 +30,7 @@ The built-in **Admin Panel** lets you configure all sources from a phone, tablet
 | GET | `/api/config` | Returns the current `ApiConfigRepository` values as JSON. |
 | POST | `/api/config` | Receives form-encoded values and saves them into `ApiConfigRepository` (DataStore). |
 | POST | `/api/plugin` | Receives a plugin manifest / script URL and stores it through `PluginRepository`. |
+| POST | `/api/trakt/sync` | Triggers an immediate Trakt two-way sync (`TraktSyncWorker.startImmediate`). |
 
 ## Configurable sources (POST `/api/config`)
 
@@ -54,10 +55,14 @@ Send form fields matching the keys supported by `ApiConfigRepository`. The admin
 | `tmdbApiKey` | TMDB API key |
 | `aniListToken` | AniList access token |
 | `traktClientId` | Trakt client ID |
+| `traktAccessToken` | Trakt OAuth access token (Bearer) for two-way sync and scrobbling |
 | `debridApiKey` / `debridProvider` | Debrid token and provider (`real_debrid`, `torbox`) |
 | `lastEpgSyncAt` | Read-only timestamp of the last IPTV/EPG background sync (milliseconds since epoch) |
 | `lastEpgSyncStatus` | Read-only status of the last sync: `success` or `error` |
 | `lastEpgSyncError` | Read-only error message from the last failed sync, if any |
+| `lastTraktSyncAt` | Read-only timestamp of the last Trakt sync (milliseconds since epoch) |
+| `lastTraktSyncStatus` | Read-only status of the last Trakt sync: `success` or `error` |
+| `lastTraktSyncError` | Read-only error message from the last failed Trakt sync, if any |
 
 Only the fields you actually use need to be present. Empty strings are ignored.
 
@@ -68,6 +73,7 @@ Only the fields you actually use need to be present. Empty strings are ignored.
   "tmdbApiKey": "your-tmdb-key",
   "aniListToken": "your-anilist-token",
   "traktClientId": "your-trakt-client-id",
+  "traktAccessToken": "your-trakt-oauth-token",
   "debridApiKey": "your-debrid-token",
   "debridProvider": "real_debrid",
   "iptvSourceUrls": "https://example.com/playlist.m3u\nhttps://example.com/playlist.m3u8",
@@ -86,13 +92,18 @@ Only the fields you actually use need to be present. Empty strings are ignored.
   "subsonicPassword": "secret",
   "podcastFeeds": "https://example.com/feed.xml\nhttps://nasa.gov/rss/dyn/NASAcast_Podcast.rss",
   "deezerProxyUrl": "https://your-worker.workers.dev",
-  "mdbListApiKey": "your-mdblist-api-key"
+  "mdbListApiKey": "your-mdblist-api-key",
+  "lastTraktSyncAt": "0",
+  "lastTraktSyncStatus": "",
+  "lastTraktSyncError": ""
 }
 ```
 
 Note: the actual HTTP endpoint expects `application/x-www-form-urlencoded` form fields, not raw JSON. The JSON example above is shown for clarity. Sensitive fields (MDBList, TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens and Subsonic password) are encrypted with AES-256-GCM in Android Keystore before being written to DataStore; values sent to the panel are already decrypted on read.
 
 ## Kodi remote settings sync
+
+The Trakt **Sync now** button on the admin page posts to `/api/trakt/sync` and starts `TraktSyncWorker` immediately. It requires `traktClientId` and `traktAccessToken` to be set.
 
 When you save a Debrid or Trakt token in the admin panel, the app attempts to push it to a configured Kodi instance:
 

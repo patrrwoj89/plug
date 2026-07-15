@@ -12,6 +12,7 @@ import android.view.KeyEvent
 import android.graphics.Color as AndroidColor
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.core.net.toUri
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -122,6 +123,8 @@ fun PlayerScreen(
     val subtitleVerticalOffset by viewModel.subtitleVerticalOffset.collectAsStateWithLifecycle()
     val showLoadingStats by viewModel.showLoadingStats.collectAsStateWithLifecycle()
     val playerStats by viewModel.playerStats.collectAsStateWithLifecycle()
+    val cinemaMode by viewModel.cinemaMode.collectAsStateWithLifecycle()
+    val cinemaInfo by viewModel.cinemaInfo.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val density = LocalDensity.current
@@ -255,6 +258,7 @@ fun PlayerScreen(
             viewModel.saveProgress(position, duration)
         },
         onScrobbleStart = { position, duration -> viewModel.scrobbleStart(position, duration) },
+        onScrobblePause = { position, duration -> viewModel.scrobblePause(position, duration) },
         onScrobbleStop = { position, duration -> viewModel.scrobbleStop(position, duration) },
         onReportProgress = { position, duration, isPlaying ->
             val state = if (isPlaying) PlaybackState.PLAYING else PlaybackState.PAUSED
@@ -270,6 +274,8 @@ fun PlayerScreen(
         subtitleSize = subtitleSize,
         subtitleColor = subtitleColor,
         subtitleVerticalOffset = subtitleVerticalOffset,
+        cinemaMode = cinemaMode,
+        cinemaInfo = cinemaInfo,
         modifier = modifier
     )
 }
@@ -285,6 +291,7 @@ private fun PlayerContent(
     onEnterPip: () -> Unit,
     onSaveProgress: (Long, Long) -> Unit,
     onScrobbleStart: (Long, Long) -> Unit,
+    onScrobblePause: (Long, Long) -> Unit,
     onScrobbleStop: (Long, Long) -> Unit,
     onReportProgress: (Long, Long, Boolean) -> Unit,
     onCancelAutoPlay: () -> Unit,
@@ -296,6 +303,8 @@ private fun PlayerContent(
     subtitleSize: Float,
     subtitleColor: String,
     subtitleVerticalOffset: Float,
+    cinemaMode: Boolean,
+    cinemaInfo: com.polishmediahub.app.ui.viewmodel.PlayerViewModel.CinemaInfo,
     modifier: Modifier = Modifier
 ) {
     var controlsVisible by remember { mutableStateOf(true) }
@@ -312,6 +321,10 @@ private fun PlayerContent(
     var lastInteraction by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var autoPlayTriggered by remember(mediaItem?.id) { mutableStateOf(false) }
     val isLive = mediaItem?.isLive == true
+    val dimAlpha by animateFloatAsState(
+        targetValue = if (isPlaying && cinemaMode && !controlsVisible) 0.45f else 0f,
+        label = "dim_alpha"
+    )
     val isSeriesLike = mediaItem?.type == MediaItem.Type.SERIES || mediaItem?.type == MediaItem.Type.EPISODE
     val remainingMs = if (duration > currentPosition) duration - currentPosition else 0L
     val overlayVisible = nextEpisode != null && !autoPlayCancelled && isSeriesLike && !isLive && remainingMs in 0..15_000
@@ -327,7 +340,12 @@ private fun PlayerContent(
                 isPlaying = playing
                 val pos = exoPlayer.currentPosition.coerceAtLeast(0L)
                 val dur = exoPlayer.duration.coerceAtLeast(0L)
-                if (playing) onScrobbleStart(pos, dur) else onScrobbleStop(pos, dur)
+                if (playing) {
+                    onScrobbleStart(pos, dur)
+                } else {
+                    onScrobblePause(pos, dur)
+                    controlsVisible = true
+                }
             }
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_READY) {
@@ -379,9 +397,9 @@ private fun PlayerContent(
         }
     }
 
-    LaunchedEffect(lastInteraction) {
+    LaunchedEffect(lastInteraction, isPlaying, cinemaMode) {
         delay(5_000)
-        if (controlsVisible) controlsVisible = false
+        if (controlsVisible && isPlaying && cinemaMode) controlsVisible = false
     }
 
     Box(
@@ -512,6 +530,12 @@ private fun PlayerContent(
             }
         }
 
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = dimAlpha))
+        )
+
         AnimatedVisibility(
             visible = controlsVisible,
             enter = fadeIn(),
@@ -541,7 +565,9 @@ private fun PlayerContent(
                     exoPlayer.applySubtitleOption(selectedSubtitleIndex, subtitleOptions)
                     subtitleLabel = subtitleOptions.getOrNull(selectedSubtitleIndex)?.label ?: "Off"
                 },
-                onSliderFocusChanged = { sliderFocused = it }
+                onSliderFocusChanged = { sliderFocused = it },
+                cinemaMode = cinemaMode,
+                cinemaInfo = cinemaInfo
             )
         }
 
@@ -744,12 +770,18 @@ internal fun PlayerControls(
     onEnterPip: () -> Unit,
     onCycleAudio: () -> Unit,
     onCycleSubtitle: () -> Unit,
-    onSliderFocusChanged: (Boolean) -> Unit
+    onSliderFocusChanged: (Boolean) -> Unit,
+    cinemaMode: Boolean,
+    cinemaInfo: com.polishmediahub.app.ui.viewmodel.PlayerViewModel.CinemaInfo
 ) {
+    val panelAlpha by animateFloatAsState(
+        targetValue = if (cinemaMode && isPlaying) 0f else if (isLive) 0.3f else 0.6f,
+        label = "panel_alpha"
+    )
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(if (isLive) Color.Black.copy(alpha = 0.3f) else AppColor.Black.copy(alpha = 0.6f))
+            .background(AppColor.Black.copy(alpha = panelAlpha))
             .padding(Spacing.lg),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
@@ -804,7 +836,7 @@ internal fun PlayerControls(
                 if (isLive) {
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = "Transmisja na żywo",
+                        text = stringResource(id = R.string.live_broadcast),
                         style = AppTypography.caption,
                         color = AppColor.OnSurface
                     )
@@ -852,6 +884,43 @@ internal fun PlayerControls(
                     )
                 }
             }
+
+            AnimatedVisibility(visible = cinemaMode && !isPlaying && !isLive) {
+                CinemaInfoCard(info = cinemaInfo)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CinemaInfoCard(info: com.polishmediahub.app.ui.viewmodel.PlayerViewModel.CinemaInfo) {
+    Column(
+        modifier = Modifier
+            .padding(top = Spacing.md)
+            .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .padding(Spacing.md),
+        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+    ) {
+        if (info.description.isNotBlank()) {
+            Text(
+                text = info.description,
+                style = AppTypography.body,
+                color = AppColor.OnSurface.copy(alpha = 0.9f)
+            )
+        }
+        if (info.genres.isNotEmpty()) {
+            Text(
+                text = stringResource(id = R.string.genres_label, info.genres.joinToString(", ")),
+                style = AppTypography.caption,
+                color = AppColor.OnSurface.copy(alpha = 0.8f)
+            )
+        }
+        if (info.cast.isNotEmpty()) {
+            Text(
+                text = stringResource(id = R.string.cast_label, info.cast.joinToString(", ")),
+                style = AppTypography.caption,
+                color = AppColor.OnSurface.copy(alpha = 0.8f)
+            )
         }
     }
 }

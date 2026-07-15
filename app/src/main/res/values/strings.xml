@@ -186,4 +186,20 @@
     <string name="crash_report_restart">Restart app</string>
     <string name="crash_report_clear_cache">Clear cache and restart</string>
     <string name="crash_report_no_details">No crash details available.</string>
+
+    <string name="settings_cinema_mode">Cinema Mode</string>
+    <string name="settings_cinema_mode_subtitle">Auto-hide overlays and show info card on pause</string>
+    <string name="settings_trakt_client_id">Trakt client ID</string>
+    <string name="settings_trakt_client_id_hint">Get it at trakt.tv/oauth/applications</string>
+    <string name="settings_trakt_access_token">Trakt access token</string>
+    <string name="settings_trakt_access_token_hint">OAuth Bearer token</string>
+    <string name="trakt_sync_section">Trakt Sync</string>
+    <string name="trakt_sync_now">Sync with Trakt now</string>
+    <string name="trakt_last_sync">Last Trakt sync: %1$s — %2$s</string>
+    <string name="trakt_sync_status_never">Never</string>
+    <string name="trakt_sync_status_success">Success</string>
+    <string name="trakt_sync_status_error">Error</string>
+    <string name="genres_label">Genres: %1$s</string>
+    <string name="cast_label">Cast: %1$s</string>
+    <string name="live_broadcast">Live broadcast</string>
 </resources>

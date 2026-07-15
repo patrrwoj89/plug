@@ -11,6 +11,7 @@ import com.polishmediahub.app.data.SettingsRepository
 import com.polishmediahub.app.data.WatchHistoryRepository
 import com.polishmediahub.app.data.audio.AudioHistoryRepository
 import com.polishmediahub.app.data.audio.AudioRepository
+import com.polishmediahub.app.data.remote.tmdb.TmdbMediaRepository
 import com.polishmediahub.app.data.remote.trakt.TraktMediaRepository
 import com.polishmediahub.app.data.torrent.TorrentMediaSource
 import com.polishmediahub.app.data.tv.TvLauncherManager
@@ -44,6 +45,7 @@ class PlayerViewModel @Inject constructor(
     private val watchHistoryRepository: WatchHistoryRepository,
     private val tvLauncherManager: TvLauncherManager,
     private val traktMediaRepository: TraktMediaRepository,
+    private val tmdbMediaRepository: TmdbMediaRepository,
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
@@ -82,6 +84,12 @@ class PlayerViewModel @Inject constructor(
 
     private val _showLoadingStats = MutableStateFlow(false)
     val showLoadingStats: StateFlow<Boolean> = _showLoadingStats.asStateFlow()
+
+    private val _cinemaMode = MutableStateFlow(false)
+    val cinemaMode: StateFlow<Boolean> = _cinemaMode.asStateFlow()
+
+    private val _cinemaInfo = MutableStateFlow(CinemaInfo())
+    val cinemaInfo: StateFlow<CinemaInfo> = _cinemaInfo.asStateFlow()
 
     private val _playerStats = MutableStateFlow(PlayerStats())
     val playerStats: StateFlow<PlayerStats> = _playerStats.asStateFlow()
@@ -158,6 +166,19 @@ class PlayerViewModel @Inject constructor(
 
         viewModelScope.launch {
             settingsRepository.showLoadingStats.collect { _showLoadingStats.value = it }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.cinemaMode.collect { _cinemaMode.value = it }
+        }
+
+        viewModelScope.launch {
+            _item.filterNotNull().collect { current ->
+                _cinemaInfo.value = CinemaInfo()
+                if (_cinemaMode.value) {
+                    loadCinemaInfo(current)
+                }
+            }
         }
 
         viewModelScope.launch {
@@ -316,6 +337,17 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
+    fun scrobblePause(positionMs: Long, durationMs: Long) {
+        val current = item.value ?: return
+        viewModelScope.launch {
+            if (!isAudioItem(current)) {
+                val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
+                traktMediaRepository.scrobblePause(current, progress)
+            }
+            reportProgress(current, positionMs, durationMs, PlaybackState.PAUSED)
+        }
+    }
+
     fun scrobbleStop(positionMs: Long, durationMs: Long) {
         val current = item.value ?: return
         viewModelScope.launch {
@@ -323,7 +355,27 @@ class PlayerViewModel @Inject constructor(
                 val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
                 traktMediaRepository.scrobbleStop(current, progress)
             }
-            reportProgress(current, positionMs, durationMs, PlaybackState.PAUSED)
+            reportProgress(current, positionMs, durationMs, PlaybackState.STOPPED)
+        }
+    }
+
+    private suspend fun loadCinemaInfo(mediaItem: MediaItem) {
+        try {
+            val cast = tmdbMediaRepository.credits(mediaItem).take(5)
+            _cinemaInfo.value = CinemaInfo(
+                title = mediaItem.title,
+                description = mediaItem.description,
+                genres = mediaItem.genres,
+                cast = cast
+            )
+        } catch (e: Exception) {
+            Log.w("PlayerViewModel", "loadCinemaInfo failed: ${e.message}", e)
+            _cinemaInfo.value = CinemaInfo(
+                title = mediaItem.title,
+                description = mediaItem.description,
+                genres = mediaItem.genres,
+                cast = emptyList()
+            )
         }
     }
 
@@ -402,6 +454,13 @@ class PlayerViewModel @Inject constructor(
         videoUrl = streamUrl,
         isLive = isLive,
         type = MediaItem.Type.AUDIO
+    )
+
+    data class CinemaInfo(
+        val title: String = "",
+        val description: String = "",
+        val genres: List<String> = emptyList(),
+        val cast: List<String> = emptyList()
     )
 
     data class PlayerStats(

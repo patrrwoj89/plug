@@ -258,6 +258,34 @@ For series, when 15 seconds remain in the current episode a semi-transparent ove
 
 No, the overlay is only triggered for `MediaItem.Type.SERIES` / episodes.
 
+## Trakt.tv sync
+
+### How does two-way Trakt sync work?
+
+`TraktSyncWorker` runs every 6 hours (and can be triggered manually from **Settings** or the admin panel). It pulls your watched history and watchlist from Trakt and writes them to the active profile's Room tables. Any items watched or added to the watchlist locally while offline are pushed back to Trakt. Conflicts are resolved by timestamp: the newer record wins.
+
+### Where do I enter my Trakt credentials?
+
+Open **Settings → Trakt Sync** or the wireless **Admin** panel and enter your **Trakt client ID** and **OAuth access token**. These values are encrypted with AES-256-GCM in the Android Keystore before being saved to DataStore.
+
+### What is Trakt scrobbling?
+
+During playback the app sends `/scrobble/start` when the video starts playing, `/scrobble/pause` when you pause, and `/scrobble/stop` when the player closes. Each request includes the exact percent progress, so Trakt knows how far you are in a movie or episode.
+
+### Where can I see the last sync status?
+
+The **Settings** screen and the wireless **Admin** panel show "Last Trakt sync: [date] — [status]". If a sync fails, the error message is displayed there.
+
+## Cinema Dimming Mode
+
+### What is Cinema Mode?
+
+**Cinema Mode** (toggle in **Settings**) is a playback experience designed for dark rooms. While the video is playing the player overlays automatically hide after a short inactivity delay and the screen smoothly dims. When you pause or press any D-Pad button the interface brightens again.
+
+### What is the info card shown on pause?
+
+When paused, a card appears below the progress slider showing the title, description, genres and the top 5 cast members for the current movie or episode. Cast data is fetched in the background from TMDB (or Trakt metadata) as soon as the player opens.
+
 ## Spoiler Blur
 
 ### Why is the episode description blurred?

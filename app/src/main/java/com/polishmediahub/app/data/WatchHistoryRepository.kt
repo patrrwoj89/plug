@@ -25,7 +25,8 @@ class WatchHistoryRepository @Inject constructor(
         profileRepository.currentProfile.filterNotNull().flatMapLatest { profile ->
             historyDao.observeAll(profile.id).map { list ->
                 list.mapNotNull { entity ->
-                    mediaRepository.byId(entity.id)?.let { it to entity }
+                    val item = mediaRepository.byId(entity.id) ?: entity.toMediaItem()
+                    if (item != null) item to entity else null
                 }
             }
         }
@@ -44,6 +45,11 @@ class WatchHistoryRepository @Inject constructor(
             }
         }
 
+    suspend fun updatePosition(item: MediaItem, positionMs: Long, durationMs: Long) = withContext(Dispatchers.IO) {
+        val profileId = currentProfileId() ?: return@withContext
+        historyDao.upsert(item.toWatchedEntity(profileId, positionMs, durationMs))
+    }
+
     suspend fun updatePosition(id: String, positionMs: Long, durationMs: Long) = withContext(Dispatchers.IO) {
         val profileId = currentProfileId() ?: return@withContext
         historyDao.upsert(
@@ -51,9 +57,25 @@ class WatchHistoryRepository @Inject constructor(
                 profileId = profileId,
                 id = id,
                 positionMs = positionMs,
-                durationMs = durationMs
+                durationMs = durationMs,
+                watchedAt = System.currentTimeMillis()
             )
         )
+    }
+
+    suspend fun addOrUpdateHistory(
+        item: MediaItem,
+        positionMs: Long = 0,
+        durationMs: Long = 0,
+        watchedAt: Long = System.currentTimeMillis()
+    ) = withContext(Dispatchers.IO) {
+        val profileId = currentProfileId() ?: return@withContext
+        historyDao.upsert(item.toWatchedEntity(profileId, positionMs, durationMs, watchedAt))
+    }
+
+    suspend fun getAllForCurrentProfile(): List<WatchedEntity> = withContext(Dispatchers.IO) {
+        val profileId = currentProfileId() ?: return@withContext emptyList()
+        historyDao.getAll(profileId)
     }
 
     suspend fun remove(id: String) = withContext(Dispatchers.IO) {
@@ -67,4 +89,48 @@ class WatchHistoryRepository @Inject constructor(
     }
 
     private fun currentProfileId(): String? = profileRepository.currentProfile.value?.id
+
+    private fun MediaItem.toWatchedEntity(
+        profileId: String,
+        positionMs: Long,
+        durationMs: Long,
+        watchedAt: Long = System.currentTimeMillis()
+    ) = WatchedEntity(
+        profileId = profileId,
+        id = id,
+        positionMs = positionMs,
+        durationMs = durationMs,
+        watchedAt = watchedAt,
+        title = title,
+        subtitle = subtitle,
+        description = description,
+        posterUrl = posterUrl.orEmpty(),
+        backdropUrl = backdropUrl.orEmpty(),
+        year = year,
+        type = type.name,
+        season = season,
+        episode = episode,
+        tmdbId = tmdbId,
+        traktId = traktId,
+        imdbId = imdbId
+    )
+
+    private fun WatchedEntity.toMediaItem(): MediaItem? {
+        if (title.isBlank()) return null
+        return MediaItem(
+            id = id,
+            title = title,
+            subtitle = subtitle,
+            description = description,
+            posterUrl = posterUrl.takeIf { it.isNotBlank() },
+            backdropUrl = backdropUrl.takeIf { it.isNotBlank() },
+            year = year,
+            type = runCatching { MediaItem.Type.valueOf(type) }.getOrDefault(MediaItem.Type.MOVIE),
+            season = season,
+            episode = episode,
+            tmdbId = tmdbId,
+            traktId = traktId,
+            imdbId = imdbId
+        )
+    }
 }

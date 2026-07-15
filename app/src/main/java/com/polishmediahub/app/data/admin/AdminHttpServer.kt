@@ -1,9 +1,12 @@
 package com.polishmediahub.app.data.admin
 
+import android.content.Context
 import android.util.Log
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.plugin.PluginRepository
+import com.polishmediahub.app.data.remote.trakt.TraktSyncWorker
 import com.polishmediahub.app.data.source.KodiMediaSource
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -26,6 +29,7 @@ import javax.inject.Singleton
 
 @Singleton
 class AdminHttpServer @Inject constructor(
+    @param:ApplicationContext private val context: Context,
     private val apiConfigRepository: ApiConfigRepository,
     private val pluginRepository: PluginRepository,
     private val kodiMediaSource: KodiMediaSource
@@ -108,6 +112,7 @@ class AdminHttpServer @Inject constructor(
                     method == "GET" && path == "/admin" -> serveAdminPage(out)
                     method == "POST" && path == "/api/config" -> handleConfigPost(body, out)
                     method == "POST" && path == "/api/plugin" -> handlePluginPost(body, out)
+                    method == "POST" && path == "/api/trakt/sync" -> handleTraktSync(out)
                     method == "GET" && path == "/api/config" -> serveConfig(out)
                     else -> writeResponse(out, 404, "Not Found", "text/plain", "Not Found")
                 }
@@ -152,7 +157,11 @@ class AdminHttpServer @Inject constructor(
                     "mdbListApiKey" to mdbListApiKey,
                     "lastEpgSyncAt" to lastEpgSyncAt,
                     "lastEpgSyncStatus" to lastEpgSyncStatus,
-                    "lastEpgSyncError" to lastEpgSyncError.map { it ?: "" }
+                    "lastEpgSyncError" to lastEpgSyncError.map { it ?: "" },
+                    "traktAccessToken" to traktAccessToken,
+                    "lastTraktSyncAt" to lastTraktSyncAt,
+                    "lastTraktSyncStatus" to lastTraktSyncStatus,
+                    "lastTraktSyncError" to lastTraktSyncError.map { it ?: "" }
                 )
             }.mapValues { (_, flow) -> flow.first().toString() }
             val jsonObj = JsonObject(values.mapValues { (_, v) -> JsonPrimitive(v) })
@@ -190,6 +199,7 @@ class AdminHttpServer @Inject constructor(
             params["podcastFeeds"]?.let { apiConfigRepository.setPodcastFeeds(it) }
             params["deezerProxyUrl"]?.let { apiConfigRepository.setDeezerProxyUrl(it) }
             params["mdbListApiKey"]?.let { apiConfigRepository.setMdbListApiKey(it) }
+            params["traktAccessToken"]?.let { apiConfigRepository.setTraktAccessToken(it) }
             pushAddonSettingsIfKodiConfigured()
         }
         writeResponse(out, 200, "OK", "text/plain", "OK")
@@ -211,6 +221,11 @@ class AdminHttpServer @Inject constructor(
         } catch (e: Exception) {
             Log.w("AdminHttpServer", "pushAddonSettingsIfKodiConfigured failed: ${e.message}", e)
         }
+    }
+
+    private fun handleTraktSync(out: java.io.OutputStream) {
+        TraktSyncWorker.startImmediate(context)
+        writeResponse(out, 200, "OK", "text/plain", "Trakt sync scheduled")
     }
 
     private fun handlePluginPost(body: String, out: java.io.OutputStream) {
@@ -324,6 +339,8 @@ button:hover { background: #29b6f6; }
   <input type="text" name="aniListToken">
   <label>Trakt Client ID</label>
   <input type="text" name="traktClientId">
+  <label>Trakt Access Token</label>
+  <input type="password" name="traktAccessToken" placeholder="OAuth Bearer token from Trakt.tv">
   <label>Debrid API Key / Token</label>
   <input type="text" name="debridApiKey">
   <label>Debrid Provider</label>
@@ -331,6 +348,9 @@ button:hover { background: #29b6f6; }
   <button type="submit">Save Configuration</button>
   <div id="status" class="status"></div>
 </form>
+<h2>Trakt Sync</h2>
+<p id="traktStatus" class="status"></p>
+<button type="button" id="traktSyncBtn">Sync with Trakt now</button>
 <h2>Plugin</h2>
 <form id="pluginForm">
   <label>Plugin URL</label>
@@ -381,8 +401,30 @@ async function loadEpgStatus() {
     el.style.display = status ? 'block' : 'none';
   } catch (e) { console.error(e); }
 }
+async function syncTrakt() {
+  try {
+    const res = await fetch('/api/trakt/sync', { method: 'POST' });
+    if (res.ok) { alert('Trakt sync scheduled'); }
+    else { alert('Trakt sync failed'); }
+  } catch (err) { alert(err.message); }
+}
+async function loadTraktStatus() {
+  try {
+    const res = await fetch('/api/config');
+    const cfg = await res.json();
+    const at = cfg.lastTraktSyncAt ? new Date(Number(cfg.lastTraktSyncAt)).toLocaleString() : 'Never';
+    const status = cfg.lastTraktSyncStatus || '';
+    const error = cfg.lastTraktSyncError;
+    const el = document.getElementById('traktStatus');
+    el.textContent = 'Last Trakt sync: ' + at + ' — ' + status + (error ? ' (' + error + ')' : '');
+    el.className = 'status ' + (status === 'success' ? 'ok' : status ? 'err' : '');
+    el.style.display = status ? 'block' : 'none';
+  } catch (e) { console.error(e); }
+}
+document.getElementById('traktSyncBtn').addEventListener('click', syncTrakt);
 loadConfig();
 loadEpgStatus();
+loadTraktStatus();
 </script>
 </body>
 </html>

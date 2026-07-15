@@ -41,6 +41,34 @@ interface TraktApi {
     @GET("sync/watchlist/movies,shows")
     suspend fun watchlist(@Header("Authorization") auth: String, @Header("trakt-api-key") clientId: String): List<TraktWatchlistItem>
 
+    @POST("sync/history")
+    suspend fun syncHistoryAdd(
+        @Header("Authorization") auth: String,
+        @Header("trakt-api-key") clientId: String,
+        @Body body: TraktSyncHistoryBody
+    )
+
+    @POST("sync/history/remove")
+    suspend fun syncHistoryRemove(
+        @Header("Authorization") auth: String,
+        @Header("trakt-api-key") clientId: String,
+        @Body body: TraktSyncHistoryBody
+    )
+
+    @POST("sync/watchlist")
+    suspend fun syncWatchlistAdd(
+        @Header("Authorization") auth: String,
+        @Header("trakt-api-key") clientId: String,
+        @Body body: TraktSyncHistoryBody
+    )
+
+    @POST("sync/watchlist/remove")
+    suspend fun syncWatchlistRemove(
+        @Header("Authorization") auth: String,
+        @Header("trakt-api-key") clientId: String,
+        @Body body: TraktSyncHistoryBody
+    )
+
     @POST("scrobble/start")
     suspend fun scrobbleStart(
         @Header("Authorization") auth: String,
@@ -118,12 +146,14 @@ data class TraktWatchedSeason(
 @Serializable
 data class TraktWatchedEpisode(
     val number: Int,
+    val ids: TraktIds? = null,
     @SerialName("last_watched_at") val lastWatchedAt: String? = null
 )
 
 @Serializable
 data class TraktWatchlistItem(
     val type: String,
+    @SerialName("listed_at") val listedAt: String? = null,
     val movie: TraktMovie? = null,
     val show: TraktShow? = null
 )
@@ -164,4 +194,43 @@ data class TraktSharing(
     val twitter: Boolean = false,
     val tumblr: Boolean = false,
     val medium: Boolean = false
+)
+
+@Serializable
+data class TraktSyncHistoryBody(
+    val movies: List<TraktSyncMovie> = emptyList(),
+    val shows: List<TraktSyncShow> = emptyList(),
+    val episodes: List<TraktSyncEpisode> = emptyList()
+)
+
+@Serializable
+data class TraktSyncMovie(
+    val title: String,
+    val year: Int? = null,
+    val ids: TraktIds,
+    @SerialName("watched_at") val watchedAt: String? = null
+)
+
+@Serializable
+data class TraktSyncShow(
+    val title: String,
+    val year: Int? = null,
+    val ids: TraktIds,
+    val seasons: List<TraktSyncSeason> = emptyList(),
+    @SerialName("watched_at") val watchedAt: String? = null
+)
+
+@Serializable
+data class TraktSyncSeason(
+    val number: Int,
+    val episodes: List<TraktSyncEpisode> = emptyList()
+)
+
+@Serializable
+data class TraktSyncEpisode(
+    val season: Int,
+    val number: Int,
+    val title: String? = null,
+    val ids: TraktIds? = null,
+    @SerialName("watched_at") val watchedAt: String? = null
 )

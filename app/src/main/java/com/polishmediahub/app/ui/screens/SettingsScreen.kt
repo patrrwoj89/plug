@@ -28,6 +28,7 @@ import com.polishmediahub.app.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.polishmediahub.app.navigation.Screen
 import com.polishmediahub.app.ui.components.FocusableSurface
+import com.polishmediahub.app.ui.components.TvButton
 import com.polishmediahub.app.ui.components.TvOutlinedTextField
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
@@ -59,6 +60,10 @@ fun SettingsScreen(
     val subtitleVerticalOffset by viewModel.subtitleVerticalOffset.collectAsStateWithLifecycle()
     val showLoadingStats by viewModel.showLoadingStats.collectAsStateWithLifecycle()
     val mdbListApiKey by viewModel.mdbListApiKey.collectAsStateWithLifecycle()
+    val traktClientId by viewModel.traktClientId.collectAsStateWithLifecycle()
+    val traktAccessToken by viewModel.traktAccessToken.collectAsStateWithLifecycle()
+    val lastTraktSync by viewModel.lastTraktSync.collectAsStateWithLifecycle()
+    val cinemaMode by viewModel.cinemaMode.collectAsStateWithLifecycle()
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
     val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
     val lastEpgSync by viewModel.lastEpgSync.collectAsStateWithLifecycle()
@@ -179,6 +184,13 @@ fun SettingsScreen(
             onCheckedChange = viewModel::setShowLoadingStats
         )
 
+        SettingsToggle(
+            title = stringResource(id = R.string.settings_cinema_mode),
+            subtitle = stringResource(id = R.string.settings_cinema_mode_subtitle),
+            checked = cinemaMode,
+            onCheckedChange = viewModel::setCinemaMode
+        )
+
         SettingsSelector(
             title = stringResource(id = R.string.settings_preferred_quality),
             value = preferredQuality,
@@ -195,6 +207,46 @@ fun SettingsScreen(
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions.Default
         )
+
+        Text(
+            text = stringResource(id = R.string.trakt_sync_section),
+            style = AppTypography.headline,
+            modifier = Modifier.padding(top = Spacing.md)
+        )
+
+        TvOutlinedTextField(
+            value = traktClientId,
+            onValueChange = viewModel::setTraktClientId,
+            label = { Text(stringResource(id = R.string.settings_trakt_client_id)) },
+            placeholder = { Text(stringResource(id = R.string.settings_trakt_client_id_hint)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            keyboardOptions = KeyboardOptions.Default
+        )
+
+        TvOutlinedTextField(
+            value = traktAccessToken,
+            onValueChange = viewModel::setTraktAccessToken,
+            label = { Text(stringResource(id = R.string.settings_trakt_access_token)) },
+            placeholder = { Text(stringResource(id = R.string.settings_trakt_access_token_hint)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions.Default
+        )
+
+        val syncTraktStatus = remember(lastTraktSync) { formatTraktSyncStatus(context, lastTraktSync) }
+        Text(
+            text = syncTraktStatus,
+            style = AppTypography.caption,
+            color = AppColor.OnSurfaceVariant
+        )
+
+        TvButton(onClick = { viewModel.syncTraktNow() }) {
+            Text(
+                text = stringResource(id = R.string.trakt_sync_now),
+                color = AppColor.Black,
+                style = AppTypography.button
+            )
+        }
 
         SettingsToggle(
             title = stringResource(id = R.string.settings_pin_enabled),
@@ -384,4 +436,18 @@ private fun formatEpgSyncStatus(context: android.content.Context, state: LastEpg
         else -> if (state.at > 0L) state.status else ""
     }
     return context.getString(R.string.epg_last_sync, date, status)
+}
+
+private fun formatTraktSyncStatus(context: android.content.Context, state: com.polishmediahub.app.ui.viewmodel.LastTraktSyncState): String {
+    val date = if (state.at > 0L) {
+        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(state.at))
+    } else {
+        context.getString(R.string.trakt_sync_status_never)
+    }
+    val status = when (state.status) {
+        "success" -> context.getString(R.string.trakt_sync_status_success)
+        "error" -> context.getString(R.string.trakt_sync_status_error) + (state.error?.let { " ($it)" } ?: "")
+        else -> if (state.at > 0L) state.status else ""
+    }
+    return context.getString(R.string.trakt_last_sync, date, status)
 }

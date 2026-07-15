@@ -21,6 +21,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
   - **Integracja MDBList** (`MdbListMediaSource`): publiczne listy top, listy użytkownika, wyszukiwanie mediów i lookup po identyfikatorach imdb/tmdb/trakt/tvdb; każdy element zawiera `tmdbId`, `imdbId` i `traktId`, co ułatwia dopasowanie do innych źródeł.
   - **Reaktywny fallback Kitsu dla anime** (`KitsuMediaSource`, `AnimeRepository`): gdy AniList GraphQL zawiedzie (błąd sieci, timeout, 429), aplikacja automatycznie i cicho przełącza się na Kitsu JSON:API. Z `include=mappings` parsowane są powiązane `malId` oraz `aniListId`, aby zachować zgodność z resolverami strumieni.
 - **Strumieniowanie BitTorrent** przez `jlibtorrent` z pobieraniem sekwencyjnym, lokalnym serwerem HTTP i UI buforowania.
+- **Dwukierunkowa synchronizacja z Trakt.tv** (`TraktSyncWorker`) co 6 godzin: pobiera historię obejrzanych i listę do obejrzenia z Trakt do Room, wysyła lokalną historię/listę do obejrzenia z Room z powrotem do Trakt, z rozwiązywaniem konfliktów na podstawie timestampu. Odtwarzacz ExoPlayer wysyła `/scrobble/start`, `/scrobble/pause` i `/scrobble/stop` z dokładnym procentem postępu.
 - **Muzyka i audio**:
   - Natywny parser RSS podcastów (`PodcastRssParser`) z tagami iTunes i URL-ami audio z `<enclosure>`.
   - Repozytorium radia internetowego M3U/PLS (`RadioRepository`).
@@ -46,6 +47,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - **Odtwarzanie DRM**: `MediaItem` przenosi `drmLicenseUrl`, `drmScheme` i `drmHeaders`; ExoPlayer konfiguruje `DrmConfiguration` dla Widevine/PlayReady/ClearKey.
 - **Polskie audio / napisy**: ExoPlayer preferuje utwory `pl`, depriorytyzuje Audiodeskrypcję i pokazuje pełne etykiety językowe w panelu odtwarzacza.
 - **Napisy zewnętrzne**: pliki `.vtt` i `.srt`.
+- **Inteligentny Tryb Kinowy**: po włączeniu nakładki automatycznie ukrywają się podczas odtwarzania, a ekran płynnie przyciemnia się; po pauzie nakładka rozjaśnia się i pod suwakiem pojawia się karta informacyjna z tytułem, opisem, gatunkami i głównymi aktorami pobranymi w tle z metadanych TMDB / Trakt.
 - **Nagłówki strumieni**: `User-Agent`, `Referer`, `Cookie` i niestandardowe nagłówki przekazywane do `DefaultHttpDataSource.Factory`.
 
 ### Sieć i ochrona przed botami
@@ -58,6 +60,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 
 - **Bezprzewodowy panel administracyjny** serwowany lokalnie z kodem QR (ZXing) do łatwej konfiguracji źródeł z telefonu lub komputera; panel oraz Ustawienia wyświetlają datę i status ostatniej synchronizacji EPG.
 - **Tło aktualizowanie EPG/IPTV** (`IptvUpdateWorker`) uruchamia się co 12 godzin (i przy zimnym starcie) na `Dispatchers.IO` z ograniczeniami unmetered/idle/battery-not-low, zapisuje kanały i programy do Room, dzięki czemu ekran telewizji na żywo otwiera się natychmiast.
+- **Tło synchronizacji Trakt.tv** (`TraktSyncWorker`) uruchamia się co 6 godzin z ograniczeniami sieci/baterii. Można też uruchomić natychmiastową synchronizację z poziomu Ustawień lub panelu admina.
 - **Onboarding pierwszego uruchomienia** pozwala nowym użytkownikom wybrać legalne pakiety startowe.
 
 ### Integracja z Android TV

@@ -258,6 +258,34 @@ Dla seriali, gdy do końca odcinka pozostaje 15 sekund, pojawia się półprzezr
 
 Nie, nakładka jest uruchamiana tylko dla `MediaItem.Type.SERIES` / odcinków.
 
+## Synchronizacja Trakt.tv
+
+### Jak działa dwukierunkowa synchronizacja z Trakt?
+
+`TraktSyncWorker` uruchamia się co 6 godzin (a także ręcznie z **Ustawień** lub panelu admina). Pobiera z Trakt historię obejrzanych pozycji i listę do obejrzenia, zapisując je w tabelach Room aktywnego profilu. Pozycje obejrzane lub dodane do listy do obejrzenia lokalnie w trybie offline są wysyłane z powrotem do Trakt. Konflikty są rozwiązywane na podstawie timestampu — nowszy rekord wygrywa.
+
+### Gdzie wpisać dane logowania do Trakt?
+
+Otwórz **Ustawienia → Synchronizacja Trakt** lub bezprzewodowy **panel Admin** i wpisz **Trakt client ID** oraz **OAuth access token**. Wartości te są szyfrowane algorytmem AES-256-GCM w Android Keystore przed zapisem do DataStore.
+
+### Czym jest scrobbling Trakt?
+
+Podczas odtwarzania aplikacja wysyła `/scrobble/start` po rozpoczęciu odtwarzania, `/scrobble/pause` po pauzie i `/scrobble/stop` po zamknięciu odtwarzacza. Każde żądanie zawiera dokładny procent postępu, więc Trakt wie, na jakim etapie jesteś w filmie lub odcinku.
+
+### Gdzie zobaczyć status ostatniej synchronizacji?
+
+Ekran **Ustawień** oraz bezprzewodowy **panel Admin** pokazują „Ostatnia synchronizacja Trakt: [data] — [status]”. W przypadku błędu wyświetlana jest także jego treść.
+
+## Tryb Kinowy
+
+### Czym jest Tryb Kinowy?
+
+**Tryb Kinowy** (przełącznik w **Ustawieniach**) to tryb odtwarzania zaprojektowany dla ciemnych pomieszczeń. Gdy wideo jest odtwarzane, nakładki automatycznie chowają się po krótkim czasie bez aktywności, a ekran płynnie przyciemnia się. Po pauzie lub naciśnięciu przycisku pilota interfejs rozjaśnia się ponownie.
+
+### Co pokazuje karta informacyjna przy pauzie?
+
+Po pauzie pod suwakiem postępu pojawia się karta z tytułem, opisem, gatunkami i top 5 aktorami aktualnego filmu lub odcinka. Dane o obsadzie są pobierane w tle z TMDB (lub metadanych Trakt) zaraz po otwarciu odtwarzacza.
+
 ## Spoiler Blur
 
 ### Dlaczego opis odcinka jest rozmyty?

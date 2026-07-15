@@ -28,5 +28,11 @@ data class SavedMediaEntity(
     val rating: String,
     val videoUrl: String,
     val listType: String, // "library" or "watchlist"
-    val addedAt: Long = System.currentTimeMillis()
+    val addedAt: Long = System.currentTimeMillis(),
+    // Cross IDs used for Trakt two-way sync and matching against other sources.
+    val tmdbId: Int? = null,
+    val traktId: Int? = null,
+    val imdbId: String? = null,
+    val season: Int? = null,
+    val episode: Int? = null
 )

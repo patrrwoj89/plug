@@ -2,9 +2,12 @@ package com.polishmediahub.app.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.SettingsRepository
+import com.polishmediahub.app.data.remote.trakt.TraktSyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -15,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    private val apiConfigRepository: ApiConfigRepository
+    private val apiConfigRepository: ApiConfigRepository,
+    @param:ApplicationContext private val context: Context
 ) : ViewModel() {
 
     val darkTheme: StateFlow<Boolean> = settingsRepository.darkTheme
@@ -45,6 +49,9 @@ class SettingsViewModel @Inject constructor(
     val showLoadingStats: StateFlow<Boolean> = settingsRepository.showLoadingStats
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = false)
 
+    val cinemaMode: StateFlow<Boolean> = settingsRepository.cinemaMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = false)
+
     val isFirstLaunch: StateFlow<Boolean?> = settingsRepository.isFirstLaunch
         .stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = null)
 
@@ -58,6 +65,19 @@ class SettingsViewModel @Inject constructor(
     val mdbListApiKey: StateFlow<String> = apiConfigRepository.mdbListApiKey
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = "")
 
+    val traktClientId: StateFlow<String> = apiConfigRepository.traktClientId
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = "")
+
+    val traktAccessToken: StateFlow<String> = apiConfigRepository.traktAccessToken
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = "")
+
+    val lastTraktSync: StateFlow<LastTraktSyncState> = combine(
+        apiConfigRepository.lastTraktSyncAt,
+        apiConfigRepository.lastTraktSyncStatus,
+        apiConfigRepository.lastTraktSyncError
+    ) { at, status, error -> LastTraktSyncState(at, status, error) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = LastTraktSyncState())
+
     fun setDarkTheme(value: Boolean) = viewModelScope.launch { settingsRepository.setDarkTheme(value) }
     fun setAutoplayTrailers(value: Boolean) = viewModelScope.launch { settingsRepository.setAutoplayTrailers(value) }
     fun setSaveSearchHistory(value: Boolean) = viewModelScope.launch { settingsRepository.setSaveSearchHistory(value) }
@@ -67,6 +87,17 @@ class SettingsViewModel @Inject constructor(
     fun setSubtitleColor(value: String) = viewModelScope.launch { settingsRepository.setSubtitleColor(value) }
     fun setSubtitleVerticalOffset(value: Float) = viewModelScope.launch { settingsRepository.setSubtitleVerticalOffset(value) }
     fun setShowLoadingStats(value: Boolean) = viewModelScope.launch { settingsRepository.setShowLoadingStats(value) }
+    fun setCinemaMode(value: Boolean) = viewModelScope.launch { settingsRepository.setCinemaMode(value) }
 
     fun setMdbListApiKey(value: String) = viewModelScope.launch { apiConfigRepository.setMdbListApiKey(value) }
+    fun setTraktClientId(value: String) = viewModelScope.launch { apiConfigRepository.setTraktClientId(value) }
+    fun setTraktAccessToken(value: String) = viewModelScope.launch { apiConfigRepository.setTraktAccessToken(value) }
+
+    fun syncTraktNow() = viewModelScope.launch { TraktSyncWorker.startImmediate(context) }
 }
+
+data class LastTraktSyncState(
+    val at: Long = 0L,
+    val status: String = "",
+    val error: String? = null
+)

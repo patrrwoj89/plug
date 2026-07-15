@@ -53,6 +53,9 @@ class ApiConfigRepository @Inject constructor(
     val lastEpgSyncAt: Flow<Long> = context.apiConfigDataStore.data.map { it[KEY_LAST_EPG_SYNC_AT] ?: 0L }
     val lastEpgSyncStatus: Flow<String> = plainStringFlow(KEY_LAST_EPG_SYNC_STATUS)
     val lastEpgSyncError: Flow<String?> = context.apiConfigDataStore.data.map { it[KEY_LAST_EPG_SYNC_ERROR] }
+    val lastTraktSyncAt: Flow<Long> = context.apiConfigDataStore.data.map { it[KEY_LAST_TRAKT_SYNC_AT] ?: 0L }
+    val lastTraktSyncStatus: Flow<String> = plainStringFlow(KEY_LAST_TRAKT_SYNC_STATUS)
+    val lastTraktSyncError: Flow<String?> = context.apiConfigDataStore.data.map { it[KEY_LAST_TRAKT_SYNC_ERROR] }
 
     suspend fun setTmdbApiKey(value: String) = edit(KEY_TMDB, value)
     suspend fun setAniListToken(value: String) = edit(KEY_ANILIST, value)
@@ -82,6 +85,18 @@ class ApiConfigRepository @Inject constructor(
     suspend fun setPodcastFeeds(value: String) = edit(KEY_PODCAST_FEEDS, value)
     suspend fun setDeezerProxyUrl(value: String) = edit(KEY_DEEZER_PROXY_URL, value)
     suspend fun setMdbListApiKey(value: String) = edit(KEY_MDBLIST, value)
+
+    suspend fun setLastTraktSync(timestamp: Long, status: String, error: String? = null) {
+        context.apiConfigDataStore.edit {
+            it[KEY_LAST_TRAKT_SYNC_AT] = timestamp
+            it[KEY_LAST_TRAKT_SYNC_STATUS] = status
+            if (error != null) {
+                it[KEY_LAST_TRAKT_SYNC_ERROR] = error
+            } else {
+                it.remove(KEY_LAST_TRAKT_SYNC_ERROR)
+            }
+        }
+    }
 
     suspend fun setLastEpgSync(timestamp: Long, status: String, error: String? = null) {
         context.apiConfigDataStore.edit {
@@ -152,6 +167,9 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_LAST_EPG_SYNC_AT = longPreferencesKey("last_epg_sync_at")
         private val KEY_LAST_EPG_SYNC_STATUS = stringPreferencesKey("last_epg_sync_status")
         private val KEY_LAST_EPG_SYNC_ERROR = stringPreferencesKey("last_epg_sync_error")
+        private val KEY_LAST_TRAKT_SYNC_AT = longPreferencesKey("last_trakt_sync_at")
+        private val KEY_LAST_TRAKT_SYNC_STATUS = stringPreferencesKey("last_trakt_sync_status")
+        private val KEY_LAST_TRAKT_SYNC_ERROR = stringPreferencesKey("last_trakt_sync_error")
 
         private val SENSITIVE_STRING_KEYS = setOf(
             KEY_TMDB,

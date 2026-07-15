@@ -152,10 +152,25 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
   - `podcastFeeds`, `deezerProxy` i `webSources`.
   - Przykładowe źródła obejmują publiczne IPTV, EPG, dodatki Stremio, kanały RSS podcastów i radio internetowe.
 
+#### Dwukierunkowa synchronizacja z Trakt.tv (`TraktSyncWorker`, `TraktMediaRepository`)
+- `TraktSyncWorker` to `@HiltWorker` uruchamiany co 6 godzin przez `WorkManager` z ograniczeniami `NetworkType.CONNECTED` oraz `requiresBatteryNotLow`.
+- Pobiera obejrzane filmy/seriale/odcinki z `/sync/watched` oraz listę do obejrzenia z `/sync/watchlist` i zapisuje je w per-profilowych tabelach Room.
+- Wysyła lokalną historię (`WatchHistoryRepository`) i listę do obejrzenia (`SavedMediaRepository`) z powrotem do Trakt przez `/sync/history` i `/sync/watchlist`; konflikty są rozwiązywane na podstawie timestampu — nowszy rekord wygrywa.
+- `PlayerViewModel` wysyła żądania `/scrobble/start`, `/scrobble/pause` i `/scrobble/stop` z dokładnym procentem postępu przy zmianach stanu ExoPlayera.
+- Timestamp/status/błąd ostatniej synchronizacji są eksponowane przez `ApiConfigRepository` i wyświetlane w `SettingsScreen` oraz `AdminHttpServer`.
+
+#### Inteligentny Tryb Kinowy (`PlayerScreen`, `PlayerViewModel`)
+- Przełącznik `cinemaMode` w `SettingsRepository` / `SettingsScreen` oraz bezprzewodowym panelu admina.
+- Gdy `isPlaying == true`, odtwarzacz automatycznie chowa nakładki po krótkim czasie bez aktywności i przyciemnia cały ekran animowanym czarnym overlayem.
+- Po pauzie lub interakcji pilotem nakładka płynnie rozjaśnia się, a pod suwakiem pojawia się karta informacyjna z tytułem, opisem, gatunkami i top 5 aktorami pobranymi w tle z metadanych TMDB / Trakt.
+- `TmdbMediaRepository.credits(...)` odpytuje endpointy `/movie/{id}/credits` oraz `/tv/{id}/credits`.
+
 ### Zmieniono
 - `TVNavHost` czeka na wartość `isFirstLaunch` przed wyborem startu `NavHost`, co zapobiega resetowaniu grafu nawigacji.
 - `TvLauncherManager` zapisuje postęp co 15 sekund podczas odtwarzania, z wymuszonym zapisem przy `onPlaybackStopped`.
 - `PlayerScreen` reaktywnie pobiera styl napisów i nakładkę Nerd Stats z dedykowanych `StateFlow`.
+- Sygnatura `PlayerControls` rozszerzona o parametry `cinemaMode` i `cinemaInfo` dla karty informacyjnej Trybu Kinowego.
+- `AdminHttpServer` obsługuje teraz `/api/trakt/sync` i eksponuje `traktAccessToken`, `lastTraktSyncAt/Status/Error`.
 
 ### Naprawiono
 

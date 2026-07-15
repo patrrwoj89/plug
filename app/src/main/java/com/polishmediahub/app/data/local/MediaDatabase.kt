@@ -19,7 +19,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         AudioHistoryEntity::class,
         ChannelEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = false
 )
 abstract class MediaDatabase : RoomDatabase() {
@@ -52,7 +52,8 @@ abstract class MediaDatabase : RoomDatabase() {
             migrationFromV8toV9(),
             migrationFromV9toV10(),
             migrationFromV10toV11(),
-            migrationFromV11toV12()
+            migrationFromV11toV12(),
+            migrationFromV12toV13()
         ).toTypedArray()
 
         private fun migrationWithEpgRebuild(startVersion: Int, endVersion: Int): Migration =
@@ -251,6 +252,36 @@ abstract class MediaDatabase : RoomDatabase() {
                 }
             }
 
+        private fun migrationFromV12toV13(): Migration =
+            object : Migration(12, 13) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    addWatchedAndSavedMediaCrossIdColumns(db)
+                }
+            }
+
+        private fun addWatchedAndSavedMediaCrossIdColumns(db: SupportSQLiteDatabase) {
+            // watched table metadata cache and cross-IDs for Trakt two-way sync
+            addColumnIfMissing(db, "watched", "title", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "watched", "subtitle", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "watched", "description", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "watched", "posterUrl", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "watched", "backdropUrl", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "watched", "year", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "watched", "type", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "watched", "season", "INTEGER")
+            addColumnIfMissing(db, "watched", "episode", "INTEGER")
+            addColumnIfMissing(db, "watched", "tmdbId", "INTEGER")
+            addColumnIfMissing(db, "watched", "traktId", "INTEGER")
+            addColumnIfMissing(db, "watched", "imdbId", "TEXT")
+
+            // saved_media cross-IDs for Trakt watchlist matching
+            addColumnIfMissing(db, "saved_media", "tmdbId", "INTEGER")
+            addColumnIfMissing(db, "saved_media", "traktId", "INTEGER")
+            addColumnIfMissing(db, "saved_media", "imdbId", "TEXT")
+            addColumnIfMissing(db, "saved_media", "season", "INTEGER")
+            addColumnIfMissing(db, "saved_media", "episode", "INTEGER")
+        }
+
         private fun addProfileParentalControlColumns(db: SupportSQLiteDatabase) {
             addColumnIfMissing(db, "profiles", "maxAgeRating", "TEXT")
             addColumnIfMissing(db, "profiles", "allowNsfw", "INTEGER NOT NULL DEFAULT 0")
@@ -436,6 +467,25 @@ abstract class MediaDatabase : RoomDatabase() {
             addColumnIfMissing(db, "profiles", "maxAgeRating", "TEXT")
             addColumnIfMissing(db, "profiles", "allowNsfw", "INTEGER NOT NULL DEFAULT 0")
             addColumnIfMissing(db, "epg_entries", "channelId", "TEXT")
+
+            // Trakt sync metadata / cross-IDs (also added in v12->v13 migration)
+            addColumnIfMissing(db, "watched", "title", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "watched", "subtitle", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "watched", "description", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "watched", "posterUrl", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "watched", "backdropUrl", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "watched", "year", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "watched", "type", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "watched", "season", "INTEGER")
+            addColumnIfMissing(db, "watched", "episode", "INTEGER")
+            addColumnIfMissing(db, "watched", "tmdbId", "INTEGER")
+            addColumnIfMissing(db, "watched", "traktId", "INTEGER")
+            addColumnIfMissing(db, "watched", "imdbId", "TEXT")
+            addColumnIfMissing(db, "saved_media", "tmdbId", "INTEGER")
+            addColumnIfMissing(db, "saved_media", "traktId", "INTEGER")
+            addColumnIfMissing(db, "saved_media", "imdbId", "TEXT")
+            addColumnIfMissing(db, "saved_media", "season", "INTEGER")
+            addColumnIfMissing(db, "saved_media", "episode", "INTEGER")
         }
 
         private fun addEpgColumnsIfMissing(db: SupportSQLiteDatabase) {

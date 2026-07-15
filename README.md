@@ -21,6 +21,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
   - **MDBList integration** (`MdbListMediaSource`): public top lists, user lists, media search and cross-ID lookup by imdb/tmdb/trakt/tvdb; every item carries `tmdbId`, `imdbId` and `traktId` for matching with other sources.
   - **Kitsu anime fallback** (`KitsuMediaSource`, `AnimeRepository`): when AniList GraphQL fails (network, timeout, 429), the app silently falls back to Kitsu JSON:API. Cross-linked `malId` and `aniListId` are parsed from `include=mappings` to keep stream resolver compatibility.
 - **BitTorrent streaming** via `jlibtorrent` with sequential download, local HTTP proxy and buffering UI.
+- **Trakt.tv two-way sync** (`TraktSyncWorker`) every 6 hours: pulls watched history and watchlist from Trakt into Room, pushes local Room history/watchlist back to Trakt, with timestamp conflict resolution. ExoPlayer playback sends `/scrobble/start`, `/scrobble/pause` and `/scrobble/stop` with exact percent progress.
 - **Music & audio**:
   - Native podcast RSS parser (`PodcastRssParser`) with iTunes tags and enclosure audio URLs.
   - M3U/PLS internet radio repository (`RadioRepository`).
@@ -46,6 +47,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **DRM playback**: `MediaItem` carries `drmLicenseUrl`, `drmScheme` and `drmHeaders`; ExoPlayer is configured with the correct `DrmConfiguration` for Widevine/PlayReady/ClearKey.
 - **Polish audio / subtitle support**: ExoPlayer prefers `pl` tracks, deprioritizes Audio Description and exposes full language labels in player controls.
 - **External subtitles**: `.vtt` and `.srt` URLs.
+- **Cinema Dimming Mode**: when enabled, overlays auto-hide while playing and the screen smoothly dims; on pause an animated info card below the slider shows title, description, genres and top cast members fetched from TMDB/Trakt.
 - **Stream headers**: `User-Agent`, `Referer`, `Cookie` and custom headers forwarded to `DefaultHttpDataSource.Factory`.
 
 ### Network & anti-bot
@@ -58,6 +60,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 
 - **Wireless admin panel** served by a local HTTP server with QR code (ZXing) for easy source configuration from a phone or computer; the panel and Settings show the last EPG sync timestamp and status.
 - **Background EPG/IPTV updater** (`IptvUpdateWorker`) runs every 12 hours (and on cold start) on `Dispatchers.IO` with unmetered/idle/battery-not-low constraints, caches channels and EPG in Room, so the live-TV screen opens instantly.
+- **Background Trakt.tv sync** (`TraktSyncWorker`) runs every 6 hours with network/battery constraints. You can also trigger an immediate sync from `Settings` or the admin panel.
 - **First-launch onboarding** lets new users pick legal starter source packages, including an MDBList starter package in `legal_sources.json`.
 
 ### Android TV integration

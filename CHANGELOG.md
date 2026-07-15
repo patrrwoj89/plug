@@ -152,10 +152,25 @@ All notable changes to Polish Media Hub are documented in this file.
 - Added `podcastFeeds`, `deezerProxy` and `webSources` sections.
 - Sample sources include public IPTV, EPG, Stremio add-ons, podcast RSS feeds and internet radio.
 
+#### Trakt.tv two-way sync engine (`TraktSyncWorker`, `TraktMediaRepository`)
+- `TraktSyncWorker` is a `@HiltWorker` scheduled every 6 hours via `WorkManager` with `NetworkType.CONNECTED` and `requiresBatteryNotLow` constraints.
+- Pulls watched movies/shows/episodes from `/sync/watched` and the watchlist from `/sync/watchlist` into per-profile Room tables.
+- Pushes local `WatchHistoryRepository` and `SavedMediaRepository` changes back to Trakt using `/sync/history` and `/sync/watchlist`; timestamp-based conflict resolution keeps the newer record.
+- `PlayerViewModel` sends `/scrobble/start`, `/scrobble/pause` and `/scrobble/stop` requests with exact percent progress on ExoPlayer state changes.
+- Last sync timestamp/status/error are exposed through `ApiConfigRepository` and shown in `SettingsScreen` and `AdminHttpServer`.
+
+#### Cinema Dimming Mode (`PlayerScreen`, `PlayerViewModel`)
+- `cinemaMode` toggle in `SettingsRepository` / `SettingsScreen` and the wireless admin panel.
+- When `isPlaying == true` the player auto-hides overlays after a short inactivity delay and dims the entire screen with an animated black overlay.
+- On pause or D-Pad interaction the overlay fades back in and an info card below the slider shows the title, description, genres and top 5 cast members fetched in the background from TMDB / Trakt metadata.
+- `TmdbMediaRepository.credits(...)` queries `/movie/{id}/credits` and `/tv/{id}/credits`.
+
 ### Changed
 - `TVNavHost` waits for the `isFirstLaunch` value before choosing the `NavHost` start destination, avoiding graph resets.
 - `TvLauncherManager` progress writes throttled to 15 seconds during playback, with a forced write on `onPlaybackStopped`.
 - `PlayerScreen` now drives subtitle styling and Nerd Stats overlay reactively from dedicated `StateFlow`s.
+- `PlayerControls` signature extended with `cinemaMode` and `cinemaInfo` to support the Cinema Dimming info card.
+- `AdminHttpServer` now accepts `/api/trakt/sync` and exposes `traktAccessToken`, `lastTraktSyncAt/Status/Error`.
 
 ### Fixed
 

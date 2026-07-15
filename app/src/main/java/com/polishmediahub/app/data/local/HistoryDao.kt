@@ -13,8 +13,14 @@ interface HistoryDao {
     @Query("SELECT * FROM watched WHERE profileId = :profileId ORDER BY watchedAt DESC")
     fun observeAll(profileId: String): Flow<List<WatchedEntity>>
 
+    @Query("SELECT * FROM watched WHERE profileId = :profileId ORDER BY watchedAt DESC")
+    suspend fun getAll(profileId: String): List<WatchedEntity>
+
     @Query("SELECT * FROM watched WHERE profileId = :profileId AND id = :id LIMIT 1")
     fun observeById(profileId: String, id: String): Flow<WatchedEntity?>
+
+    @Query("SELECT * FROM watched WHERE profileId = :profileId AND id = :id LIMIT 1")
+    suspend fun getById(profileId: String, id: String): WatchedEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: WatchedEntity)

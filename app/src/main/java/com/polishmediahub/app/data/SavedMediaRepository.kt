@@ -37,14 +37,14 @@ class SavedMediaRepository @Inject constructor(
     fun isInWatchlist(id: String): Flow<Boolean> =
         currentProfileIdFlow().flatMapLatest { dao.isSaved(it, id, TYPE_WATCHLIST) }
 
-    suspend fun addToLibrary(item: MediaItem) = withContext(Dispatchers.IO) {
+    suspend fun addToLibrary(item: MediaItem, addedAt: Long = System.currentTimeMillis()) = withContext(Dispatchers.IO) {
         val profileId = currentProfileId() ?: return@withContext
-        dao.insert(item.toEntity(profileId, TYPE_LIBRARY))
+        dao.insert(item.toEntity(profileId, TYPE_LIBRARY, addedAt))
     }
 
-    suspend fun addToWatchlist(item: MediaItem) = withContext(Dispatchers.IO) {
+    suspend fun addToWatchlist(item: MediaItem, addedAt: Long = System.currentTimeMillis()) = withContext(Dispatchers.IO) {
         val profileId = currentProfileId() ?: return@withContext
-        dao.insert(item.toEntity(profileId, TYPE_WATCHLIST))
+        dao.insert(item.toEntity(profileId, TYPE_WATCHLIST, addedAt))
     }
 
     suspend fun removeFromLibrary(id: String) = withContext(Dispatchers.IO) {
@@ -57,11 +57,20 @@ class SavedMediaRepository @Inject constructor(
         dao.deleteByIdAndType(profileId, id, TYPE_WATCHLIST)
     }
 
+    suspend fun getWatchlist(): List<SavedMediaEntity> = withContext(Dispatchers.IO) {
+        val profileId = currentProfileId() ?: return@withContext emptyList()
+        dao.getByType(profileId, TYPE_WATCHLIST)
+    }
+
+    suspend fun addToWatchlist(entity: SavedMediaEntity) = withContext(Dispatchers.IO) {
+        dao.insert(entity)
+    }
+
     private fun currentProfileIdFlow() = profileRepository.currentProfile.filterNotNull().map { it.id }
 
     private fun currentProfileId(): String? = profileRepository.currentProfile.value?.id
 
-    private fun MediaItem.toEntity(profileId: String, listType: String) = SavedMediaEntity(
+    private fun MediaItem.toEntity(profileId: String, listType: String, addedAt: Long) = SavedMediaEntity(
         profileId = profileId,
         id = id,
         title = title,
@@ -73,7 +82,13 @@ class SavedMediaRepository @Inject constructor(
         duration = duration,
         rating = rating,
         videoUrl = videoUrl.orEmpty(),
-        listType = listType
+        listType = listType,
+        addedAt = addedAt,
+        tmdbId = tmdbId,
+        traktId = traktId,
+        imdbId = imdbId,
+        season = season,
+        episode = episode
     )
 
     private fun toModel(entity: SavedMediaEntity) = MediaItem(
@@ -86,7 +101,12 @@ class SavedMediaRepository @Inject constructor(
         year = entity.year,
         duration = entity.duration,
         rating = entity.rating,
-        videoUrl = entity.videoUrl.takeIf { it.isNotBlank() }
+        videoUrl = entity.videoUrl.takeIf { it.isNotBlank() },
+        tmdbId = entity.tmdbId,
+        traktId = entity.traktId,
+        imdbId = entity.imdbId,
+        season = entity.season,
+        episode = entity.episode
     )
 
     companion object {

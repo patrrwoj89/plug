@@ -36,6 +36,12 @@ interface TmdbApi {
     @GET("3/tv/{id}/images")
     suspend fun seriesImages(@Path("id") id: Int, @Query("api_key") apiKey: String): TmdbImagesResponse
 
+    @GET("3/movie/{id}/credits")
+    suspend fun movieCredits(@Path("id") id: Int, @Query("api_key") apiKey: String): TmdbCreditsResponse
+
+    @GET("3/tv/{id}/credits")
+    suspend fun seriesCredits(@Path("id") id: Int, @Query("api_key") apiKey: String): TmdbCreditsResponse
+
     @GET("3/genre/movie/list")
     suspend fun movieGenres(@Query("api_key") apiKey: String): TmdbGenreResponse
 
@@ -152,4 +158,15 @@ data class TmdbGenreResponse(
 data class TmdbGenre(
     val id: Int,
     val name: String
+)
+
+@Serializable
+data class TmdbCreditsResponse(
+    val cast: List<TmdbCastMember> = emptyList()
+)
+
+@Serializable
+data class TmdbCastMember(
+    val name: String,
+    val order: Int = 0
 )

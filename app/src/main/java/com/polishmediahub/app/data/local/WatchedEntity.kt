@@ -20,5 +20,19 @@ data class WatchedEntity(
     val id: String,
     val positionMs: Long = 0,
     val durationMs: Long = 0,
-    val watchedAt: Long = System.currentTimeMillis()
+    val watchedAt: Long = System.currentTimeMillis(),
+    // Cached metadata so Trakt-synced items can appear in Continue Watching even when
+    // the original source plugin is offline or the ID is Trakt-only.
+    val title: String = "",
+    val subtitle: String = "",
+    val description: String = "",
+    val posterUrl: String = "",
+    val backdropUrl: String = "",
+    val year: String = "",
+    val type: String = "",
+    val season: Int? = null,
+    val episode: Int? = null,
+    val tmdbId: Int? = null,
+    val traktId: Int? = null,
+    val imdbId: String? = null
 )

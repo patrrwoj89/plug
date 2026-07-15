@@ -31,7 +31,9 @@ class PlayerControlsScreenshotTest {
                     onEnterPip = {},
                     onCycleAudio = {},
                     onCycleSubtitle = {},
-                    onSliderFocusChanged = {}
+                    onSliderFocusChanged = {},
+                    cinemaMode = false,
+                    cinemaInfo = com.polishmediahub.app.ui.viewmodel.PlayerViewModel.CinemaInfo()
                 )
             }
         }
@@ -55,7 +57,9 @@ class PlayerControlsScreenshotTest {
                     onEnterPip = {},
                     onCycleAudio = {},
                     onCycleSubtitle = {},
-                    onSliderFocusChanged = {}
+                    onSliderFocusChanged = {},
+                    cinemaMode = false,
+                    cinemaInfo = com.polishmediahub.app.ui.viewmodel.PlayerViewModel.CinemaInfo()
                 )
             }
         }

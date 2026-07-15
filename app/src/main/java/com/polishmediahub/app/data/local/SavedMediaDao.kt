@@ -13,6 +13,9 @@ interface SavedMediaDao {
     @Query("SELECT * FROM saved_media WHERE profileId = :profileId AND listType = :listType ORDER BY addedAt DESC")
     fun observeByType(profileId: String, listType: String): Flow<List<SavedMediaEntity>>
 
+    @Query("SELECT * FROM saved_media WHERE profileId = :profileId AND listType = :listType ORDER BY addedAt DESC")
+    suspend fun getByType(profileId: String, listType: String): List<SavedMediaEntity>
+
     @Query("SELECT * FROM saved_media WHERE profileId = :profileId AND id = :id LIMIT 1")
     suspend fun getById(profileId: String, id: String): SavedMediaEntity?
 

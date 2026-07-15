@@ -30,6 +30,7 @@ Wbudowany **Panel administracyjny** pozwala konfigurować wszystkie źródła z 
 | GET | `/api/config` | Zwraca aktualne wartości `ApiConfigRepository` jako JSON. |
 | POST | `/api/config` | Odbiera wartości form-encoded i zapisuje je w `ApiConfigRepository` (DataStore). |
 | POST | `/api/plugin` | Odbiera URL manifestu / skryptu wtyczki i zapisuje przez `PluginRepository`. |
+| POST | `/api/trakt/sync` | Uruchamia natychmiastową dwukierunkową synchronizację z Trakt (`TraktSyncWorker.startImmediate`). |
 
 ## Konfigurowalne źródła (POST `/api/config`)
 
@@ -54,10 +55,14 @@ Wyślij pola formularza odpowiadające kluczom obsługiwanym przez `ApiConfigRep
 | `tmdbApiKey` | Klucz API TMDB |
 | `aniListToken` | Token dostępu AniList |
 | `traktClientId` | Client ID Trakt |
+| `traktAccessToken` | OAuth access token Trakt (Bearer) do dwukierunkowej synchronizacji i scrobblingu |
 | `debridApiKey` / `debridProvider` | Token Debrid i provider (`real_debrid`, `torbox`) |
 | `lastEpgSyncAt` | Tylko do odczytu — znacznik czasu ostatniej synchronizacji EPG/IPTV (ms od epoki) |
 | `lastEpgSyncStatus` | Tylko do odczytu — status ostatniej synchronizacji: `success` lub `error` |
 | `lastEpgSyncError` | Tylko do odczytu — komunikat błędu z ostatniej nieudanej synchronizacji |
+| `lastTraktSyncAt` | Tylko do odczytu — znacznik czasu ostatniej synchronizacji Trakt (ms od epoki) |
+| `lastTraktSyncStatus` | Tylko do odczytu — status ostatniej synchronizacji Trakt: `success` lub `error` |
+| `lastTraktSyncError` | Tylko do odczytu — komunikat błędu z ostatniej nieudanej synchronizacji Trakt |
 
 Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignorowane.
 
@@ -68,6 +73,7 @@ Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignoro
   "tmdbApiKey": "your-tmdb-key",
   "aniListToken": "your-anilist-token",
   "traktClientId": "your-trakt-client-id",
+  "traktAccessToken": "your-trakt-oauth-token",
   "debridApiKey": "your-debrid-token",
   "debridProvider": "real_debrid",
   "iptvSourceUrls": "https://example.com/playlist.m3u\nhttps://example.com/playlist.m3u8",
@@ -86,13 +92,18 @@ Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignoro
   "subsonicPassword": "secret",
   "podcastFeeds": "https://example.com/feed.xml\nhttps://nasa.gov/rss/dyn/NASAcast_Podcast.rss",
   "deezerProxyUrl": "https://your-worker.workers.dev",
-  "mdbListApiKey": "your-mdblist-api-key"
+  "mdbListApiKey": "your-mdblist-api-key",
+  "lastTraktSyncAt": "0",
+  "lastTraktSyncStatus": "",
+  "lastTraktSyncError": ""
 }
 ```
 
 Uwaga: rzeczywisty endpoint HTTP oczekuje danych `application/x-www-form-urlencoded`, a nie surowego JSON. Powyższy JSON pokazany jest dla przejrzystości. Wrażliwe pola (MDBList, TMDB, AniList, Trakt, Debrid, tokeny Jellyfin/Plex/Emby oraz hasło Subsonic) są szyfrowane algorytmem AES-256-GCM w Android Keystore przed zapisem do DataStore; wartości widoczne w panelu są odszyfrowane przy odczycie.
 
 ## Zdalna synchronizacja ustawień Kodi
+
+Przycisk **Zsynchronizuj z Trakt teraz** w panelu web wysyła POST na `/api/trakt/sync` i natychmiast uruchamia `TraktSyncWorker`. Wymaga to ustawionych `traktClientId` i `traktAccessToken`.
 
 Gdy zapiszesz token Debrid lub Trakt w panelu administracyjnym, aplikacja próbuje automatycznie przesłać go do skonfigurowanego Kodi:
 

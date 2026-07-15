@@ -112,7 +112,7 @@ class TvLauncherManager @Inject constructor(
             lastProgressUpdateMs[mediaItem.id] = System.currentTimeMillis()
         }
 
-        watchHistoryRepository.updatePosition(mediaItem.id, positionMs, durationMs)
+        watchHistoryRepository.updatePosition(mediaItem, positionMs, durationMs)
         val finished = durationMs > 0 && positionMs >= durationMs - FINISHED_THRESHOLD_MS
         if (finished) {
             watchNextHelper.removeFromWatchNext(mediaItem.id)
