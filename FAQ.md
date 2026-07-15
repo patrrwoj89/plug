@@ -184,6 +184,10 @@ See [PLUGIN_GUIDE.md](PLUGIN_GUIDE.md). A plugin is a JavaScript file that expos
 
 Yes. Return a `headers` map in the `MediaItem` object. The player will forward those headers (for example `User-Agent`, `Referer`) to ExoPlayer's `DefaultHttpDataSource.Factory`.
 
+### Some MKV/AVI files or DTS/AC3 audio won't play. What can I do?
+
+Enable **Use LibVLC player** in **Settings > Player** (or from the wireless Admin panel). This switches `PlayerScreen` to the in-process `UniversalVlcPlayer` built on `org.videolan.android:libvlc-all`. LibVLC handles many codecs and containers that ExoPlayer may fail to decode on Android TV, including DTS/AC3 audio and MKV/AVI sources from torrents, Kodi and web plugins.
+
 ### How are Cloudstream / Aniyomi plugins different from QuickJS plugins?
 
 QuickJS plugins are JavaScript executed inside the app's QuickJS engine. Cloudstream/Aniyomi plugins are Android DEX/APK files loaded dynamically via `DexClassLoader` and adapted with reflection. Both result in `MediaItem` objects and can supply headers for ExoPlayer.
@@ -226,7 +230,7 @@ It shouldn't. ExoPlayer prefers Polish audio but deprioritizes tracks flagged as
 
 ### Can I load external subtitles?
 
-Yes. `PlayerScreen` supports `.vtt` and `.srt` subtitle URLs. The subtitle language defaults to Polish unless the media item specifies another language. You can change subtitle size, color and vertical offset in Settings and they are applied live.
+Yes. `PlayerScreen` supports `.vtt` and `.srt` subtitle URLs. The subtitle language defaults to Polish unless the media item specifies another language. Plugins can also supply a `subtitleHeaders` map in `MediaItem` so authorization headers are forwarded when downloading the subtitle file. You can change subtitle size, color and vertical offset in Settings and they are applied live.
 
 ### Where do podcasts and radio come from?
 

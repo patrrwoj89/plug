@@ -105,6 +105,7 @@ import com.polishmediahub.app.ui.components.TvTextButton
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Spacing
+import com.polishmediahub.app.ui.player.UniversalVlcPlayer
 import com.polishmediahub.app.ui.viewmodel.PlayerViewModel
 import kotlinx.coroutines.delay
 import java.util.Locale
@@ -133,9 +134,20 @@ fun PlayerScreen(
     val skipIntroState by viewModel.skipIntroState.collectAsStateWithLifecycle()
     val pendingSeekToMs by viewModel.pendingSeekToMs.collectAsStateWithLifecycle()
     val forceAutoPlayOverlay by viewModel.forceAutoPlayOverlay.collectAsStateWithLifecycle()
+    val useAlternativePlayer by viewModel.useAlternativePlayer.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val density = LocalDensity.current
+
+    if (useAlternativePlayer) {
+        UniversalVlcPlayer(
+            mediaItem = item,
+            videoUrl = resolvedUrl ?: item?.videoUrl,
+            onBack = { onNavigate(Screen.Home) },
+            modifier = modifier
+        )
+        return
+    }
 
     val headers = item?.headers.orEmpty()
     val videoUrl = resolvedUrl ?: item?.videoUrl
@@ -696,7 +708,7 @@ private fun PlayerContent(
 }
 
 @Composable
-private fun NextEpisodeOverlay(
+internal fun NextEpisodeOverlay(
     nextEpisode: MediaItem?,
     countdownSeconds: Int,
     onPlayNow: () -> Unit,

@@ -184,6 +184,10 @@ Zobacz [PLUGIN_GUIDE.md](PLUGIN_GUIDE.md) / [PLUGIN_GUIDE.pl.md](PLUGIN_GUIDE.pl
 
 Tak. Zwróć obiekt `headers` w `MediaItem`. Odtwarzacz przekaże te nagłówki (np. `User-Agent`, `Referer`) do `DefaultHttpDataSource.Factory` w ExoPlayerze.
 
+### Niektóre pliki MKV/AVI lub dźwięk DTS/AC3 nie odtwarzają się. Co robić?
+
+Włącz opcję **Użyj odtwarzacza LibVLC** w **Ustawieniach > Odtwarzacz** (lub z poziomu bezprzewodowego panelu Admina). Spowoduje to przełączenie `PlayerScreen` na wbudowany w proces aplikacji `UniversalVlcPlayer` oparty na `org.videolan.android:libvlc-all`. LibVLC obsługuje wiele kodeków i kontenerów, których ExoPlayer na Android TV może nie dekodować, w tym dźwięk DTS/AC3 oraz pliki MKV/AVI z torrentów, Kodi i wtyczek webowych.
+
 ### Czym wtyczki Cloudstream / Aniyomi różnią się od QuickJS?
 
 QuickJS to JavaScript wykonywany w silniku wbudowanym w aplikację. Wtyczki Cloudstream/Aniyomi to skompilowane pliki DEX/APK ładowane dynamicznie przez `DexClassLoader` i adaptowane refleksyjnie. Oba rodzaje wytwarzają obiekty `MediaItem` i mogą dostarczać nagłówki dla ExoPlayera.
@@ -226,7 +230,7 @@ Nie powinno się tak dziać. ExoPlayer preferuje polskie audio, ale depriorytyzu
 
 ### Czy mogę załadować zewnętrzne napisy?
 
-Tak. `PlayerScreen` obsługuje URL-e napisów `.vtt` i `.srt`. Język napisów domyślnie to polski, chyba że element multimedialny określa inny. W Ustawieniach możesz zmienić rozmiar, kolor i przesunięcie pionowe napisów; zmiany są stosowane na żywo.
+Tak. `PlayerScreen` obsługuje URL-e napisów `.vtt` i `.srt`. Język napisów domyślnie to polski, chyba że element multimedialny określa inny. Wtyczki mogą także dostarczyć mapę `subtitleHeaders` w `MediaItem`, dzięki czemu nagłówki autoryzacyjne są przekazywane podczas pobierania pliku napisów. W Ustawieniach możesz zmienić rozmiar, kolor i przesunięcie pionowe napisów; zmiany są stosowane na żywo.
 
 ### Skąd biorą się podcasty i radio?
 

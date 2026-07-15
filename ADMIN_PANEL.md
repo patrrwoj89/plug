@@ -68,6 +68,7 @@ Send form fields matching the keys supported by `ApiConfigRepository`. The admin
 | `autoSkipIntro` | `true` or `false` — show skip intro/outro buttons during playback |
 | `introEndSeconds` | Default intro end time in seconds (e.g. `90`) |
 | `outroDurationSeconds` | Default outro duration measured from the end, in seconds (e.g. `120`) |
+| `useAlternativePlayer` | `true` or `false` — use the in-process LibVLC engine instead of ExoPlayer |
 
 Only the fields you actually use need to be present. Empty strings are ignored.
 
@@ -105,7 +106,8 @@ Only the fields you actually use need to be present. Empty strings are ignored.
   "lastTraktSyncError": "",
   "autoSkipIntro": "true",
   "introEndSeconds": "90",
-  "outroDurationSeconds": "120"
+  "outroDurationSeconds": "120",
+  "useAlternativePlayer": "false"
 }
 ```
 

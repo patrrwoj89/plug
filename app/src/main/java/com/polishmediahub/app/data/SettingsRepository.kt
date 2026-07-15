@@ -64,6 +64,9 @@ class SettingsRepository @Inject constructor(
     val defaultOutroDurationSeconds: Flow<Int> = context.dataStore.data
         .map { it[KEY_OUTRO_DURATION_SECONDS] ?: 120 }
 
+    val useAlternativePlayer: Flow<Boolean> = context.dataStore.data
+        .map { it[KEY_USE_ALTERNATIVE_PLAYER] ?: false }
+
     suspend fun setDarkTheme(value: Boolean) = context.dataStore.edit { it[KEY_DARK_THEME] = value }
     suspend fun setAutoplayTrailers(value: Boolean) = context.dataStore.edit { it[KEY_AUTOPLAY_TRAILERS] = value }
     suspend fun setSaveSearchHistory(value: Boolean) = context.dataStore.edit { it[KEY_SAVE_SEARCH_HISTORY] = value }
@@ -78,6 +81,7 @@ class SettingsRepository @Inject constructor(
     suspend fun setAutoSkipIntro(value: Boolean) = context.dataStore.edit { it[KEY_AUTO_SKIP_INTRO] = value }
     suspend fun setDefaultIntroEndSeconds(value: Int) = context.dataStore.edit { it[KEY_INTRO_END_SECONDS] = value }
     suspend fun setDefaultOutroDurationSeconds(value: Int) = context.dataStore.edit { it[KEY_OUTRO_DURATION_SECONDS] = value }
+    suspend fun setUseAlternativePlayer(value: Boolean) = context.dataStore.edit { it[KEY_USE_ALTERNATIVE_PLAYER] = value }
 
     companion object {
         private val KEY_DARK_THEME = booleanPreferencesKey("dark_theme")
@@ -94,5 +98,6 @@ class SettingsRepository @Inject constructor(
         private val KEY_AUTO_SKIP_INTRO = booleanPreferencesKey("auto_skip_intro")
         private val KEY_INTRO_END_SECONDS = intPreferencesKey("intro_end_seconds")
         private val KEY_OUTRO_DURATION_SECONDS = intPreferencesKey("outro_duration_seconds")
+        private val KEY_USE_ALTERNATIVE_PLAYER = booleanPreferencesKey("use_alternative_player")
     }
 }

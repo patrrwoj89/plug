@@ -61,6 +61,9 @@ class SettingsViewModel @Inject constructor(
     val defaultOutroDurationSeconds: StateFlow<Int> = settingsRepository.defaultOutroDurationSeconds
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = 120)
 
+    val useAlternativePlayer: StateFlow<Boolean> = settingsRepository.useAlternativePlayer
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = false)
+
     val isFirstLaunch: StateFlow<Boolean?> = settingsRepository.isFirstLaunch
         .stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = null)
 
@@ -100,6 +103,7 @@ class SettingsViewModel @Inject constructor(
     fun setAutoSkipIntro(value: Boolean) = viewModelScope.launch { settingsRepository.setAutoSkipIntro(value) }
     fun setDefaultIntroEndSeconds(value: Int) = viewModelScope.launch { settingsRepository.setDefaultIntroEndSeconds(value) }
     fun setDefaultOutroDurationSeconds(value: Int) = viewModelScope.launch { settingsRepository.setDefaultOutroDurationSeconds(value) }
+    fun setUseAlternativePlayer(value: Boolean) = viewModelScope.launch { settingsRepository.setUseAlternativePlayer(value) }
 
     fun setMdbListApiKey(value: String) = viewModelScope.launch { apiConfigRepository.setMdbListApiKey(value) }
     fun setTraktClientId(value: String) = viewModelScope.launch { apiConfigRepository.setTraktClientId(value) }

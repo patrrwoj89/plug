@@ -68,6 +68,7 @@ Wyślij pola formularza odpowiadające kluczom obsługiwanym przez `ApiConfigRep
 | `autoSkipIntro` | `true` lub `false` — pokazuj przyciski pomijania czołówki i końcówki |
 | `introEndSeconds` | Domyślny czas końca czołówki w sekundach (np. `90`) |
 | `outroDurationSeconds` | Domyślna długość końcówki liczona od końca filmu w sekundach (np. `120`) |
+| `useAlternativePlayer` | `true` lub `false` — użyj wbudowanego silnika LibVLC zamiast ExoPlayera |
 
 Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignorowane.
 
@@ -105,7 +106,8 @@ Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignoro
   "lastTraktSyncError": "",
   "autoSkipIntro": "true",
   "introEndSeconds": "90",
-  "outroDurationSeconds": "120"
+  "outroDurationSeconds": "120",
+  "useAlternativePlayer": "false"
 }
 ```
 

@@ -51,7 +51,8 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - **Logowanie Trakt.tv kodem urządzenia** (`TraktAuthManager`, `TraktPairingSection`): aplikacja na Android TV prosi o kod urządzenia, wyświetla `user_code` i kod QR z adresem aktywacji, a następnie odpytuje `oauth/device/token` do momentu autoryzacji. Tokeny dostępowe i odświeżania są szyfrowane AES-256-GCM w Android Keystore.
 - **Natywny tryb obrazu w obrazie** (`MainActivity`, `PlayerScreen`): gdy odtwarzanie jest aktywne i użytkownik opuszcza aplikację, odtwarzacz przechodzi w PiP; ekran odtwarzacza ukrywa kontrolki, napisy, Nerd Stats, kartę kinową i nakładkę następnego odcinka, pozostawiając sam strumień wideo. Powrót do pełnego ekranu przywraca pełny interfejs.
 - **Inteligentne pomijanie czołówki i końcówki** (`PlayerScreen`, `PlayerViewModel`): wtyczki mogą dostarczać dokładne znaczniki czasowe `introStartMs/introEndMs/outroStartMs/outroEndMs` w `MediaItem`; w przeciwnym razie odtwarzacz używa konfigurowalnych domyślnych długości czołówki i końcówki. Półprzezroczysty przycisk obsługiwany pilotem D-Pad wysuwa się podczas segmentu, aby pominąć czołówkę lub wywołać nakładkę Auto-Play Next.
-- **Nagłówki strumieni**: `User-Agent`, `Referer`, `Cookie` i niestandardowe nagłówki przekazywane do `DefaultHttpDataSource.Factory`.
+- **Alternatywny silnik LibVLC** (`UniversalVlcPlayer`): wbudowany silnik `org.videolan.android:libvlc-all` działający bezpośrednio w procesie aplikacji. Włącz go w Ustawieniach / panelu Admina, aby ominąć problemy ExoPlayera z dekodowaniem dźwięku DTS/AC3 oraz kontenerów MKV/AVI z torrentów, Kodi i wtyczek webowych. Przekazuje `mediaItem.headers`, dodaje domyślny `User-Agent`, dołącza napisy zewnętrzne przez `Media.addSlave` wraz z `subtitleHeaders` i odpytuje `mediaPlayer.time`, aby scrobbling Trakt, historia Room, nakładka Auto-Play Next i Smart Skip Intro/Outro działały także na silniku LibVLC.
+- **Nagłówki strumieni**: `User-Agent`, `Referer`, `Cookie` i niestandardowe nagłówki przekazywane do `DefaultHttpDataSource.Factory` (ExoPlayer) lub wstrzykiwane do opcji `LibVLC` (silnik LibVLC).
 
 ### Sieć i ochrona przed botami
 
@@ -105,6 +106,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - Kotlinx Serialization 1.8.0
 - Coil 2.7.0
 - jlibtorrent 2.0.12.9 (FrostWire Maven)
+- LibVLC 4.0.0-eap17 (`org.videolan.android:libvlc-all`) jako alternatywny silnik odtwarzacza w procesie aplikacji
 - QuickJS wrapper 3.2.3 (`wang.harlon.quickjs:wrapper-android`)
 - ZXing 3.5.3 dla kodów QR
 - `androidx.tvprovider:tvprovider:1.1.0` dla kanałów Android TV

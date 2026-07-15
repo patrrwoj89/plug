@@ -185,6 +185,8 @@
 
     <string name="settings_cinema_mode">Tryb Kinowy</string>
     <string name="settings_cinema_mode_subtitle">Automatycznie ukrywaj nakładki i pokazuj kartę informacyjną przy pauzie</string>
+    <string name="settings_use_alternative_player">Użyj odtwarzacza LibVLC</string>
+    <string name="settings_use_alternative_player_subtitle">Przełącz na LibVLC dla lepszej obsługi DTS/AC3, MKV i AVI</string>
     <string name="settings_trakt_client_id">Trakt client ID</string>
     <string name="settings_trakt_client_id_hint">Pobierz go na trakt.tv/oauth/applications</string>
     <string name="trakt_sync_section">Synchronizacja Trakt</string>
@@ -212,6 +214,7 @@
     <string name="live_broadcast">Transmisja na żywo</string>
     <string name="skip_intro">Pomiń czołówkę</string>
     <string name="skip_outro">Pomiń napisy końcowe</string>
+    <string name="player_error">Nie można odtworzyć tego strumienia</string>
     <string name="settings_skip_intro_section">Pomijanie czołówki / końcówki</string>
     <string name="settings_auto_skip_intro">Automatycznie pomijaj czołówki i końcówki</string>
     <string name="settings_auto_skip_intro_subtitle">Pokazuj przyciski pomijania podczas czołówki i końcówki</string>

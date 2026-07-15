@@ -193,6 +193,16 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 - **Pomiń napisy końcowe** natychmiast wywołuje istniejącą nakładkę Auto-Play Next, umożliwiając odtworzenie następnego odcinka lub anulowanie.
 - Przełącznik i domyślne czasy trwania są zapisywane w `SettingsRepository` i udostępniane przez `SettingsViewModel`.
 
+#### Alternatywny silnik odtwarzacza LibVLC (`UniversalVlcPlayer`)
+- Nowa zależność `org.videolan.android:libvlc-all:4.0.0-eap17`.
+- Komponent `UniversalVlcPlayer` otacia `VLCVideoLayout`, `LibVLC`, `MediaPlayer` i `Media` bezpośrednio w procesie aplikacji (bez instalowania zewnętrznego odtwarzacza).
+- Przełącznik `useAlternativePlayer` w `SettingsRepository` / DataStore, udostępniony w `SettingsScreen` i panelu webowym `AdminHttpServer`.
+- `PlayerScreen` warunkowo renderuje `UniversalVlcPlayer` zamiast `PlayerContent`, gdy przełącznik jest włączony.
+- Nagłówek HTTP `User-Agent` oraz `mediaItem.headers` są wstrzykiwane do opcji `LibVLC`; dodawany jest domyślny `User-Agent` `PolishMediaHub`, gdy źródło go nie przekazuje.
+- Zewnętrzne napisy (`subtitleUrl`) są dołączane przez `Media.addSlave`; `subtitleHeaders` przekazywane są jako per-mediowe opcje `:http-header-fields`, a pierwsza ścieżka tekstowa wybierana jest po zdarzeniu `MediaPlayer.Event.Playing`.
+- Pętla pozycji co 500 ms odczytuje `mediaPlayer.time`/`length` i przekazuje do `PlayerViewModel.updatePosition(...)`, dzięki czemu scrobbling Trakt, historia profilu w Room, nakładka Auto-Play Next i przycisk Smart Skip Intro/Outro działają także na silniku LibVLC.
+- Rozwiązuje problemy dekodowania ExoPlayera z dźwiękiem DTS/AC3 oraz kontenerami MKV/AVI z torrentów, Kodi i wtyczek webowych.
+
 ### Zmieniono
 - `TVNavHost` czeka na wartość `isFirstLaunch` przed wyborem startu `NavHost`, co zapobiega resetowaniu grafu nawigacji.
 - `TvLauncherManager` zapisuje postęp co 15 sekund podczas odtwarzania, z wymuszonym zapisem przy `onPlaybackStopped`.
@@ -203,6 +213,9 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 - Sygnatura `PlayerContent` rozszerzona o `onUpdatePosition`, `onSkipIntro`, `onSkipOutro`, `onSeekHandled`, `skipIntroState`, `pendingSeekToMs` i `forceAutoPlayOverlay`.
 - `NextEpisodeOverlay` przyjmuje nullable `nextEpisode` i kończy się natychmiast, gdy wartość jest null.
 - `AdminHttpServer` zapisuje i eksponuje `autoSkipIntro`, `introEndSeconds` oraz `outroDurationSeconds` z `SettingsRepository`.
+- `MediaItem` rozszerzono o mapę `subtitleHeaders` dla autoryzacyjnych nagłówków napisów.
+- `QuickJsMediaSource` mapuje pole `subtitleHeaders` z wtyczek JS na `MediaItem`.
+- Widoczność `NextEpisodeOverlay` zmieniono z `private` na `internal`, aby mogła być używana przez `UniversalVlcPlayer`.
 
 ### Naprawiono
 

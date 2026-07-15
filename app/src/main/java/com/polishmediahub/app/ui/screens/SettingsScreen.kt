@@ -67,6 +67,7 @@ fun SettingsScreen(
     val autoSkipIntro by viewModel.autoSkipIntro.collectAsStateWithLifecycle()
     val defaultIntroEndSeconds by viewModel.defaultIntroEndSeconds.collectAsStateWithLifecycle()
     val defaultOutroDurationSeconds by viewModel.defaultOutroDurationSeconds.collectAsStateWithLifecycle()
+    val useAlternativePlayer by viewModel.useAlternativePlayer.collectAsStateWithLifecycle()
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
     val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
     val lastEpgSync by viewModel.lastEpgSync.collectAsStateWithLifecycle()
@@ -192,6 +193,13 @@ fun SettingsScreen(
             subtitle = stringResource(id = R.string.settings_cinema_mode_subtitle),
             checked = cinemaMode,
             onCheckedChange = viewModel::setCinemaMode
+        )
+
+        SettingsToggle(
+            title = stringResource(id = R.string.settings_use_alternative_player),
+            subtitle = stringResource(id = R.string.settings_use_alternative_player_subtitle),
+            checked = useAlternativePlayer,
+            onCheckedChange = viewModel::setUseAlternativePlayer
         )
 
         Text(

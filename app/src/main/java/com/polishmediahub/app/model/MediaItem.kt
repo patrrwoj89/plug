@@ -22,6 +22,7 @@ data class MediaItem(
     val channelNumber: String? = null,
     val headers: Map<String, String> = emptyMap(),
     val subtitleUrl: String? = null,
+    val subtitleHeaders: Map<String, String> = emptyMap(),
     val subtitleLanguage: String? = "pl",
     val drmLicenseUrl: String? = null,
     val drmScheme: String? = null,

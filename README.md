@@ -51,7 +51,8 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **Trakt.tv device-code login** (`TraktAuthManager`, `TraktPairingSection`): the TV app requests a device code, shows the `user_code` and a QR code pointing to the activation URL, and polls `oauth/device/token` until you authorize it. The access/refresh tokens are encrypted with AES-256-GCM in the Android Keystore.
 - **Native Picture-in-Picture** (`MainActivity`, `PlayerScreen`): when playback is active and the user leaves the activity, the app enters PiP; `PlayerScreen` hides controls, subtitles, Nerd Stats, Cinema info and the Next Episode overlay, leaving only the video stream.
 - **Smart Skip Intro/Outro** (`PlayerScreen`, `PlayerViewModel`): plugins can provide exact `introStartMs/introEndMs/outroStartMs/outroEndMs` timestamps in `MediaItem`; otherwise the player uses configurable default intro/outro durations. A D-Pad-focusable button slides in during the segment to skip the intro or trigger the Auto-Play Next overlay.
-- **Stream headers**: `User-Agent`, `Referer`, `Cookie` and custom headers forwarded to `DefaultHttpDataSource.Factory`.
+- **LibVLC alternative player** (`UniversalVlcPlayer`): built-in `org.videolan.android:libvlc-all` engine that runs inside the app process. Toggle it in Settings / Admin panel to bypass ExoPlayer decoding issues with DTS/AC3 audio and MKV/AVI containers from torrents, Kodi and web plugins. It forwards `mediaItem.headers`, adds a default `User-Agent`, attaches external subtitles via `Media.addSlave` with `subtitleHeaders`, and polls `mediaPlayer.time` to keep Trakt scrobbling, Room history, Auto-Play Next and Smart Skip Intro/Outro working.
+- **Stream headers**: `User-Agent`, `Referer`, `Cookie` and custom headers forwarded to `DefaultHttpDataSource.Factory` (ExoPlayer) or injected into `LibVLC` options (LibVLC engine).
 
 ### Network & anti-bot
 
@@ -106,6 +107,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - Kotlinx Serialization 1.8.0
 - Coil 2.7.0
 - jlibtorrent 2.0.12.9 (FrostWire Maven)
+- LibVLC 4.0.0-eap17 (`org.videolan.android:libvlc-all`) as an alternative in-process player engine
 - QuickJS wrapper 3.2.3 (`wang.harlon.quickjs:wrapper-android`)
 - ZXing 3.5.3 for QR codes
 - `androidx.tvprovider:tvprovider:1.1.0` for Android TV channels

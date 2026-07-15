@@ -170,7 +170,8 @@ class AdminHttpServer @Inject constructor(
                     mapOf(
                         "autoSkipIntro" to autoSkipIntro,
                         "introEndSeconds" to defaultIntroEndSeconds,
-                        "outroDurationSeconds" to defaultOutroDurationSeconds
+                        "outroDurationSeconds" to defaultOutroDurationSeconds,
+                        "useAlternativePlayer" to useAlternativePlayer
                     )
                 }
             }.mapValues { (_, flow) -> flow.first().toString() }
@@ -214,6 +215,7 @@ class AdminHttpServer @Inject constructor(
             params["autoSkipIntro"]?.toBooleanStrictOrNull()?.let { settingsRepository.setAutoSkipIntro(it) }
             params["introEndSeconds"]?.toIntOrNull()?.let { settingsRepository.setDefaultIntroEndSeconds(it.coerceIn(1, 600)) }
             params["outroDurationSeconds"]?.toIntOrNull()?.let { settingsRepository.setDefaultOutroDurationSeconds(it.coerceIn(1, 600)) }
+            params["useAlternativePlayer"]?.toBooleanStrictOrNull()?.let { settingsRepository.setUseAlternativePlayer(it) }
             pushAddonSettingsIfKodiConfigured()
         }
         writeResponse(out, 200, "OK", "text/plain", "OK")
@@ -368,6 +370,9 @@ button:hover { background: #29b6f6; }
   <input type="text" name="introEndSeconds" placeholder="90">
   <label>Outro Duration from End (seconds)</label>
   <input type="text" name="outroDurationSeconds" placeholder="120">
+  <h3>Player Engine</h3>
+  <label>Use LibVLC alternative player (true/false)</label>
+  <input type="text" name="useAlternativePlayer" placeholder="false">
   <button type="submit">Save Configuration</button>
   <div id="status" class="status"></div>
 </form>

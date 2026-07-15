@@ -129,6 +129,9 @@ dependencies {
     // Haze frosted-glass blur for modern sidebar overlay
     implementation(libs.haze.android)
 
+    // LibVLC alternative video/audio player engine (DTS/AC3, AVI/MKV support)
+    implementation(libs.libvlc)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

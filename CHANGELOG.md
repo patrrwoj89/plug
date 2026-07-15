@@ -193,6 +193,16 @@ All notable changes to Polish Media Hub are documented in this file.
 - **Skip credits/outro** immediately triggers the existing Auto-Play Next overlay so the user can play the next episode or cancel.
 - Toggle and default durations are persisted in `SettingsRepository` and exposed through `SettingsViewModel`.
 
+#### LibVLC alternative player engine (`UniversalVlcPlayer`)
+- New `org.videolan.android:libvlc-all:4.0.0-eap17` dependency.
+- `UniversalVlcPlayer` Composable wraps `VLCVideoLayout`, `LibVLC`, `MediaPlayer` and `Media` directly in the app process (no external player installation required).
+- `useAlternativePlayer` toggle in `SettingsRepository` / DataStore, exposed in `SettingsScreen` and `AdminHttpServer` web panel.
+- `PlayerScreen` conditionally renders `UniversalVlcPlayer` instead of `PlayerContent` when the toggle is enabled.
+- HTTP `User-Agent` and per-stream `mediaItem.headers` are injected through `LibVLC` options; a default `PolishMediaHub` User-Agent is added when none is supplied.
+- External subtitles (`subtitleUrl`) are attached via `Media.addSlave`; `subtitleHeaders` are passed as per-media `:http-header-fields` options and the first text track is selected on `MediaPlayer.Event.Playing`.
+- A 500 ms position loop reads `mediaPlayer.time`/`length` and feeds `PlayerViewModel.updatePosition(...)`, keeping Trakt scrobbling, Room watch history, Auto-Play Next and Smart Skip Intro/Outro functional on the LibVLC engine.
+- Solves ExoPlayer decoding issues with DTS/AC3 audio and MKV/AVI containers from torrents, Kodi and web plugins.
+
 ### Changed
 - `TVNavHost` waits for the `isFirstLaunch` value before choosing the `NavHost` start destination, avoiding graph resets.
 - `TvLauncherManager` progress writes throttled to 15 seconds during playback, with a forced write on `onPlaybackStopped`.
@@ -203,6 +213,9 @@ All notable changes to Polish Media Hub are documented in this file.
 - `PlayerContent` signature extended with `onUpdatePosition`, `onSkipIntro`, `onSkipOutro`, `onSeekHandled`, `skipIntroState`, `pendingSeekToMs` and `forceAutoPlayOverlay`.
 - `NextEpisodeOverlay` accepts a nullable `nextEpisode` and exits early when null.
 - `AdminHttpServer` now saves and exposes `autoSkipIntro`, `introEndSeconds` and `outroDurationSeconds` from `SettingsRepository`.
+- `MediaItem` extended with `subtitleHeaders` map for per-subtitle authorization headers.
+- `QuickJsMediaSource` maps the `subtitleHeaders` field from JS plugins to `MediaItem`.
+- `NextEpisodeOverlay` visibility changed from `private` to `internal` so it can be reused by `UniversalVlcPlayer`.
 
 ### Fixed
 

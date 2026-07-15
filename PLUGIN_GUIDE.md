@@ -82,9 +82,10 @@ Use `r.code` to detect 403/429, read cookies from `r.headers["Set-Cookie"]`, and
 | `year` | Number / String | no | Release year. |
 | `season` | Number | no | For series episodes. |
 | `episode` | Number | no | For series episodes. |
-| `videoUrl` or `url` | String | no | Direct stream or manifest URL. If present, ExoPlayer uses it directly. |
-| `headers` | Object | no | HTTP headers forwarded to ExoPlayer, e.g. `{ "User-Agent": "...", "Referer": "..." }`. |
+| `videoUrl` or `url` | String | no | Direct stream or manifest URL. If present, the active player engine (ExoPlayer or LibVLC) uses it directly. |
+| `headers` | Object | no | HTTP headers forwarded to the active player engine, e.g. `{ "User-Agent": "...", "Referer": "..." }`. |
 | `subtitleUrl` | String | no | External subtitle file (`.vtt` or `.srt`). |
+| `subtitleHeaders` | Object | no | Per-subtitle HTTP headers (e.g. `Authorization`) used when fetching `subtitleUrl`. |
 | `subtitleLanguage` | String | no | Language code, defaults to `pl`. |
 | `drmLicenseUrl` | String | no | DRM license server URL. |
 | `drmScheme` | String | no | `WIDEVINE`, `PLAYREADY` or `CLEARKEY`. |
@@ -92,13 +93,13 @@ Use `r.code` to detect 403/429, read cookies from `r.headers["Set-Cookie"]`, and
 
 ### Stream and subtitle formats
 
-The player auto-detects the stream type from the URL extension and MIME type:
+The default ExoPlayer engine auto-detects the stream type from the URL extension and MIME type:
 
 - `.m3u8` or `application/x-mpegurl` → HLS
 - `.mpd` or `application/dash+xml` → DASH
 - `.mp4`, `.mkv`, `.webm`, etc. → progressive
 
-Subtitles can be `.vtt` or `.srt`. Provide `subtitleLanguage` to match the user's locale.
+Subtitles can be `.vtt` or `.srt`. Provide `subtitleLanguage` to match the user's locale. If you need DTS/AC3 audio or legacy MKV/AVI containers that ExoPlayer cannot decode, the user can enable the built-in LibVLC player from Settings/Admin.
 
 ### Minimal example QuickJS plugin
 

@@ -158,7 +158,7 @@ class QuickJsMediaSource @Inject constructor(
                 val value = v as? String ?: v?.toString() ?: return@mapNotNull null
                 key to value
             }.toMap()
-            else -> headers
+            else -> emptyMap()
         }
         return MediaItem(
             id = map["id"] as String,
@@ -179,6 +179,7 @@ class QuickJsMediaSource @Inject constructor(
             videoUrl = map["videoUrl"] as? String ?: map["url"] as? String,
             headers = headers,
             subtitleUrl = map["subtitleUrl"] as? String,
+            subtitleHeaders = subtitleHeaders,
             subtitleLanguage = (map["subtitleLanguage"] as? String) ?: "pl"
         )
     }

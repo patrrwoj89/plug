@@ -97,6 +97,9 @@ class PlayerViewModel @Inject constructor(
     private val _isInPipMode = MutableStateFlow(false)
     val isInPipMode: StateFlow<Boolean> = _isInPipMode.asStateFlow()
 
+    private val _useAlternativePlayer = MutableStateFlow(false)
+    val useAlternativePlayer: StateFlow<Boolean> = _useAlternativePlayer.asStateFlow()
+
     private val _skipIntroState = MutableStateFlow(SkipIntroState())
     val skipIntroState: StateFlow<SkipIntroState> = _skipIntroState.asStateFlow()
 
@@ -254,6 +257,10 @@ class PlayerViewModel @Inject constructor(
 
         viewModelScope.launch {
             settingsRepository.defaultOutroDurationSeconds.collect { skipSettings = skipSettings.copy(outroDurationSeconds = it) }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.useAlternativePlayer.collect { _useAlternativePlayer.value = it }
         }
 
         viewModelScope.launch {

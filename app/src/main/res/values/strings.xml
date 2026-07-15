@@ -188,6 +188,8 @@
 
     <string name="settings_cinema_mode">Cinema Mode</string>
     <string name="settings_cinema_mode_subtitle">Auto-hide overlays and show info card on pause</string>
+    <string name="settings_use_alternative_player">Use LibVLC player</string>
+    <string name="settings_use_alternative_player_subtitle">Switch to LibVLC for better DTS/AC3, MKV and AVI support</string>
     <string name="settings_trakt_client_id">Trakt client ID</string>
     <string name="settings_trakt_client_id_hint">Get it at trakt.tv/oauth/applications</string>
     <string name="trakt_sync_section">Trakt Sync</string>
@@ -215,6 +217,7 @@
     <string name="live_broadcast">Live broadcast</string>
     <string name="skip_intro">Skip intro</string>
     <string name="skip_outro">Skip credits</string>
+    <string name="player_error">Unable to play this stream</string>
     <string name="settings_skip_intro_section">Skip Intro / Outro</string>
     <string name="settings_auto_skip_intro">Auto skip intros and outros</string>
     <string name="settings_auto_skip_intro_subtitle">Show skip buttons during intro and outro segments</string>

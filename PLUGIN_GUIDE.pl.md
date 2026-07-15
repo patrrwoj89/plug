@@ -82,9 +82,10 @@ Użyj `r.code` do wykrywania 403/429, odczytaj ciasteczka z `r.headers["Set-Cook
 | `year` | Number / String | nie | Rok wydania. |
 | `season` | Number | nie | Dla odcinków seriali. |
 | `episode` | Number | nie | Dla odcinków seriali. |
-| `videoUrl` lub `url` | String | nie | Bezpośredni URL strumienia / manifestu. Jeśli obecny, ExoPlayer używa go bezpośrednio. |
-| `headers` | Object | nie | Nagłówki HTTP przekazywane do ExoPlayera, np. `{ "User-Agent": "...", "Referer": "..." }`. |
+| `videoUrl` lub `url` | String | nie | Bezpośredni URL strumienia / manifestu. Jeśli obecny, aktywny silnik odtwarzacza (ExoPlayer lub LibVLC) używa go bezpośrednio. |
+| `headers` | Object | nie | Nagłówki HTTP przekazywane do aktywnego silnika odtwarzacza, np. `{ "User-Agent": "...", "Referer": "..." }`. |
 | `subtitleUrl` | String | nie | Zewnętrzny plik napisów (`.vtt` lub `.srt`). |
+| `subtitleHeaders` | Object | nie | Per-ścieżka HTTP nagłówki (np. `Authorization`) używane przy pobieraniu `subtitleUrl`. |
 | `subtitleLanguage` | String | nie | Kod języka, domyślnie `pl`. |
 | `drmLicenseUrl` | String | nie | URL serwera licencji DRM. |
 | `drmScheme` | String | nie | `WIDEVINE`, `PLAYREADY` lub `CLEARKEY`. |
@@ -92,13 +93,13 @@ Użyj `r.code` do wykrywania 403/429, odczytaj ciasteczka z `r.headers["Set-Cook
 
 ### Formaty strumieni i napisów
 
-Odtwarzacz automatycznie wykrywa typ strumienia z rozszerzenia URL i MIME type:
+Domyślny silnik ExoPlayer automatycznie wykrywa typ strumienia z rozszerzenia URL i MIME type:
 
 - `.m3u8` lub `application/x-mpegurl` → HLS
 - `.mpd` lub `application/dash+xml` → DASH
 - `.mp4`, `.mkv`, `.webm` itp. → progresywny
 
-Napisy mogą być `.vtt` lub `.srt`. Podaj `subtitleLanguage`, aby dopasować język użytkownika.
+Napisy mogą być `.vtt` lub `.srt`. Podaj `subtitleLanguage`, aby dopasować język użytkownika. Jeśli potrzebujesz dźwięku DTS/AC3 lub starszych kontenerów MKV/AVI, których ExoPlayer nie dekoduje, użytkownik może włączyć wbudowany silnik LibVLC w Ustawieniach / panelu Admina.
 
 ### Minimalny przykład wtyczki QuickJS
 

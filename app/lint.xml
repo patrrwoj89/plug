@@ -5,6 +5,9 @@
     <issue id="GradleDependency" severity="ignore" />
     <issue id="NewerVersionAvailable" severity="ignore" />
 
+    <!-- LibVLC native libraries are prebuilt by upstream and not aligned to 16 KB pages yet. -->
+    <issue id="Aligned16KB" severity="ignore" />
+
     <!-- Launcher icon design/density warnings are pre-existing assets and out of scope. -->
     <issue id="IconLauncherShape" severity="ignore" />
     <issue id="IconDensities" severity="ignore" />
