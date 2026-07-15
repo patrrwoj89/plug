@@ -179,6 +179,8 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 - `CloudstreamSource.categories()` ładuje zdalne indeksy zamiast zwracać pustą listę.
 - `QuickJsEngine` nie używa już `runBlocking` w `httpFetch`.
 - `PlayerViewModel` posiada zaktualizowane override'y `AnalyticsListener` zgodnie z API ExoPlayera.
+- `AnimeRepository.categories()` teraz fallbackuje do Kitsu, gdy AniList zwraca puste kategorie.
+- Logika `ContentFilter` dla wieku/NSFW została uproszczona: `allowNsfw` blokuje pozycje oznaczone jako treści dla dorosłych, a `maxAgeRating` blokuje pozycje o rozpoznanym poziomie wiekowym wyższym od limitu.
 
 ## [1.0.0-alpha] — 2026-07-14
 
