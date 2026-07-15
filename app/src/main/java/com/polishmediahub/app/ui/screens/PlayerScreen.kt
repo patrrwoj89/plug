@@ -4,9 +4,12 @@ package com.polishmediahub.app.ui.screens
 
 import android.app.Activity
 import android.app.PictureInPictureParams
+import android.graphics.Typeface
 import android.os.Build
 import android.util.Rational
+import android.util.TypedValue
 import android.view.KeyEvent
+import android.graphics.Color as AndroidColor
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -14,6 +17,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.layout.ContentScale
@@ -52,8 +56,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.media3.ui.CaptionStyleCompat
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -93,6 +100,7 @@ import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Spacing
 import com.polishmediahub.app.ui.viewmodel.PlayerViewModel
 import kotlinx.coroutines.delay
+import java.util.Locale
 
 @Composable
 fun PlayerScreen(
@@ -108,8 +116,14 @@ fun PlayerScreen(
     val preferredQuality by viewModel.preferredQuality.collectAsStateWithLifecycle()
     val nextEpisode by viewModel.nextEpisode.collectAsStateWithLifecycle()
     val autoPlayCancelled by viewModel.autoPlayCancelled.collectAsStateWithLifecycle()
+    val subtitleSize by viewModel.subtitleSize.collectAsStateWithLifecycle()
+    val subtitleColor by viewModel.subtitleColor.collectAsStateWithLifecycle()
+    val subtitleVerticalOffset by viewModel.subtitleVerticalOffset.collectAsStateWithLifecycle()
+    val showLoadingStats by viewModel.showLoadingStats.collectAsStateWithLifecycle()
+    val playerStats by viewModel.playerStats.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val density = LocalDensity.current
 
     val headers = item?.headers.orEmpty()
     val videoUrl = resolvedUrl ?: item?.videoUrl
@@ -151,6 +165,11 @@ fun PlayerScreen(
 
     LaunchedEffect(preferredQuality, exoPlayer) {
         applyPreferredQuality(exoPlayer, preferredQuality)
+    }
+
+    DisposableEffect(exoPlayer) {
+        viewModel.setPlayer(exoPlayer)
+        onDispose { viewModel.setPlayer(null) }
     }
 
     DisposableEffect(exoPlayer, item, resolvedUrl) {
@@ -245,6 +264,11 @@ fun PlayerScreen(
         onPlayNextEpisode = { position, duration -> viewModel.playNextEpisode(position, duration) },
         torrentBuffering = torrentBuffering,
         torrentStatus = torrentStatus,
+        showLoadingStats = showLoadingStats,
+        playerStats = playerStats,
+        subtitleSize = subtitleSize,
+        subtitleColor = subtitleColor,
+        subtitleVerticalOffset = subtitleVerticalOffset,
         modifier = modifier
     )
 }
@@ -266,6 +290,11 @@ private fun PlayerContent(
     onPlayNextEpisode: (Long, Long) -> Unit,
     torrentBuffering: Int?,
     torrentStatus: TorrentStatus?,
+    showLoadingStats: Boolean,
+    playerStats: com.polishmediahub.app.ui.viewmodel.PlayerViewModel.PlayerStats,
+    subtitleSize: Float,
+    subtitleColor: String,
+    subtitleVerticalOffset: Float,
     modifier: Modifier = Modifier
 ) {
     var controlsVisible by remember { mutableStateOf(true) }
@@ -287,6 +316,7 @@ private fun PlayerContent(
     val overlayVisible = nextEpisode != null && !autoPlayCancelled && isSeriesLike && !isLive && remainingMs in 0..15_000
     val countdownSeconds = (remainingMs / 1000).toInt().coerceIn(0, 15)
     val coverUrl = mediaItem?.posterUrl
+    val density = LocalDensity.current
 
     BackHandler { if (overlayVisible) onCancelAutoPlay() else onBack() }
 
@@ -422,6 +452,31 @@ private fun PlayerContent(
                     useController = false
                 }
             },
+            update = { playerView ->
+                playerView.subtitleView?.let { subtitleView ->
+                    subtitleView.setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, subtitleSize)
+                    val foregroundColor = when (subtitleColor) {
+                        "Yellow" -> AndroidColor.YELLOW
+                        "Gray" -> AndroidColor.GRAY
+                        else -> AndroidColor.WHITE
+                    }
+                    val style = CaptionStyleCompat(
+                        foregroundColor,
+                        AndroidColor.TRANSPARENT,
+                        AndroidColor.TRANSPARENT,
+                        CaptionStyleCompat.EDGE_TYPE_OUTLINE,
+                        AndroidColor.BLACK,
+                        Typeface.DEFAULT
+                    )
+                    subtitleView.setStyle(style)
+                    val offsetPx = with(density) { subtitleVerticalOffset.dp.roundToPx() }
+                    if (offsetPx >= 0) {
+                        subtitleView.setPadding(0, 0, 0, offsetPx)
+                    } else {
+                        subtitleView.setPadding(0, -offsetPx, 0, 0)
+                    }
+                }
+            },
             modifier = Modifier.fillMaxSize()
         )
 
@@ -516,6 +571,10 @@ private fun PlayerContent(
                 onCancel = onCancelAutoPlay
             )
         }
+
+        if (showLoadingStats) {
+            PlayerStatsOverlay(playerStats = playerStats)
+        }
     }
 }
 
@@ -602,6 +661,69 @@ private fun NextEpisodeOverlay(
                     onClick = onCancel
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PlayerStatsOverlay(
+    playerStats: PlayerViewModel.PlayerStats
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopEnd
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(Spacing.md)
+                .background(
+                    Color.Black.copy(alpha = 0.7f),
+                    RoundedCornerShape(8.dp)
+                )
+                .padding(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+        ) {
+            val fps = if (playerStats.frameRate > 0) {
+                String.format(Locale.US, "%.1f", playerStats.frameRate)
+            } else {
+                "--"
+            }
+            val bitrate = String.format(Locale.US, "%.1f", playerStats.currentBitrateMbps)
+            Text(
+                text = "Res: ${playerStats.resolution}",
+                style = AppTypography.caption,
+                color = AppColor.OnSurface
+            )
+            Text(
+                text = "FPS: $fps",
+                style = AppTypography.caption,
+                color = AppColor.OnSurface
+            )
+            Text(
+                text = "Video: ${playerStats.videoCodec}",
+                style = AppTypography.caption,
+                color = AppColor.OnSurface
+            )
+            Text(
+                text = "Audio: ${playerStats.audioCodec}",
+                style = AppTypography.caption,
+                color = AppColor.OnSurface
+            )
+            Text(
+                text = "Bitrate: $bitrate Mbps",
+                style = AppTypography.caption,
+                color = AppColor.OnSurface
+            )
+            Text(
+                text = "Dropped: ${playerStats.droppedFrames}",
+                style = AppTypography.caption,
+                color = AppColor.OnSurface
+            )
+            Text(
+                text = "Jank: ${playerStats.jankFrames}",
+                style = AppTypography.caption,
+                color = AppColor.OnSurface
+            )
         }
     }
 }

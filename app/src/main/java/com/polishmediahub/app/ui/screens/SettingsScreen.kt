@@ -46,6 +46,10 @@ fun SettingsScreen(
     val saveSearchHistory by viewModel.saveSearchHistory.collectAsStateWithLifecycle()
     val preferredQuality by viewModel.preferredQuality.collectAsStateWithLifecycle()
     val spoilerBlurEnabled by viewModel.spoilerBlurEnabled.collectAsStateWithLifecycle()
+    val subtitleSize by viewModel.subtitleSize.collectAsStateWithLifecycle()
+    val subtitleColor by viewModel.subtitleColor.collectAsStateWithLifecycle()
+    val subtitleVerticalOffset by viewModel.subtitleVerticalOffset.collectAsStateWithLifecycle()
+    val showLoadingStats by viewModel.showLoadingStats.collectAsStateWithLifecycle()
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
     val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
     var pinVerified by remember { mutableStateOf(false) }
@@ -103,6 +107,63 @@ fun SettingsScreen(
             subtitle = stringResource(id = R.string.settings_spoiler_blur_subtitle),
             checked = spoilerBlurEnabled,
             onCheckedChange = viewModel::setSpoilerBlur
+        )
+
+        val subtitleSizeOptions = listOf("14sp" to 14f, "18sp" to 18f, "24sp" to 24f, "32sp" to 32f)
+        val subtitleColorOptions = listOf(
+            R.string.subtitle_color_white to "White",
+            R.string.subtitle_color_yellow to "Yellow",
+            R.string.subtitle_color_gray to "Gray"
+        )
+        val subtitleOffsetOptions = listOf("-50" to -50f, "-25" to -25f, "0" to 0f, "+25" to 25f, "+50" to 50f)
+        val whiteLabel = stringResource(id = R.string.subtitle_color_white)
+        val yellowLabel = stringResource(id = R.string.subtitle_color_yellow)
+        val grayLabel = stringResource(id = R.string.subtitle_color_gray)
+        val colorDisplayToKey = mapOf(
+            whiteLabel to "White",
+            yellowLabel to "Yellow",
+            grayLabel to "Gray"
+        )
+
+        Text(
+            text = stringResource(id = R.string.settings_subtitles),
+            style = AppTypography.headline,
+            modifier = Modifier.padding(top = Spacing.md)
+        )
+
+        SettingsSelector(
+            title = stringResource(id = R.string.settings_subtitle_size),
+            value = subtitleSizeOptions.find { it.second == subtitleSize }?.first ?: "18sp",
+            options = subtitleSizeOptions.map { it.first },
+            onSelect = { label ->
+                subtitleSizeOptions.find { it.first == label }?.second?.let(viewModel::setSubtitleSize)
+            }
+        )
+
+        SettingsSelector(
+            title = stringResource(id = R.string.settings_subtitle_color),
+            value = colorDisplayToKey.entries.find { it.value == subtitleColor }?.key
+                ?: whiteLabel,
+            options = colorDisplayToKey.keys.toList(),
+            onSelect = { label ->
+                colorDisplayToKey[label]?.let(viewModel::setSubtitleColor)
+            }
+        )
+
+        SettingsSelector(
+            title = stringResource(id = R.string.settings_subtitle_vertical_offset),
+            value = subtitleOffsetOptions.find { it.second == subtitleVerticalOffset }?.first ?: "0",
+            options = subtitleOffsetOptions.map { it.first },
+            onSelect = { label ->
+                subtitleOffsetOptions.find { it.first == label }?.second?.let(viewModel::setSubtitleVerticalOffset)
+            }
+        )
+
+        SettingsToggle(
+            title = stringResource(id = R.string.settings_show_loading_stats),
+            subtitle = stringResource(id = R.string.settings_show_loading_stats_subtitle),
+            checked = showLoadingStats,
+            onCheckedChange = viewModel::setShowLoadingStats
         )
 
         SettingsSelector(

@@ -47,6 +47,15 @@
     <string name="settings_preferred_quality">Preferowana jakość strumienia</string>
     <string name="settings_spoiler_blur">Rozmycie spoilerów</string>
     <string name="settings_spoiler_blur_subtitle">Rozmyj opisy fabuły dla nieobejrzanych odcinków</string>
+    <string name="settings_subtitles">Napisy</string>
+    <string name="settings_subtitle_size">Rozmiar napisów</string>
+    <string name="settings_subtitle_color">Kolor napisów</string>
+    <string name="settings_subtitle_vertical_offset">Przesunięcie napisów w pionie</string>
+    <string name="subtitle_color_white">Biały</string>
+    <string name="subtitle_color_yellow">Żółty</string>
+    <string name="subtitle_color_gray">Szary</string>
+    <string name="settings_show_loading_stats">Pokaż statystyki odtwarzania</string>
+    <string name="settings_show_loading_stats_subtitle">Wyświetlaj nakładkę diagnostyczną w odtwarzaczu</string>
     <string name="version_info">PolishMediaHub Skeleton v0.2.0</string>
 
     <string name="admin_title">Admin / Źródła</string>

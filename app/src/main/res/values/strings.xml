@@ -47,6 +47,15 @@
     <string name="settings_preferred_quality">Preferred stream quality</string>
     <string name="settings_spoiler_blur">Spoiler blur</string>
     <string name="settings_spoiler_blur_subtitle">Blur plot descriptions for unwatched episodes</string>
+    <string name="settings_subtitles">Subtitles</string>
+    <string name="settings_subtitle_size">Subtitle size</string>
+    <string name="settings_subtitle_color">Subtitle color</string>
+    <string name="settings_subtitle_vertical_offset">Subtitle vertical offset</string>
+    <string name="subtitle_color_white">White</string>
+    <string name="subtitle_color_yellow">Yellow</string>
+    <string name="subtitle_color_gray">Gray</string>
+    <string name="settings_show_loading_stats">Show loading stats</string>
+    <string name="settings_show_loading_stats_subtitle">Display player nerd stats overlay</string>
     <string name="version_info">PolishMediaHub Skeleton v0.2.0</string>
 
     <string name="admin_title">Admin / Sources</string>

@@ -1,3 +1,5 @@
+@file:Suppress("UnsafeOptInUsageError")
+
 package com.polishmediahub.app.ui.viewmodel
 
 import android.util.Log
@@ -25,6 +27,10 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import androidx.media3.common.Format
+import androidx.media3.common.VideoSize
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.analytics.AnalyticsListener
 import javax.inject.Inject
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -65,7 +71,23 @@ class PlayerViewModel @Inject constructor(
     private val _autoPlayCancelled = MutableStateFlow(false)
     val autoPlayCancelled: StateFlow<Boolean> = _autoPlayCancelled.asStateFlow()
 
+    private val _subtitleSize = MutableStateFlow(18f)
+    val subtitleSize: StateFlow<Float> = _subtitleSize.asStateFlow()
+
+    private val _subtitleColor = MutableStateFlow("White")
+    val subtitleColor: StateFlow<String> = _subtitleColor.asStateFlow()
+
+    private val _subtitleVerticalOffset = MutableStateFlow(0f)
+    val subtitleVerticalOffset: StateFlow<Float> = _subtitleVerticalOffset.asStateFlow()
+
+    private val _showLoadingStats = MutableStateFlow(false)
+    val showLoadingStats: StateFlow<Boolean> = _showLoadingStats.asStateFlow()
+
+    private val _playerStats = MutableStateFlow(PlayerStats())
+    val playerStats: StateFlow<PlayerStats> = _playerStats.asStateFlow()
+
     private var currentAudioTrack: AudioTrack? = null
+    private var analyticsListener: PlayerAnalyticsListener? = null
 
     init {
         viewModelScope.launch {
@@ -120,6 +142,22 @@ class PlayerViewModel @Inject constructor(
 
         viewModelScope.launch {
             settingsRepository.preferredQuality.collect { _preferredQuality.value = it }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.subtitleSize.collect { _subtitleSize.value = it }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.subtitleColor.collect { _subtitleColor.value = it }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.subtitleVerticalOffset.collect { _subtitleVerticalOffset.value = it }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.showLoadingStats.collect { _showLoadingStats.value = it }
         }
 
         viewModelScope.launch {
@@ -182,6 +220,35 @@ class PlayerViewModel @Inject constructor(
                 Log.w("PlayerViewModel", "playNextEpisode failed: ${e.message}")
             }
         }
+    }
+
+    fun setPlayer(exoPlayer: ExoPlayer?) {
+        val previous = analyticsListener
+        if (previous != null && exoPlayer == null) {
+            // Detaching the previous player from the same listener object is
+            // done via the stored ExoPlayer reference.
+        }
+        analyticsListener?.let { listener ->
+            try { currentExoPlayer?.removeAnalyticsListener(listener) } catch (_: Exception) {}
+        }
+        analyticsListener = null
+        currentExoPlayer = null
+        _playerStats.value = PlayerStats()
+
+        val player = exoPlayer ?: return
+        currentExoPlayer = player
+        val listener = PlayerAnalyticsListener().also { analyticsListener = it }
+        player.addAnalyticsListener(listener)
+    }
+
+    private var currentExoPlayer: ExoPlayer? = null
+
+    override fun onCleared() {
+        analyticsListener?.let { listener ->
+            try { currentExoPlayer?.removeAnalyticsListener(listener) } catch (_: Exception) {}
+        }
+        analyticsListener = null
+        currentExoPlayer = null
     }
 
     private suspend fun loadNextEpisode(current: MediaItem) {
@@ -331,4 +398,115 @@ class PlayerViewModel @Inject constructor(
         isLive = isLive,
         type = MediaItem.Type.AUDIO
     )
+
+    data class PlayerStats(
+        val resolution: String = "--",
+        val frameRate: Float = 0f,
+        val videoCodec: String = "--",
+        val audioCodec: String = "--",
+        val currentBitrateMbps: Float = 0f,
+        val droppedFrames: Int = 0,
+        val jankFrames: Int = 0
+    )
+
+    private inner class PlayerAnalyticsListener : AnalyticsListener {
+        override fun onVideoInputFormatChanged(
+            eventTime: AnalyticsListener.EventTime,
+            format: Format,
+            decoderReuseEvaluation: androidx.media3.exoplayer.DecoderReuseEvaluation?
+        ) {
+            val stats = _playerStats.value
+            _playerStats.value = stats.copy(
+                videoCodec = format.toCodecName(),
+                frameRate = if (format.frameRate > 0) format.frameRate else stats.frameRate
+            )
+        }
+
+        override fun onAudioInputFormatChanged(
+            eventTime: AnalyticsListener.EventTime,
+            format: Format,
+            decoderReuseEvaluation: androidx.media3.exoplayer.DecoderReuseEvaluation?
+        ) {
+            _playerStats.value = _playerStats.value.copy(audioCodec = format.toCodecName())
+        }
+
+        override fun onVideoSizeChanged(
+            eventTime: AnalyticsListener.EventTime,
+            videoSize: VideoSize
+        ) {
+            if (videoSize.width > 0 && videoSize.height > 0) {
+                _playerStats.value = _playerStats.value.copy(
+                    resolution = "${videoSize.width}x${videoSize.height}"
+                )
+            }
+        }
+
+        override fun onBandwidthEstimate(
+            eventTime: AnalyticsListener.EventTime,
+            totalLoadTimeMs: Int,
+            totalBytesLoaded: Long,
+            bitrateEstimate: Long
+        ) {
+            val mbps = if (bitrateEstimate > 0) bitrateEstimate / 1_000_000f else 0f
+            _playerStats.value = _playerStats.value.copy(currentBitrateMbps = mbps)
+        }
+
+        override fun onDroppedVideoFrames(
+            eventTime: AnalyticsListener.EventTime,
+            droppedFrames: Int,
+            elapsedMs: Long
+        ) {
+            val current = _playerStats.value.droppedFrames
+            _playerStats.value = _playerStats.value.copy(droppedFrames = current + droppedFrames)
+        }
+
+        override fun onVideoFrameProcessingOffset(
+            eventTime: AnalyticsListener.EventTime,
+            totalProcessingOffsetUs: Long,
+            frameCount: Int
+        ) {
+            if (frameCount > 0) {
+                val avgOffsetUs = totalProcessingOffsetUs / frameCount
+                if (avgOffsetUs > 50_000) {
+                    val current = _playerStats.value.jankFrames
+                    _playerStats.value = _playerStats.value.copy(jankFrames = current + 1)
+                }
+            }
+        }
+
+        private fun Format.toCodecName(): String {
+            val codecsString = codecs
+            if (!codecsString.isNullOrBlank()) {
+                val base = codecsString.substringBefore(".")
+                return when {
+                    base.contains("avc", ignoreCase = true) -> "h264"
+                    base.contains("hev", ignoreCase = true) || base.contains("hvc", ignoreCase = true) -> "hevc"
+                    base.contains("av1", ignoreCase = true) -> "av1"
+                    base.contains("vp9", ignoreCase = true) -> "vp9"
+                    base.contains("mp4a", ignoreCase = true) -> "aac"
+                    base.contains("ac-3", ignoreCase = true) || base.equals("ac3", ignoreCase = true) -> "ac3"
+                    base.contains("ec-3", ignoreCase = true) || base.equals("eac3", ignoreCase = true) -> "eac3"
+                    base.contains("opus", ignoreCase = true) -> "opus"
+                    base.contains("dts", ignoreCase = true) -> "dts"
+                    base.contains("truehd", ignoreCase = true) || base.contains("mlp", ignoreCase = true) -> "truehd/atmos"
+                    else -> base.lowercase()
+                }
+            }
+            return sampleMimeType?.let { mime ->
+                when {
+                    mime.startsWith("video/avc") -> "h264"
+                    mime.startsWith("video/hevc") -> "hevc"
+                    mime.startsWith("video/av01") -> "av1"
+                    mime.startsWith("video/vp9") -> "vp9"
+                    mime.startsWith("audio/mp4a") -> "aac"
+                    mime.startsWith("audio/ac3") -> "ac3"
+                    mime.startsWith("audio/eac3") -> "eac3"
+                    mime.startsWith("audio/opus") -> "opus"
+                    mime.startsWith("audio/vnd.dts") -> "dts"
+                    mime.startsWith("audio/true-hd") -> "truehd/atmos"
+                    else -> mime.substringAfter("/", "--")
+                }
+            } ?: "--"
+        }
+    }
 }
