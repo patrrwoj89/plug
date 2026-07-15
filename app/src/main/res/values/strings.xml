@@ -36,6 +36,7 @@
     <string name="results_count">%1$d results</string>
     <string name="searching">Searching…</string>
     <string name="continue_watching">Continue Watching</string>
+    <string name="recommendations_channel_description">Featured movies, series and channels</string>
 
     <string name="settings_dark_theme">Dark theme</string>
     <string name="settings_dark_theme_subtitle">Use the dark colour scheme for the TV interface</string>

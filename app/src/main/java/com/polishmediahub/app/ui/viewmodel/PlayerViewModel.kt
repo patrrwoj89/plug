@@ -7,7 +7,7 @@ import com.polishmediahub.app.data.MediaRepository
 import com.polishmediahub.app.data.WatchHistoryRepository
 import com.polishmediahub.app.data.remote.trakt.TraktMediaRepository
 import com.polishmediahub.app.data.torrent.TorrentMediaSource
-import com.polishmediahub.app.data.tv.WatchNextHelper
+import com.polishmediahub.app.data.tv.TvLauncherManager
 import com.polishmediahub.app.model.MediaItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -28,7 +28,7 @@ class PlayerViewModel @Inject constructor(
     private val mediaRepository: MediaRepository,
     private val torrentMediaSource: TorrentMediaSource,
     private val watchHistoryRepository: WatchHistoryRepository,
-    private val watchNextHelper: WatchNextHelper,
+    private val tvLauncherManager: TvLauncherManager,
     private val traktMediaRepository: TraktMediaRepository
 ) : ViewModel() {
 
@@ -82,11 +82,9 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun saveProgress(positionMs: Long, durationMs: Long) {
-        val id = item.value?.id ?: return
         val current = item.value ?: return
         viewModelScope.launch {
-            watchHistoryRepository.updatePosition(id, positionMs, durationMs)
-            watchNextHelper.addToWatchNext(current, positionMs, durationMs)
+            tvLauncherManager.onPlaybackStopped(current, positionMs, durationMs)
             val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
             traktMediaRepository.scrobblePause(current, progress)
         }

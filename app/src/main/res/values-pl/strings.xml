@@ -36,6 +36,7 @@
     <string name="results_count">%1$d wyników</string>
     <string name="searching">Wyszukiwanie…</string>
     <string name="continue_watching">Kontynuuj oglądanie</string>
+    <string name="recommendations_channel_description">Polecane filmy, seriale i kanały</string>
 
     <string name="settings_dark_theme">Ciemny motyw</string>
     <string name="settings_dark_theme_subtitle">Użyj ciemnej palety dla interfejsu TV</string>

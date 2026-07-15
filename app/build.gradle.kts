@@ -72,6 +72,7 @@ dependencies {
 
     implementation(libs.androidx.tv.foundation)
     implementation(libs.androidx.tv.material)
+    implementation(libs.androidx.tv.provider)
 
     implementation(libs.androidx.navigation.compose)
     implementation(libs.hilt.navigation.compose)
