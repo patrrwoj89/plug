@@ -9,6 +9,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,6 +30,8 @@ import com.polishmediahub.app.ui.viewmodel.WatchlistViewModel
 fun WatchlistScreen(
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
     viewModel: WatchlistViewModel = hiltViewModel()
 ) {
     val savedItems by viewModel.watchlistItems.collectAsStateWithLifecycle()
@@ -57,6 +61,8 @@ fun WatchlistScreen(
                 MediaCard(
                     item = item,
                     onClick = { onNavigate(Screen.Detail(item.id)) },
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

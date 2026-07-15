@@ -400,6 +400,12 @@ export ANDROID_HOME=/path/to/android-sdk
 ./gradlew :app:verifyPaparazziDebug   # compare with baselines
 ```
 
+## UI / UX
+
+### Why does the movie poster animate when I open the details screen?
+
+Polish Media Hub uses Jetpack Compose **Shared Element Transitions**. The `NavHost` is wrapped in a `SharedTransitionLayout`; the poster in the grid (`MediaCard`) and the main poster on the detail screen share the same key (`poster_<item_id>`). When you press D-Pad Center/SELECT, Compose animates the poster's size and position between the two screens instead of fading it out and in.
+
 ### Where can I report a bug?
 
 Open an issue in the repository with reproduction steps and, if relevant, the source config you are using.

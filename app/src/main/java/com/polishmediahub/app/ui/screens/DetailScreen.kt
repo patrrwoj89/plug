@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
@@ -50,6 +52,8 @@ import com.polishmediahub.app.ui.viewmodel.DetailViewModel
 fun DetailScreen(
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
     val item by viewModel.item.collectAsStateWithLifecycle()
@@ -69,6 +73,8 @@ fun DetailScreen(
         isInLibrary = isInLibrary,
         isInWatchlist = isInWatchlist,
         blurDescription = blurDescription,
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
         onPlay = { onNavigate(Screen.Player(item!!.id)) },
         onToggleLibrary = viewModel::toggleLibrary,
         onToggleWatchlist = viewModel::toggleWatchlist,
@@ -85,11 +91,26 @@ private fun DetailContent(
     onPlay: () -> Unit,
     onToggleLibrary: () -> Unit,
     onToggleWatchlist: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null
 ) {
     val scrollState = rememberScrollState()
     var spoilerRevealed by remember(item.id) { mutableStateOf(false) }
     val shouldBlur = blurDescription && !spoilerRevealed
+
+    val posterModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+        with(sharedTransitionScope) {
+            Modifier
+                .fillMaxSize()
+                .sharedElement(
+                    sharedContentState = rememberSharedContentState(key = "poster_${item.id}"),
+                    animatedVisibilityScope = animatedVisibilityScope
+                )
+        }
+    } else {
+        Modifier.fillMaxSize()
+    }
 
     Column(
         modifier = modifier
@@ -102,10 +123,10 @@ private fun DetailContent(
                 .height(420.dp)
         ) {
             AsyncImage(
-                model = item.backdropUrl ?: item.posterUrl,
+                model = item.posterUrl ?: item.backdropUrl,
                 contentDescription = item.title,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = posterModifier
             )
             Box(
                 modifier = Modifier

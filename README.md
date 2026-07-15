@@ -37,6 +37,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **D-Pad focus restoration** in horizontal `LazyRow`s (`CategoryRow`) via `Modifier.focusGroup()` + `focusRestorer()`, so focus returns to the last viewed item when moving between rows.
 - **Voice Search** in `SearchScreen`: D-Pad Mic button launches `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` in Polish (`pl-PL`) and inserts the recognized query into the search field.
 - **Auto-Play Next** overlay for series: 15-second countdown with next-episode metadata, "Play now" / "Cancel" D-Pad buttons, BACK behaves like Cancel.
+- **Shared Element Transitions** for movie posters (`TVNavHost`, `TVCard`, `DetailScreen`, `SharedTransitionLayout`): `NavHost` is wrapped in a `SharedTransitionLayout`; `MediaCard` and the detail main poster use the same key with `Modifier.sharedElement` so posters animate smoothly from the grid to detail on D-Pad navigation.
 - **Spoiler Blur**: unwatched episode plot descriptions are blurred on the detail screen and can be revealed with D-Pad Center/SELECT.
 - **Subtitle settings in player**: size, color and vertical offset stored in DataStore and applied live to `SubtitleView`.
 - **Nerd Stats Overlay**: optional real-time panel with resolution, fps, active codecs, current bitrate and dropped/jank frames.

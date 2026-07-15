@@ -7,6 +7,9 @@ All notable changes to Polish Media Hub are documented in this file.
 ### Added
 
 #### UI / UX
+- **Shared Element Transitions for movie posters** (`TVNavHost`, `TVCard`, `DetailScreen`)
+  - `NavHost` is wrapped in a `SharedTransitionLayout` to provide a `SharedTransitionScope` to every screen.
+  - `MediaCard` and the detail main poster use `Modifier.sharedElement` with `rememberSharedContentState(key = "poster_${item.id}")` and the `AnimatedVisibilityScope` from `composable` destinations so the poster animates smoothly from the grid/row to the detail screen and back during D-Pad navigation.
 - **Modern Sidebar Scaffold** (`ModernSidebarBlurPanel`, `Sidebar`)
   - Collapsed floating pill with active profile / section info.
   - Haze blur overlay drawer that does not resize the content window.

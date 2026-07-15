@@ -25,6 +25,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.polishmediahub.app.ui.components.Sidebar
@@ -131,15 +132,20 @@ fun TVApp(
                 }
             }
     ) {
-        NavHost(
-            navController = navController,
-            startDestination = startDestination,
-            modifier = Modifier
-                .fillMaxSize()
-                .hazeSource(state = hazeState)
-        ) {
+        SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
+            NavHost(
+                navController = navController,
+                startDestination = startDestination,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .hazeSource(state = hazeState)
+            ) {
             composable(Screen.Home.route) {
-                HomeScreen(onNavigate = { navController.navigate(it.route) })
+                HomeScreen(
+                    onNavigate = { navController.navigate(it.route) },
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@composable
+                )
             }
             composable(Screen.EssentialSetup.route) {
                 EssentialSetupScreen(
@@ -152,16 +158,32 @@ fun TVApp(
                 )
             }
             composable(Screen.Search.route) {
-                SearchScreen(onNavigate = { navController.navigate(it.route) })
+                SearchScreen(
+                    onNavigate = { navController.navigate(it.route) },
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@composable
+                )
             }
             composable(Screen.Library.route) {
-                LibraryScreen(onNavigate = { navController.navigate(it.route) })
+                LibraryScreen(
+                    onNavigate = { navController.navigate(it.route) },
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@composable
+                )
             }
             composable(Screen.Watchlist.route) {
-                WatchlistScreen(onNavigate = { navController.navigate(it.route) })
+                WatchlistScreen(
+                    onNavigate = { navController.navigate(it.route) },
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@composable
+                )
             }
             composable(Screen.Anime.route) {
-                AnimeScreen(onNavigate = { navController.navigate(it.route) })
+                AnimeScreen(
+                    onNavigate = { navController.navigate(it.route) },
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@composable
+                )
             }
             composable(Screen.Music.route) {
                 MusicScreen(
@@ -203,6 +225,8 @@ fun TVApp(
             ) {
                 CustomListDetailScreen(
                     onNavigate = { navController.navigate(it.route) },
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@composable,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -225,6 +249,8 @@ fun TVApp(
             ) {
                 DetailScreen(
                     onNavigate = { navController.navigate(it.route) },
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@composable,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -238,7 +264,8 @@ fun TVApp(
                     modifier = Modifier.fillMaxSize()
                 )
             }
-        }
+            }
+        } // end SharedTransitionLayout
 
         if (currentScreen != Screen.EssentialSetup) {
             Sidebar(

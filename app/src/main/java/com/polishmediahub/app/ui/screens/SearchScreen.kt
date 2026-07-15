@@ -22,6 +22,8 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,6 +61,8 @@ import com.polishmediahub.app.ui.viewmodel.SearchViewModel
 fun SearchScreen(
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
     viewModel: SearchViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -178,6 +182,8 @@ fun SearchScreen(
                         MediaCard(
                             item = item,
                             onClick = { onNavigate(Screen.Detail(item.id)) },
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
                             modifier = Modifier.fillMaxWidth(0.25f)
                         )
                     }

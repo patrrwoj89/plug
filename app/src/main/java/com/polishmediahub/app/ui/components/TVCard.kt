@@ -18,6 +18,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import coil.compose.AsyncImage
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.ui.theme.AppColor
@@ -29,8 +31,26 @@ import com.polishmediahub.app.ui.theme.Spacing
 fun MediaCard(
     item: MediaItem,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null
 ) {
+    val posterModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+        with(sharedTransitionScope) {
+            Modifier
+                .fillMaxSize()
+                .sharedElement(
+                    sharedContentState = rememberSharedContentState(key = "poster_${item.id}"),
+                    animatedVisibilityScope = animatedVisibilityScope
+                )
+                .clip(RoundedCornerShape(Radius.md))
+        }
+    } else {
+        Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(Radius.md))
+    }
+
     FocusableSurface(
         onClick = onClick,
         modifier = modifier
@@ -43,9 +63,7 @@ fun MediaCard(
                 model = item.posterUrl,
                 contentDescription = item.title,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(Radius.md))
+                modifier = posterModifier
             )
 
             // Gradient overlay + title

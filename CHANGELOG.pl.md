@@ -7,6 +7,9 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 ### Dodano
 
 #### UI / UX
+- **Płynne animacje przejść współdzielonych elementów** dla plakatów filmów (`TVNavHost`, `TVCard`, `DetailScreen`)
+  - `NavHost` jest owinięty w `SharedTransitionLayout`, który dostarcza `SharedTransitionScope` dla każdego ekranu.
+  - `MediaCard` i główny plakat na ekranie szczegółów używają `Modifier.sharedElement` z `rememberSharedContentState(key = "poster_${item.id}")` oraz `AnimatedVisibilityScope` z docelowych `composable` — plakat płynnie animuje się z siatki/rzędu do ekranu szczegółów i z powrotem podczas nawigacji D-Padem.
 - **Nowoczesny panel boczny** (`ModernSidebarBlurPanel`, `Sidebar`)
   - Zwinięta pływająca pigułka z awatarem / sekcją.
   - Overlay z efektem rozmycia Haze, który nie zmienia szerokości okna z treścią.

@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.polishmediahub.app.R
@@ -36,6 +38,8 @@ import com.polishmediahub.app.ui.viewmodel.HomeViewModel
 fun HomeScreen(
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -89,6 +93,8 @@ fun HomeScreen(
                                 items = uiState.continueWatching
                             ),
                             onItemClick = { item -> onNavigate(Screen.Detail(item.id)) },
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -99,6 +105,8 @@ fun HomeScreen(
                         CategoryRow(
                             category = category,
                             onItemClick = { item -> onNavigate(Screen.Detail(item.id)) },
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }

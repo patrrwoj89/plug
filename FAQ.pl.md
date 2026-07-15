@@ -400,6 +400,12 @@ export ANDROID_HOME=/path/to/android-sdk
 ./gradlew :app:verifyPaparazziDebug   # porównanie z baseline'ami
 ```
 
+## Interfejs / UX
+
+### Dlaczego plakat filmu animuje się podczas otwierania ekranu szczegółów?
+
+Polish Media Hub używa Jetpack Compose **Shared Element Transitions**. `NavHost` jest owinięty w `SharedTransitionLayout`; plakat w siatce (`MediaCard`) i główny plakat na ekranie szczegółów współdzielą ten sam klucz (`poster_<item_id>`). Po naciśnięciu D-Pad Center/SELECT Compose animuje rozmiar i pozycję plakatu między dwoma ekranami zamiast go wygaszać i ponownie pojawiać.
+
 ### Gdzie zgłosić błąd?
 
 Otwórz issue w repozytorium z krokami reprodukcji i, jeśli dotyczy, z konfiguracją źródła, którego używasz.
