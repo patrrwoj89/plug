@@ -171,6 +171,21 @@ fun PlayerScreen(
                     .build()
                 mediaItemBuilder.setSubtitleConfigurations(listOf(subConfig))
             }
+            mediaItem?.let { item ->
+                val drmUuid = when (item.drmScheme?.lowercase()) {
+                    "widevine" -> C.WIDEVINE_UUID
+                    "playready" -> C.PLAYREADY_UUID
+                    "clearkey" -> C.CLEARKEY_UUID
+                    else -> null
+                }
+                if (drmUuid != null && !item.drmLicenseUrl.isNullOrBlank()) {
+                    val drmConfig = ExoMediaItem.DrmConfiguration.Builder(drmUuid)
+                        .setLicenseUri(android.net.Uri.parse(item.drmLicenseUrl))
+                        .setLicenseRequestHeaders(item.drmHeaders)
+                        .build()
+                    mediaItemBuilder.setDrmConfiguration(drmConfig)
+                }
+            }
             exoPlayer.setMediaItem(mediaItemBuilder.build())
             exoPlayer.prepare()
             exoPlayer.seekTo(resumePosition)

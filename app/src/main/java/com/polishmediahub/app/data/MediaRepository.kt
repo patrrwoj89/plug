@@ -10,5 +10,6 @@ interface MediaRepository {
     suspend fun search(query: String): List<MediaItem>
     suspend fun byId(id: String): MediaItem?
     suspend fun resolve(mediaItem: MediaItem): String? = mediaItem.videoUrl
+    suspend fun resolveItem(mediaItem: MediaItem): MediaItem = mediaItem
     suspend fun reportProgress(mediaItem: MediaItem, positionMs: Long, durationMs: Long, state: PlaybackState) {}
 }

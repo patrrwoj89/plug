@@ -61,7 +61,9 @@ class PlayerViewModel @Inject constructor(
             _item.value = mediaRepository.byId(mediaId)
             val current = _item.value
             if (current != null) {
-                _resolvedUrl.value = mediaRepository.resolve(current)
+                val resolved = mediaRepository.resolveItem(current)
+                _item.value = resolved
+                _resolvedUrl.value = resolved.videoUrl
                 watchHistoryRepository.observePosition(mediaId).collect { position ->
                     _resumePosition.value = position
                 }

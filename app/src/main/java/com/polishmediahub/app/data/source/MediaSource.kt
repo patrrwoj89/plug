@@ -19,5 +19,9 @@ interface MediaSource {
     suspend fun search(query: String): List<MediaItem>
     suspend fun byId(id: String): MediaItem?
     suspend fun resolve(mediaItem: MediaItem): String?
+    suspend fun resolveItem(mediaItem: MediaItem): MediaItem {
+        val url = resolve(mediaItem)
+        return if (!url.isNullOrBlank() && url != mediaItem.videoUrl) mediaItem.copy(videoUrl = url) else mediaItem
+    }
     suspend fun reportProgress(mediaItem: MediaItem, positionMs: Long, durationMs: Long, state: PlaybackState) {}
 }

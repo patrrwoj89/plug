@@ -3,6 +3,7 @@ package com.polishmediahub.app.data.admin
 import android.util.Log
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.plugin.PluginRepository
+import com.polishmediahub.app.data.source.KodiMediaSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -25,7 +26,8 @@ import javax.inject.Singleton
 @Singleton
 class AdminHttpServer @Inject constructor(
     private val apiConfigRepository: ApiConfigRepository,
-    private val pluginRepository: PluginRepository
+    private val pluginRepository: PluginRepository,
+    private val kodiMediaSource: KodiMediaSource
 ) {
 
     private var serverSocket: ServerSocket? = null
@@ -165,6 +167,7 @@ class AdminHttpServer @Inject constructor(
             params["iptvSourceUrls"]?.let { apiConfigRepository.setIptvSourceUrls(it) }
             params["stremioAddons"]?.let { apiConfigRepository.setStremioAddons(it) }
             params["kodiUrl"]?.let { apiConfigRepository.setKodiUrl(it) }
+            pushAddonSettingsIfKodiConfigured()
             params["webSourceConfig"]?.let { apiConfigRepository.setWebSourceConfig(it) }
             params["cloudstreamRepoUrls"]?.let { apiConfigRepository.setCloudstreamRepoUrls(it) }
             params["jellyfinUrl"]?.let { apiConfigRepository.setJellyfinUrl(it) }
@@ -180,8 +183,27 @@ class AdminHttpServer @Inject constructor(
             params["subsonicPassword"]?.let { apiConfigRepository.setSubsonicPassword(it) }
             params["podcastFeeds"]?.let { apiConfigRepository.setPodcastFeeds(it) }
             params["deezerProxyUrl"]?.let { apiConfigRepository.setDeezerProxyUrl(it) }
+            pushAddonSettingsIfKodiConfigured()
         }
         writeResponse(out, 200, "OK", "text/plain", "OK")
+    }
+
+    private suspend fun pushAddonSettingsIfKodiConfigured() {
+        try {
+            val kodiUrl = apiConfigRepository.kodiUrl.first()
+            if (kodiUrl.isBlank()) return
+            kodiMediaSource.configure(kodiUrl)
+            val debrid = apiConfigRepository.debridApiKey.first()
+            if (debrid.isNotBlank()) {
+                kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "realdebrid_token", debrid)
+            }
+            val traktId = apiConfigRepository.traktClientId.first()
+            if (traktId.isNotBlank()) {
+                kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "trakt_token", traktId)
+            }
+        } catch (_: Exception) {
+            // Non-fatal; Kodi may be offline.
+        }
     }
 
     private fun handlePluginPost(body: String, out: java.io.OutputStream) {

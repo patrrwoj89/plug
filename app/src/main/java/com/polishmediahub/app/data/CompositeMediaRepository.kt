@@ -55,6 +55,22 @@ class CompositeMediaRepository @Inject constructor(
             repositories.firstNotNullOfOrNull { repo -> repo.safeCall { resolve(mediaItem) } }
     } ?: mediaItem.videoUrl
 
+    override suspend fun resolveItem(mediaItem: MediaItem): MediaItem {
+        if (mediaItem.id.startsWith("magnet:") || mediaItem.id.startsWith("torrent:")) {
+            val url = torrentMediaSource.safeCall { resolve(mediaItem) }
+            return if (!url.isNullOrBlank() && url != mediaItem.videoUrl) mediaItem.copy(videoUrl = url) else mediaItem
+        }
+        for (repo in repositories) {
+            try {
+                val resolved = repo.resolveItem(mediaItem)
+                if (resolved != mediaItem) return resolved
+            } catch (e: Exception) {
+                Log.w("CompositeRepo", "resolveItem failed for ${repo::class.java.simpleName}: ${e.message}")
+            }
+        }
+        return mediaItem
+    }
+
     override suspend fun reportProgress(
         mediaItem: MediaItem,
         positionMs: Long,

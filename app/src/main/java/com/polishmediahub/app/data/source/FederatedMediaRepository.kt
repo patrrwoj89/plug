@@ -100,6 +100,19 @@ class FederatedMediaRepository @Inject constructor(
         }
     }
 
+    override suspend fun resolveItem(mediaItem: MediaItem): MediaItem {
+        ensureConfigured()
+        val prefix = mediaItem.id.substringBefore(":", missingDelimiterValue = "")
+        val source = registry.source(prefix) ?: registry.all.find { mediaItem.id.startsWith("${it.id}:") }
+            ?: return mediaItem
+        return try {
+            source.resolveItem(mediaItem)
+        } catch (e: Exception) {
+            android.util.Log.w("FederatedMediaRepository", "resolveItem failed for ${source.id}: ${e.message}")
+            mediaItem
+        }
+    }
+
     override suspend fun reportProgress(
         mediaItem: MediaItem,
         positionMs: Long,

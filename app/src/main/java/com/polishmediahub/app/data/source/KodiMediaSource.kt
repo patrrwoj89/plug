@@ -1,18 +1,21 @@
 package com.polishmediahub.app.data.source
 
+import android.util.Base64
+import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
-import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.int
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -29,7 +32,8 @@ import javax.inject.Singleton
 
 @Singleton
 class KodiMediaSource @Inject constructor(
-    private val client: OkHttpClient
+    private val client: OkHttpClient,
+    private val apiConfigRepository: ApiConfigRepository
 ) : MediaSource {
 
     override val id: String = "kodi"
@@ -37,10 +41,17 @@ class KodiMediaSource @Inject constructor(
     override val isConfigurable: Boolean = true
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
-    private var baseUrl: String = "http://localhost:8080"
+    private var configuredBaseUrl: String = ""
 
     fun configure(url: String) {
-        baseUrl = url.removeSuffix("/")
+        configuredBaseUrl = url.removeSuffix("/")
+    }
+
+    private suspend fun baseUrl(): String {
+        if (configuredBaseUrl.isNotBlank()) return configuredBaseUrl
+        val stored = apiConfigRepository.kodiUrl.first().removeSuffix("/")
+        if (stored.isNotBlank()) configuredBaseUrl = stored
+        return configuredBaseUrl
     }
 
     override suspend fun isAvailable(): Boolean {
@@ -74,10 +85,102 @@ class KodiMediaSource @Inject constructor(
     }
 
     override suspend fun byId(id: String): MediaItem? {
-        return (getMovies() + getTvShows()).find { it.id == id }
+        return when {
+            id.startsWith("kodi:plugin:") -> {
+                val file = decodePluginId(id)
+                getFileDetails(file)
+            }
+            else -> (getMovies() + getTvShows()).find { it.id == id }
+        }
     }
 
-    override suspend fun resolve(mediaItem: MediaItem): String? = mediaItem.videoUrl
+    override suspend fun resolve(mediaItem: MediaItem): String? = resolveItem(mediaItem).videoUrl
+
+    override suspend fun resolveItem(mediaItem: MediaItem): MediaItem {
+        val file = pluginFileFromMediaItem(mediaItem) ?: mediaItem.videoUrl ?: return mediaItem
+        if (file.isBlank()) return mediaItem
+        return try {
+            val (url, drm) = prepareDownload(file)
+            if (url.isNullOrBlank()) return mediaItem
+            mediaItem.copy(
+                videoUrl = url,
+                drmLicenseUrl = drm?.licenseUrl ?: mediaItem.drmLicenseUrl,
+                drmScheme = drm?.scheme ?: mediaItem.drmScheme,
+                drmHeaders = drm?.headers ?: mediaItem.drmHeaders
+            )
+        } catch (_: Exception) {
+            mediaItem
+        }
+    }
+
+    suspend fun getPluginDirectory(directoryPath: String): List<MediaItem> = try {
+        val body = rpc(
+            "Files.GetDirectory",
+            buildJsonObject {
+                put("directory", directoryPath)
+                put("media", "video")
+                putJsonArray("properties") {
+                    add("title")
+                    add("file")
+                    add("thumbnail")
+                    add("fanart")
+                    add("genre")
+                    add("plot")
+                    add("year")
+                    add("rating")
+                    add("duration")
+                    add("mimetype")
+                    add("inputstream.adaptive.license_key")
+                    add("inputstream.adaptive.license_type")
+                }
+            }
+        )
+        parseDirectory(body, directoryPath)
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    suspend fun getFileDetails(file: String): MediaItem? = try {
+        val body = rpc(
+            "Files.GetFileDetails",
+            buildJsonObject {
+                put("file", file)
+                putJsonArray("properties") {
+                    add("title")
+                    add("file")
+                    add("thumbnail")
+                    add("fanart")
+                    add("genre")
+                    add("plot")
+                    add("year")
+                    add("rating")
+                    add("duration")
+                    add("mimetype")
+                    add("inputstream.adaptive.license_key")
+                    add("inputstream.adaptive.license_type")
+                }
+            }
+        )
+        parseFileDetails(body, file)
+    } catch (_: Exception) {
+        null
+    }
+
+    suspend fun setAddonSetting(addonId: String, settingId: String, value: String): Boolean = try {
+        val response = rpc(
+            "Settings.SetSettingValue",
+            buildJsonObject {
+                put("setting", "addon_${addonId}_$settingId")
+                put("value", value)
+            }
+        )
+        json.parseToJsonElement(response)
+            .jsonObject["result"]
+            ?.jsonPrimitive
+            ?.booleanOrNull == true
+    } catch (_: Exception) {
+        false
+    }
 
     private suspend fun getMovies(): List<MediaItem> {
         val body = rpc(
@@ -126,6 +229,7 @@ class KodiMediaSource @Inject constructor(
     }
 
     private suspend fun rpc(method: String, params: JsonObject): String {
+        val base = baseUrl().ifBlank { throw IllegalStateException("Kodi URL not configured") }
         val payload = buildJsonObject {
             put("jsonrpc", "2.0")
             put("method", method)
@@ -133,12 +237,48 @@ class KodiMediaSource @Inject constructor(
             put("id", 1)
         }.toString()
         val request = Request.Builder()
-            .url("$baseUrl/jsonrpc")
+            .url("$base/jsonrpc")
             .post(payload.toRequestBody("application/json".toMediaType()))
             .build()
-        return with(Dispatchers.IO) {
+        return withContext(Dispatchers.IO) {
             client.newCall(request).execute().use { it.body?.string().orEmpty() }
         }
+    }
+
+    private suspend fun prepareDownload(file: String): Pair<String?, DrmInfo?> {
+        val body = rpc(
+            "Files.PrepareDownload",
+            buildJsonObject { put("path", file) }
+        )
+        val jsonElement = json.parseToJsonElement(body)
+        val result = jsonElement.jsonObject["result"]?.jsonObject ?: return null to null
+        val details = result["details"]?.jsonObject
+        val url = details?.get("path")?.jsonPrimitive?.contentOrNull
+            ?: result["path"]?.jsonPrimitive?.contentOrNull
+        val drm = parseDrm(details ?: result)
+        return url to drm
+    }
+
+    private fun parseDirectory(body: String, directoryPath: String): List<MediaItem> = try {
+        json.parseToJsonElement(body)
+            .jsonObject["result"]
+            ?.jsonObject?.get("files")
+            ?.jsonArray
+            ?.mapIndexedNotNull { index, element ->
+                element.jsonObject.toPluginMediaItem(directoryPath, index)
+            } ?: emptyList()
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    private fun parseFileDetails(body: String, file: String): MediaItem? = try {
+        json.parseToJsonElement(body)
+            .jsonObject["result"]
+            ?.jsonObject?.get("filedetails")
+            ?.jsonObject
+            ?.toPluginMediaItem(parent = "", index = 0, fallbackFile = file)
+    } catch (_: Exception) {
+        null
     }
 
     private fun parseMovies(body: String): List<MediaItem> = try {
@@ -161,14 +301,6 @@ class KodiMediaSource @Inject constructor(
             ?: emptyList()
     } catch (_: Exception) {
         emptyList()
-    }
-
-    private fun toKodiImageUrl(path: String?): String? {
-        if (path == null) return null
-        if (!path.startsWith("image://", ignoreCase = true)) return path
-        val inner = path.removePrefix("image://").removeSuffix("/")
-        val encoded = URLEncoder.encode("image://$inner", "UTF-8")
-        return "$baseUrl/image/$encoded"
     }
 
     private fun JsonObject.toMovie(): MediaItem {
@@ -206,16 +338,102 @@ class KodiMediaSource @Inject constructor(
             type = MediaItem.Type.SERIES
         )
     }
+
+    private fun JsonObject.toPluginMediaItem(parent: String, index: Int, fallbackFile: String? = null): MediaItem? {
+        val label = string("label").orEmpty().ifBlank { string("title").orEmpty() }
+        val file = string("file") ?: fallbackFile ?: return null
+        val fileType = string("filetype") ?: "file"
+        val isDirectory = fileType.equals("directory", ignoreCase = true)
+        val fanart = toKodiImageUrl(string("fanart"))
+        val thumb = toKodiImageUrl(string("thumbnail"))
+        val drm = parseDrm(this)
+        return MediaItem(
+            id = encodePluginId(parent, file, index),
+            title = label,
+            subtitle = if (isDirectory) "Folder" else string("mimetype").orEmpty(),
+            description = string("plot").orEmpty(),
+            posterUrl = thumb,
+            backdropUrl = fanart ?: thumb,
+            year = int("year")?.toString() ?: "",
+            rating = double("rating")?.toString() ?: "",
+            genres = stringList("genre"),
+            videoUrl = file,
+            duration = int("duration")?.toString() ?: "",
+            drmLicenseUrl = drm?.licenseUrl,
+            drmScheme = drm?.scheme,
+            drmHeaders = drm?.headers ?: emptyMap(),
+            type = if (isDirectory) MediaItem.Type.SERIES else MediaItem.Type.MOVIE
+        )
+    }
+
+    private fun parseDrm(json: JsonObject): DrmInfo? {
+        val licenseKey = json.string("inputstream.adaptive.license_key")
+        val licenseType = json.string("inputstream.adaptive.license_type")
+        val licenseUrl = when {
+            licenseKey?.startsWith("http", ignoreCase = true) == true -> licenseKey
+            licenseKey?.isNotBlank() == true && licenseKey.contains("http") -> licenseKey
+            else -> null
+        } ?: return null
+        val scheme = when (licenseType?.lowercase()) {
+            "com.widevine.alpha", "widevine" -> "widevine"
+            "com.microsoft.playready", "playready" -> "playready"
+            "org.w3.clearkey", "clearkey" -> "clearkey"
+            else -> "widevine"
+        }
+        val headers = mutableMapOf<String, String>()
+        licenseKey.orEmpty().substringAfter("|", "")
+            .split("&")
+            .forEach { pair ->
+                val eq = pair.indexOf('=')
+                if (eq > 0) headers[pair.substring(0, eq)] = pair.substring(eq + 1)
+            }
+        return DrmInfo(licenseUrl, scheme, headers)
+    }
+
+    private fun toKodiImageUrl(path: String?): String? {
+        if (path == null) return null
+        if (!path.startsWith("image://", ignoreCase = true)) return path
+        val inner = path.removePrefix("image://").removeSuffix("/")
+        val base = configuredBaseUrl
+        val encoded = URLEncoder.encode("image://$inner", "UTF-8")
+        return "$base/image/$encoded"
+    }
+
+    private fun encodePluginId(directory: String, file: String, index: Int): String {
+        val raw = "$directory\u0000$file\u0000$index"
+        val encoded = Base64.encodeToString(raw.toByteArray(Charsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP)
+        return "kodi:plugin:$encoded"
+    }
+
+    private fun decodePluginId(id: String): String {
+        val encoded = id.removePrefix("kodi:plugin:")
+        val decoded = Base64.decode(encoded, Base64.URL_SAFE or Base64.NO_WRAP).toString(Charsets.UTF_8)
+        return decoded.substringAfter("\u0000").substringBeforeLast("\u0000")
+    }
+
+    private fun pluginFileFromMediaItem(mediaItem: MediaItem): String? {
+        return if (mediaItem.id.startsWith("kodi:plugin:")) {
+            decodePluginId(mediaItem.id)
+        } else {
+            mediaItem.videoUrl
+        }
+    }
+
+    private fun JsonObject.string(key: String): String? =
+        get(key)?.jsonPrimitive?.contentOrNull
+
+    private fun JsonObject.int(key: String): Int? =
+        get(key)?.jsonPrimitive?.intOrNull
+
+    private fun JsonObject.double(key: String): Double? =
+        get(key)?.jsonPrimitive?.contentOrNull?.toDoubleOrNull()
+
+    private fun JsonObject.stringList(key: String): List<String> =
+        get(key)?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+
+    private data class DrmInfo(
+        val licenseUrl: String,
+        val scheme: String,
+        val headers: Map<String, String>
+    )
 }
-
-private fun JsonObject.string(key: String): String? =
-    get(key)?.jsonPrimitive?.content
-
-private fun JsonObject.int(key: String): Int? =
-    get(key)?.jsonPrimitive?.int
-
-private fun JsonObject.double(key: String): Double? =
-    get(key)?.jsonPrimitive?.content?.toDoubleOrNull()
-
-private fun JsonObject.stringList(key: String): List<String> =
-    get(key)?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()

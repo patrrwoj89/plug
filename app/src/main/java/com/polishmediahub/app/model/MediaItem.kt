@@ -23,6 +23,9 @@ data class MediaItem(
     val headers: Map<String, String> = emptyMap(),
     val subtitleUrl: String? = null,
     val subtitleLanguage: String? = "pl",
+    val drmLicenseUrl: String? = null,
+    val drmScheme: String? = null,
+    val drmHeaders: Map<String, String> = emptyMap(),
     val type: Type = Type.MOVIE
 ) {
     enum class Type { MOVIE, SERIES, EPISODE, CHANNEL }
