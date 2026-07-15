@@ -41,6 +41,7 @@ import com.polishmediahub.app.ui.theme.Radius
 import com.polishmediahub.app.ui.theme.Spacing
 import com.polishmediahub.app.ui.viewmodel.AdminViewModel
 import com.polishmediahub.app.ui.viewmodel.PinViewModel
+import com.polishmediahub.app.ui.viewmodel.TraktPairingViewModel
 import com.polishmediahub.app.navigation.Screen
 
 @Composable
@@ -48,7 +49,8 @@ fun AdminScreen(
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AdminViewModel = hiltViewModel(),
-    pinViewModel: PinViewModel = hiltViewModel()
+    pinViewModel: PinViewModel = hiltViewModel(),
+    traktPairingViewModel: TraktPairingViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val currentProvider = DebridProvider.entries.find { it.id == state.debridProvider } ?: DebridProvider.TORBOX
@@ -106,13 +108,7 @@ fun AdminScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
         )
 
-        TvOutlinedTextField(
-            value = state.traktClientId,
-            onValueChange = viewModel::setTraktClientId,
-            label = { Text(stringResource(id = R.string.admin_trakt_id)) },
-            modifier = Modifier.fillMaxWidth(0.5f),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
-        )
+        TraktPairingSection(viewModel = traktPairingViewModel)
 
         TvOutlinedTextField(
             value = state.iptvSourceUrls,

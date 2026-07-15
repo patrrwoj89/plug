@@ -165,12 +165,27 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 - Po pauzie lub interakcji pilotem nakładka płynnie rozjaśnia się, a pod suwakiem pojawia się karta informacyjna z tytułem, opisem, gatunkami i top 5 aktorami pobranymi w tle z metadanych TMDB / Trakt.
 - `TmdbMediaRepository.credits(...)` odpytuje endpointy `/movie/{id}/credits` oraz `/tv/{id}/credits`.
 
+#### Logowanie Trakt.tv kodem urządzenia (`TraktAuthManager`, `TraktPairingViewModel`, `TraktPairingSection`)
+- Zastępuje ręczne wklejanie tokenów oficjalnym przepływem device-code (`/oauth/device/code` i `/oauth/device/token`).
+- Użytkownik wpisuje raz `client ID` i `client secret` Trakt; aplikacja żąda kodu urządzenia, wyświetla `user_code`, odlicza czas ważności i pokazuje kod QR z adresem aktywacji.
+- Polling odbywa się na `Dispatchers.IO` co `interval` sekund do momentu autoryzacji urządzenia.
+- Uzyskane `access_token` i `refresh_token` są szyfrowane AES-256-GCM w Android Keystore i zapisywane w `ApiConfigRepository`.
+- Kreator parowania zintegrowany w `SettingsScreen` oraz `AdminScreen`.
+
+#### Natywny tryb Picture-in-Picture (`MainActivity`, `PlayerScreen`, `PlayerViewModel`)
+- `MainActivity` deklaruje `android:supportsPictureInPicture="true"` z wymaganymi `configChanges`.
+- `onUserLeaveHint()` wchodzi w tryb PiP, gdy odtwarzacz jest aktualnie w stanie odtwarzania.
+- `onPictureInPictureModeChanged()` propaguje stan PiP do `PlayerViewModel`.
+- `PlayerScreen` ukrywa kontrolki, napisy, nakładkę Nerd Stats, kartę informacyjną Trybu Kinowego i nakładkę następnego odcinka, gdy `isInPipMode == true`, pozostawiając sam strumień wideo.
+- Powrót do pełnego ekranu przywraca pełny interfejs sterowania.
+
 ### Zmieniono
 - `TVNavHost` czeka na wartość `isFirstLaunch` przed wyborem startu `NavHost`, co zapobiega resetowaniu grafu nawigacji.
 - `TvLauncherManager` zapisuje postęp co 15 sekund podczas odtwarzania, z wymuszonym zapisem przy `onPlaybackStopped`.
 - `PlayerScreen` reaktywnie pobiera styl napisów i nakładkę Nerd Stats z dedykowanych `StateFlow`.
 - Sygnatura `PlayerControls` rozszerzona o parametry `cinemaMode` i `cinemaInfo` dla karty informacyjnej Trybu Kinowego.
-- `AdminHttpServer` obsługuje teraz `/api/trakt/sync` i eksponuje `traktAccessToken`, `lastTraktSyncAt/Status/Error`.
+- `AdminHttpServer` obsługuje teraz `/api/trakt/sync` i eksponuje `traktClientSecret`, `traktRefreshToken`, `traktAccessToken`, `lastTraktSyncAt/Status/Error`.
+- `ApiConfigRepository` rozszerzona o szyfrowane pola `traktClientSecret` i `traktRefreshToken`.
 
 ### Naprawiono
 

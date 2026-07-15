@@ -55,7 +55,9 @@ Send form fields matching the keys supported by `ApiConfigRepository`. The admin
 | `tmdbApiKey` | TMDB API key |
 | `aniListToken` | AniList access token |
 | `traktClientId` | Trakt client ID |
+| `traktClientSecret` | Trakt client secret (required for the device-code OAuth flow) |
 | `traktAccessToken` | Trakt OAuth access token (Bearer) for two-way sync and scrobbling |
+| `traktRefreshToken` | Trakt OAuth refresh token (populated automatically after device-code pairing) |
 | `debridApiKey` / `debridProvider` | Debrid token and provider (`real_debrid`, `torbox`) |
 | `lastEpgSyncAt` | Read-only timestamp of the last IPTV/EPG background sync (milliseconds since epoch) |
 | `lastEpgSyncStatus` | Read-only status of the last sync: `success` or `error` |
@@ -73,7 +75,9 @@ Only the fields you actually use need to be present. Empty strings are ignored.
   "tmdbApiKey": "your-tmdb-key",
   "aniListToken": "your-anilist-token",
   "traktClientId": "your-trakt-client-id",
+  "traktClientSecret": "your-trakt-client-secret",
   "traktAccessToken": "your-trakt-oauth-token",
+  "traktRefreshToken": "your-trakt-refresh-token",
   "debridApiKey": "your-debrid-token",
   "debridProvider": "real_debrid",
   "iptvSourceUrls": "https://example.com/playlist.m3u\nhttps://example.com/playlist.m3u8",
@@ -103,7 +107,7 @@ Note: the actual HTTP endpoint expects `application/x-www-form-urlencoded` form 
 
 ## Kodi remote settings sync
 
-The Trakt **Sync now** button on the admin page posts to `/api/trakt/sync` and starts `TraktSyncWorker` immediately. It requires `traktClientId` and `traktAccessToken` to be set.
+The Trakt **Sync now** button on the admin page posts to `/api/trakt/sync` and starts `TraktSyncWorker` immediately. It requires `traktClientId` and `traktAccessToken` to be set (obtained automatically after device-code pairing).
 
 When you save a Debrid or Trakt token in the admin panel, the app attempts to push it to a configured Kodi instance:
 

@@ -25,7 +25,9 @@ class ApiConfigRepository @Inject constructor(
     val tmdbApiKey: Flow<String> = stringFlow(KEY_TMDB)
     val aniListToken: Flow<String> = stringFlow(KEY_ANILIST)
     val traktClientId: Flow<String> = stringFlow(KEY_TRAKT_ID)
+    val traktClientSecret: Flow<String> = stringFlow(KEY_TRAKT_SECRET)
     val traktAccessToken: Flow<String> = stringFlow(KEY_TRAKT_ACCESS)
+    val traktRefreshToken: Flow<String> = stringFlow(KEY_TRAKT_REFRESH)
     val debridApiKey: Flow<String> = stringFlow(KEY_DEBRID)
     val debridAccessToken: Flow<String> = stringFlow(KEY_DEBRID_ACCESS)
     val debridRefreshToken: Flow<String> = stringFlow(KEY_DEBRID_REFRESH)
@@ -60,7 +62,9 @@ class ApiConfigRepository @Inject constructor(
     suspend fun setTmdbApiKey(value: String) = edit(KEY_TMDB, value)
     suspend fun setAniListToken(value: String) = edit(KEY_ANILIST, value)
     suspend fun setTraktClientId(value: String) = edit(KEY_TRAKT_ID, value)
+    suspend fun setTraktClientSecret(value: String) = edit(KEY_TRAKT_SECRET, value)
     suspend fun setTraktAccessToken(value: String) = edit(KEY_TRAKT_ACCESS, value)
+    suspend fun setTraktRefreshToken(value: String) = edit(KEY_TRAKT_REFRESH, value)
     suspend fun setDebridApiKey(value: String) = edit(KEY_DEBRID, value)
     suspend fun setDebridAccessToken(value: String) = edit(KEY_DEBRID_ACCESS, value)
     suspend fun setDebridRefreshToken(value: String) = edit(KEY_DEBRID_REFRESH, value)
@@ -139,7 +143,9 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_TMDB = stringPreferencesKey("tmdb_api_key")
         private val KEY_ANILIST = stringPreferencesKey("anilist_token")
         private val KEY_TRAKT_ID = stringPreferencesKey("trakt_client_id")
+        private val KEY_TRAKT_SECRET = stringPreferencesKey("trakt_client_secret")
         private val KEY_TRAKT_ACCESS = stringPreferencesKey("trakt_access_token")
+        private val KEY_TRAKT_REFRESH = stringPreferencesKey("trakt_refresh_token")
         private val KEY_DEBRID = stringPreferencesKey("debrid_api_key")
         private val KEY_DEBRID_ACCESS = stringPreferencesKey("debrid_access_token")
         private val KEY_DEBRID_REFRESH = stringPreferencesKey("debrid_refresh_token")
@@ -175,7 +181,9 @@ class ApiConfigRepository @Inject constructor(
             KEY_TMDB,
             KEY_ANILIST,
             KEY_TRAKT_ID,
+            KEY_TRAKT_SECRET,
             KEY_TRAKT_ACCESS,
+            KEY_TRAKT_REFRESH,
             KEY_DEBRID,
             KEY_DEBRID_ACCESS,
             KEY_DEBRID_REFRESH,

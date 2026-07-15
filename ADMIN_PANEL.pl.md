@@ -55,7 +55,9 @@ Wyślij pola formularza odpowiadające kluczom obsługiwanym przez `ApiConfigRep
 | `tmdbApiKey` | Klucz API TMDB |
 | `aniListToken` | Token dostępu AniList |
 | `traktClientId` | Client ID Trakt |
+| `traktClientSecret` | Client secret Trakt (wymagany do przepływu device-code OAuth) |
 | `traktAccessToken` | OAuth access token Trakt (Bearer) do dwukierunkowej synchronizacji i scrobblingu |
+| `traktRefreshToken` | OAuth refresh token Trakt (uzupełniany automatycznie po parowaniu kodem urządzenia) |
 | `debridApiKey` / `debridProvider` | Token Debrid i provider (`real_debrid`, `torbox`) |
 | `lastEpgSyncAt` | Tylko do odczytu — znacznik czasu ostatniej synchronizacji EPG/IPTV (ms od epoki) |
 | `lastEpgSyncStatus` | Tylko do odczytu — status ostatniej synchronizacji: `success` lub `error` |
@@ -73,7 +75,9 @@ Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignoro
   "tmdbApiKey": "your-tmdb-key",
   "aniListToken": "your-anilist-token",
   "traktClientId": "your-trakt-client-id",
+  "traktClientSecret": "your-trakt-client-secret",
   "traktAccessToken": "your-trakt-oauth-token",
+  "traktRefreshToken": "your-trakt-refresh-token",
   "debridApiKey": "your-debrid-token",
   "debridProvider": "real_debrid",
   "iptvSourceUrls": "https://example.com/playlist.m3u\nhttps://example.com/playlist.m3u8",
@@ -103,7 +107,7 @@ Uwaga: rzeczywisty endpoint HTTP oczekuje danych `application/x-www-form-urlenco
 
 ## Zdalna synchronizacja ustawień Kodi
 
-Przycisk **Zsynchronizuj z Trakt teraz** w panelu web wysyła POST na `/api/trakt/sync` i natychmiast uruchamia `TraktSyncWorker`. Wymaga to ustawionych `traktClientId` i `traktAccessToken`.
+Przycisk **Zsynchronizuj z Trakt teraz** w panelu web wysyła POST na `/api/trakt/sync` i natychmiast uruchamia `TraktSyncWorker`. Wymaga to ustawionych `traktClientId` i `traktAccessToken` (uzyskanych automatycznie po parowaniu kodem urządzenia).
 
 Gdy zapiszesz token Debrid lub Trakt w panelu administracyjnym, aplikacja próbuje automatycznie przesłać go do skonfigurowanego Kodi:
 

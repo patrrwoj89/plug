@@ -134,6 +134,9 @@ class AdminHttpServer @Inject constructor(
                     "tmdbApiKey" to tmdbApiKey,
                     "aniListToken" to aniListToken,
                     "traktClientId" to traktClientId,
+                    "traktClientSecret" to traktClientSecret,
+                    "traktRefreshToken" to traktRefreshToken,
+                    "traktAccessToken" to traktAccessToken,
                     "debridApiKey" to debridApiKey,
                     "debridProvider" to debridProvider,
                     "iptvSourceUrls" to iptvSourceUrls,
@@ -158,7 +161,6 @@ class AdminHttpServer @Inject constructor(
                     "lastEpgSyncAt" to lastEpgSyncAt,
                     "lastEpgSyncStatus" to lastEpgSyncStatus,
                     "lastEpgSyncError" to lastEpgSyncError.map { it ?: "" },
-                    "traktAccessToken" to traktAccessToken,
                     "lastTraktSyncAt" to lastTraktSyncAt,
                     "lastTraktSyncStatus" to lastTraktSyncStatus,
                     "lastTraktSyncError" to lastTraktSyncError.map { it ?: "" }
@@ -177,6 +179,7 @@ class AdminHttpServer @Inject constructor(
             params["tmdbApiKey"]?.let { apiConfigRepository.setTmdbApiKey(it) }
             params["aniListToken"]?.let { apiConfigRepository.setAniListToken(it) }
             params["traktClientId"]?.let { apiConfigRepository.setTraktClientId(it) }
+            params["traktClientSecret"]?.let { apiConfigRepository.setTraktClientSecret(it) }
             params["debridApiKey"]?.let { apiConfigRepository.setDebridApiKey(it) }
             params["debridProvider"]?.let { apiConfigRepository.setDebridProvider(it) }
             params["iptvSourceUrls"]?.let { apiConfigRepository.setIptvSourceUrls(it) }
@@ -339,6 +342,8 @@ button:hover { background: #29b6f6; }
   <input type="text" name="aniListToken">
   <label>Trakt Client ID</label>
   <input type="text" name="traktClientId">
+  <label>Trakt Client Secret</label>
+  <input type="password" name="traktClientSecret" placeholder="OAuth secret from trakt.tv/oauth/applications">
   <label>Trakt Access Token</label>
   <input type="password" name="traktAccessToken" placeholder="OAuth Bearer token from Trakt.tv">
   <label>Debrid API Key / Token</label>

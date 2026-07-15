@@ -266,7 +266,11 @@ Nie, nakładka jest uruchamiana tylko dla `MediaItem.Type.SERIES` / odcinków.
 
 ### Gdzie wpisać dane logowania do Trakt?
 
-Otwórz **Ustawienia → Synchronizacja Trakt** lub bezprzewodowy **panel Admin** i wpisz **Trakt client ID** oraz **OAuth access token**. Wartości te są szyfrowane algorytmem AES-256-GCM w Android Keystore przed zapisem do DataStore.
+Otwórz **Ustawienia → Synchronizacja Trakt** lub bezprzewodowy **panel Admin**. Wpisz **Trakt client ID** i **client secret** (oba znajdziesz na `trakt.tv/oauth/applications`), a następnie dotknij **Zaloguj się przez Trakt**. Aplikacja wyświetli `user_code` i kod QR, a w tle będzie odpytywać Trakt do momentu autoryzacji. Wpisz kod na stronie aktywacji wyświetlonej na ekranie (lub zeskanuj kod QR telefonem). Po autoryzacji token dostępu i odświeżania są szyfrowane AES-256-GCM w Android Keystore i zapisywane w DataStore.
+
+### Czym jest tryb obrazu w obrazie (Picture-in-Picture)?
+
+Gdy odtwarzasz wideo i naciśniesz przycisk **Home** (lub w inny sposób opuścisz aplikację), odtwarzacz przełącza się w natywny Androidowy Picture-in-Picture (PiP). Ukrywane są wszystkie kontrolki, napisy, nakładka Nerd Stats, karta informacyjna Trybu Kinowego i nakładka następnego odcinka — pozostaje sam strumień wideo. Po powrocie do aplikacji pełny interfejs odtwarzacza jest przywracany.
 
 ### Czym jest scrobbling Trakt?
 

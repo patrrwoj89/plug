@@ -38,6 +38,7 @@ import com.polishmediahub.app.ui.viewmodel.LastEpgSyncState
 import com.polishmediahub.app.ui.viewmodel.PinViewModel
 import com.polishmediahub.app.ui.viewmodel.ProfileViewModel
 import com.polishmediahub.app.ui.viewmodel.SettingsViewModel
+import com.polishmediahub.app.ui.viewmodel.TraktPairingViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -48,7 +49,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
     pinViewModel: PinViewModel = hiltViewModel(),
-    profileViewModel: ProfileViewModel = hiltViewModel()
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    traktPairingViewModel: TraktPairingViewModel = hiltViewModel()
 ) {
     val darkTheme by viewModel.darkTheme.collectAsStateWithLifecycle()
     val autoplayTrailers by viewModel.autoplayTrailers.collectAsStateWithLifecycle()
@@ -60,8 +62,6 @@ fun SettingsScreen(
     val subtitleVerticalOffset by viewModel.subtitleVerticalOffset.collectAsStateWithLifecycle()
     val showLoadingStats by viewModel.showLoadingStats.collectAsStateWithLifecycle()
     val mdbListApiKey by viewModel.mdbListApiKey.collectAsStateWithLifecycle()
-    val traktClientId by viewModel.traktClientId.collectAsStateWithLifecycle()
-    val traktAccessToken by viewModel.traktAccessToken.collectAsStateWithLifecycle()
     val lastTraktSync by viewModel.lastTraktSync.collectAsStateWithLifecycle()
     val cinemaMode by viewModel.cinemaMode.collectAsStateWithLifecycle()
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
@@ -214,24 +214,7 @@ fun SettingsScreen(
             modifier = Modifier.padding(top = Spacing.md)
         )
 
-        TvOutlinedTextField(
-            value = traktClientId,
-            onValueChange = viewModel::setTraktClientId,
-            label = { Text(stringResource(id = R.string.settings_trakt_client_id)) },
-            placeholder = { Text(stringResource(id = R.string.settings_trakt_client_id_hint)) },
-            modifier = Modifier.fillMaxWidth(0.5f),
-            keyboardOptions = KeyboardOptions.Default
-        )
-
-        TvOutlinedTextField(
-            value = traktAccessToken,
-            onValueChange = viewModel::setTraktAccessToken,
-            label = { Text(stringResource(id = R.string.settings_trakt_access_token)) },
-            placeholder = { Text(stringResource(id = R.string.settings_trakt_access_token_hint)) },
-            modifier = Modifier.fillMaxWidth(0.5f),
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions.Default
-        )
+        TraktPairingSection(viewModel = traktPairingViewModel)
 
         val syncTraktStatus = remember(lastTraktSync) { formatTraktSyncStatus(context, lastTraktSync) }
         Text(

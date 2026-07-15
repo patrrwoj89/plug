@@ -9,6 +9,7 @@ import android.os.Build
 import android.util.Rational
 import android.util.TypedValue
 import android.view.KeyEvent
+import android.view.View
 import android.graphics.Color as AndroidColor
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -247,6 +248,8 @@ fun PlayerScreen(
 
     val activity = context.findActivity()
 
+    val isInPipMode by viewModel.isInPipMode.collectAsStateWithLifecycle()
+
     PlayerContent(
         exoPlayer = exoPlayer,
         mediaItem = item,
@@ -265,8 +268,10 @@ fun PlayerScreen(
             viewModel.reportPlaybackProgress(position, duration, state)
         },
         onEnterPip = { activity?.enterPipMode() },
+        onIsPlayingChanged = { playing -> viewModel.setIsPlaying(playing) },
         onCancelAutoPlay = { viewModel.cancelAutoPlay() },
         onPlayNextEpisode = { position, duration -> viewModel.playNextEpisode(position, duration) },
+        isInPipMode = isInPipMode,
         torrentBuffering = torrentBuffering,
         torrentStatus = torrentStatus,
         showLoadingStats = showLoadingStats,
@@ -289,6 +294,7 @@ private fun PlayerContent(
     autoPlayCancelled: Boolean,
     onBack: () -> Unit,
     onEnterPip: () -> Unit,
+    onIsPlayingChanged: (Boolean) -> Unit,
     onSaveProgress: (Long, Long) -> Unit,
     onScrobbleStart: (Long, Long) -> Unit,
     onScrobblePause: (Long, Long) -> Unit,
@@ -296,6 +302,7 @@ private fun PlayerContent(
     onReportProgress: (Long, Long, Boolean) -> Unit,
     onCancelAutoPlay: () -> Unit,
     onPlayNextEpisode: (Long, Long) -> Unit,
+    isInPipMode: Boolean,
     torrentBuffering: Int?,
     torrentStatus: TorrentStatus?,
     showLoadingStats: Boolean,
@@ -307,7 +314,7 @@ private fun PlayerContent(
     cinemaInfo: com.polishmediahub.app.ui.viewmodel.PlayerViewModel.CinemaInfo,
     modifier: Modifier = Modifier
 ) {
-    var controlsVisible by remember { mutableStateOf(true) }
+    var controlsVisible by remember { mutableStateOf(!isInPipMode) }
     var isPlaying by remember { mutableStateOf(exoPlayer.isPlaying) }
     var currentPosition by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
@@ -322,7 +329,7 @@ private fun PlayerContent(
     var autoPlayTriggered by remember(mediaItem?.id) { mutableStateOf(false) }
     val isLive = mediaItem?.isLive == true
     val dimAlpha by animateFloatAsState(
-        targetValue = if (isPlaying && cinemaMode && !controlsVisible) 0.45f else 0f,
+        targetValue = if (isPlaying && cinemaMode && !controlsVisible && !isInPipMode) 0.45f else 0f,
         label = "dim_alpha"
     )
     val isSeriesLike = mediaItem?.type == MediaItem.Type.SERIES || mediaItem?.type == MediaItem.Type.EPISODE
@@ -332,12 +339,25 @@ private fun PlayerContent(
     val coverUrl = mediaItem?.posterUrl
     val density = LocalDensity.current
 
-    BackHandler { if (overlayVisible) onCancelAutoPlay() else onBack() }
+    BackHandler {
+        if (isInPipMode) {
+            onBack()
+        } else if (overlayVisible) {
+            onCancelAutoPlay()
+        } else {
+            onBack()
+        }
+    }
+
+    LaunchedEffect(isInPipMode) {
+        controlsVisible = !isInPipMode
+    }
 
     LaunchedEffect(exoPlayer, nextEpisode, autoPlayCancelled, isLive, isSeriesLike) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
+                onIsPlayingChanged(playing)
                 val pos = exoPlayer.currentPosition.coerceAtLeast(0L)
                 val dur = exoPlayer.duration.coerceAtLeast(0L)
                 if (playing) {
@@ -473,6 +493,7 @@ private fun PlayerContent(
             },
             update = { playerView ->
                 playerView.subtitleView?.let { subtitleView ->
+                    subtitleView.visibility = if (isInPipMode) View.GONE else View.VISIBLE
                     subtitleView.setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, subtitleSize)
                     val foregroundColor = when (subtitleColor) {
                         "Yellow" -> AndroidColor.YELLOW
@@ -499,7 +520,7 @@ private fun PlayerContent(
             modifier = Modifier.fillMaxSize()
         )
 
-        if (isLive && !coverUrl.isNullOrBlank()) {
+        if (isLive && !coverUrl.isNullOrBlank() && !isInPipMode) {
             Box(modifier = Modifier.fillMaxSize()) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
@@ -537,7 +558,7 @@ private fun PlayerContent(
         )
 
         AnimatedVisibility(
-            visible = controlsVisible,
+            visible = controlsVisible && !isInPipMode,
             enter = fadeIn(),
             exit = fadeOut()
         ) {
@@ -571,7 +592,7 @@ private fun PlayerContent(
             )
         }
 
-        if (torrentBuffering != null && torrentBuffering < 100 && torrentStatus != null) {
+        if (torrentBuffering != null && torrentBuffering < 100 && torrentStatus != null && !isInPipMode) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -590,7 +611,7 @@ private fun PlayerContent(
             }
         }
 
-        if (overlayVisible) {
+        if (overlayVisible && !isInPipMode) {
             NextEpisodeOverlay(
                 nextEpisode = nextEpisode,
                 countdownSeconds = countdownSeconds,
@@ -599,7 +620,7 @@ private fun PlayerContent(
             )
         }
 
-        if (showLoadingStats) {
+        if (showLoadingStats && !isInPipMode) {
             PlayerStatsOverlay(playerStats = playerStats)
         }
     }
@@ -812,13 +833,13 @@ internal fun PlayerControls(
                 TvIconButton(
                     onClick = onEnterPip,
                     imageVector = Icons.Default.OpenInFull,
-                    contentDescription = "Picture in picture"
+                    contentDescription = stringResource(id = R.string.picture_in_picture_content_description)
                 )
 
                 TvIconButton(
                     onClick = onCycleAudio,
                     imageVector = Icons.Default.Audiotrack,
-                    contentDescription = "Audio: $audioLabel"
+                    contentDescription = stringResource(id = R.string.audio_label, audioLabel)
                 )
                 if (audioLabel.isNotBlank()) {
                     Text(audioLabel, style = AppTypography.caption, modifier = Modifier.padding(start = Spacing.xs))
@@ -827,7 +848,7 @@ internal fun PlayerControls(
                 TvIconButton(
                     onClick = onCycleSubtitle,
                     imageVector = Icons.Default.ClosedCaption,
-                    contentDescription = "Subtitles: $subtitleLabel"
+                    contentDescription = stringResource(id = R.string.subtitle_label, subtitleLabel)
                 )
                 if (subtitleLabel.isNotBlank()) {
                     Text(subtitleLabel, style = AppTypography.caption, modifier = Modifier.padding(start = Spacing.xs))

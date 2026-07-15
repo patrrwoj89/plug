@@ -165,12 +165,27 @@ All notable changes to Polish Media Hub are documented in this file.
 - On pause or D-Pad interaction the overlay fades back in and an info card below the slider shows the title, description, genres and top 5 cast members fetched in the background from TMDB / Trakt metadata.
 - `TmdbMediaRepository.credits(...)` queries `/movie/{id}/credits` and `/tv/{id}/credits`.
 
+#### Trakt.tv Device Code OAuth (`TraktAuthManager`, `TraktPairingViewModel`, `TraktPairingSection`)
+- Replaces manual token pasting with the official device-code flow (`/oauth/device/code` and `/oauth/device/token`).
+- User enters their Trakt client ID and secret once; the app requests a device code and displays the `user_code`, expiry countdown and a QR code linking to the activation URL.
+- Polling runs on `Dispatchers.IO` every `interval` seconds until the user authorizes the device.
+- The resulting `access_token` and `refresh_token` are encrypted with AES-256-GCM in Android Keystore and saved to `ApiConfigRepository`.
+- Pairing wizard is integrated in both `SettingsScreen` and `AdminScreen`.
+
+#### Native Picture-in-Picture Mode (`MainActivity`, `PlayerScreen`, `PlayerViewModel`)
+- `MainActivity` declares `android:supportsPictureInPicture="true"` with the required `configChanges`.
+- `onUserLeaveHint()` enters PiP when the player is currently playing.
+- `onPictureInPictureModeChanged()` propagates the PiP state to `PlayerViewModel`.
+- `PlayerScreen` hides controls, subtitles, Nerd Stats, Cinema info card and Next Episode overlay when `isInPipMode == true`, leaving only the clean video stream.
+- Returning to fullscreen restores the full control interface.
+
 ### Changed
 - `TVNavHost` waits for the `isFirstLaunch` value before choosing the `NavHost` start destination, avoiding graph resets.
 - `TvLauncherManager` progress writes throttled to 15 seconds during playback, with a forced write on `onPlaybackStopped`.
 - `PlayerScreen` now drives subtitle styling and Nerd Stats overlay reactively from dedicated `StateFlow`s.
 - `PlayerControls` signature extended with `cinemaMode` and `cinemaInfo` to support the Cinema Dimming info card.
-- `AdminHttpServer` now accepts `/api/trakt/sync` and exposes `traktAccessToken`, `lastTraktSyncAt/Status/Error`.
+- `AdminHttpServer` now accepts `/api/trakt/sync` and exposes `traktClientSecret`, `traktRefreshToken`, `traktAccessToken`, `lastTraktSyncAt/Status/Error`.
+- `ApiConfigRepository` extended with encrypted `traktClientSecret` and `traktRefreshToken` keys.
 
 ### Fixed
 

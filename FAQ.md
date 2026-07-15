@@ -266,7 +266,11 @@ No, the overlay is only triggered for `MediaItem.Type.SERIES` / episodes.
 
 ### Where do I enter my Trakt credentials?
 
-Open **Settings → Trakt Sync** or the wireless **Admin** panel and enter your **Trakt client ID** and **OAuth access token**. These values are encrypted with AES-256-GCM in the Android Keystore before being saved to DataStore.
+Open **Settings → Trakt Sync** or the wireless **Admin** panel. Enter your **Trakt client ID** and **client secret** (both from `trakt.tv/oauth/applications`), then tap **Log in with Trakt**. The app will request a device code, display the `user_code` and a QR code, and poll Trakt in the background. Type the code on the activation URL shown on screen (or scan the QR code with your phone). Once you authorize the device, the access and refresh tokens are encrypted with AES-256-GCM in the Android Keystore and saved to DataStore.
+
+### What is Picture-in-Picture mode?
+
+When you are playing a video and press the **Home** button (or otherwise leave the app), the player switches to Android's native Picture-in-Picture (PiP) window. All controls, subtitles, the Nerd Stats overlay, Cinema info card and Next Episode overlay are hidden, leaving only the video stream. When you return to the app the full player interface is restored.
 
 ### What is Trakt scrobbling?
 

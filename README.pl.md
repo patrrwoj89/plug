@@ -48,6 +48,8 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - **Polskie audio / napisy**: ExoPlayer preferuje utwory `pl`, depriorytyzuje Audiodeskrypcję i pokazuje pełne etykiety językowe w panelu odtwarzacza.
 - **Napisy zewnętrzne**: pliki `.vtt` i `.srt`.
 - **Inteligentny Tryb Kinowy**: po włączeniu nakładki automatycznie ukrywają się podczas odtwarzania, a ekran płynnie przyciemnia się; po pauzie nakładka rozjaśnia się i pod suwakiem pojawia się karta informacyjna z tytułem, opisem, gatunkami i głównymi aktorami pobranymi w tle z metadanych TMDB / Trakt.
+- **Logowanie Trakt.tv kodem urządzenia** (`TraktAuthManager`, `TraktPairingSection`): aplikacja na Android TV prosi o kod urządzenia, wyświetla `user_code` i kod QR z adresem aktywacji, a następnie odpytuje `oauth/device/token` do momentu autoryzacji. Tokeny dostępowe i odświeżania są szyfrowane AES-256-GCM w Android Keystore.
+- **Natywny tryb obrazu w obrazie** (`MainActivity`, `PlayerScreen`): gdy odtwarzanie jest aktywne i użytkownik opuszcza aplikację, odtwarzacz przechodzi w PiP; ekran odtwarzacza ukrywa kontrolki, napisy, Nerd Stats, kartę kinową i nakładkę następnego odcinka, pozostawiając sam strumień wideo. Powrót do pełnego ekranu przywraca pełny interfejs.
 - **Nagłówki strumieni**: `User-Agent`, `Referer`, `Cookie` i niestandardowe nagłówki przekazywane do `DefaultHttpDataSource.Factory`.
 
 ### Sieć i ochrona przed botami
@@ -60,6 +62,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 
 - **Bezprzewodowy panel administracyjny** serwowany lokalnie z kodem QR (ZXing) do łatwej konfiguracji źródeł z telefonu lub komputera; panel oraz Ustawienia wyświetlają datę i status ostatniej synchronizacji EPG.
 - **Tło aktualizowanie EPG/IPTV** (`IptvUpdateWorker`) uruchamia się co 12 godzin (i przy zimnym starcie) na `Dispatchers.IO` z ograniczeniami unmetered/idle/battery-not-low, zapisuje kanały i programy do Room, dzięki czemu ekran telewizji na żywo otwiera się natychmiast.
+- **Parowanie Trakt.tv kodem urządzenia**: w `Ustawienia → Synchronizacja Trakt` lub w panelu admina wpisz **Trakt client ID** i **client secret**, dotknij **Zaloguj się przez Trakt**, a następnie zeskanuj kod QR lub wpisz wyświetlony `user_code` na stronie aktywacji na telefonie.
 - **Tło synchronizacji Trakt.tv** (`TraktSyncWorker`) uruchamia się co 6 godzin z ograniczeniami sieci/baterii. Można też uruchomić natychmiastową synchronizację z poziomu Ustawień lub panelu admina.
 - **Onboarding pierwszego uruchomienia** pozwala nowym użytkownikom wybrać legalne pakiety startowe.
 

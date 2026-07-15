@@ -91,8 +91,17 @@ class PlayerViewModel @Inject constructor(
     private val _cinemaInfo = MutableStateFlow(CinemaInfo())
     val cinemaInfo: StateFlow<CinemaInfo> = _cinemaInfo.asStateFlow()
 
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
+
+    private val _isInPipMode = MutableStateFlow(false)
+    val isInPipMode: StateFlow<Boolean> = _isInPipMode.asStateFlow()
+
     private val _playerStats = MutableStateFlow(PlayerStats())
     val playerStats: StateFlow<PlayerStats> = _playerStats.asStateFlow()
+
+    fun setIsPlaying(playing: Boolean) { _isPlaying.value = playing }
+    fun setPipMode(inPip: Boolean) { _isInPipMode.value = inPip }
 
     private var currentAudioTrack: AudioTrack? = null
     private var analyticsListener: PlayerAnalyticsListener? = null
