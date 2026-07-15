@@ -5,11 +5,12 @@ import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
 import com.whl.quickjs.wrapper.JSArray
 import com.whl.quickjs.wrapper.JSObject
-import okhttp3.OkHttpClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class QuickJsMediaSource @Inject constructor(
-    private val client: OkHttpClient
+    private val engine: QuickJsEngine
 ) : MediaSource {
 
     override val id: String = "quickjs"
@@ -17,14 +18,13 @@ class QuickJsMediaSource @Inject constructor(
     override val isConfigurable: Boolean = true
 
     private var script: String = ""
-    private val engine: QuickJsEngine by lazy { QuickJsEngine(client) }
 
     fun configure(script: String) {
         if (this.script != script) {
             this.script = script
             engine.close()
             engine.init()
-            engine.evaluate(script)
+            withContextOrEmpty { engine.evaluate(script) }
         }
     }
 
@@ -36,47 +36,50 @@ class QuickJsMediaSource @Inject constructor(
     override suspend fun isAvailable(): Boolean = script.isNotBlank()
 
     override suspend fun featured(): List<MediaItem> =
-        callList("featured") ?: emptyList()
+        withContextIO { callList("featured") } ?: emptyList()
 
     override suspend fun categories(): List<Category> =
-        callList("categories")?.let { items ->
-            items.groupBy { it.type }
-                .map { (type, group) ->
-                    Category(
-                        id = "quickjs:${type.name.lowercase()}",
-                        name = type.name,
-                        items = group
-                    )
-                }
+        withContextIO {
+            callList("categories")?.let { items ->
+                items.groupBy { it.type }
+                    .map { (type, group) ->
+                        Category(
+                            id = "quickjs:${type.name.lowercase()}",
+                            name = type.name,
+                            items = group
+                        )
+                    }
+            }
         } ?: emptyList()
 
     override suspend fun search(query: String): List<MediaItem> =
-        callList("search", query) ?: emptyList()
+        withContextIO { callList("search", query) } ?: emptyList()
 
     override suspend fun byId(id: String): MediaItem? =
-        callMap("byId", id)?.let { mapToMediaItem(it) }
+        withContextIO { callMap("byId", id)?.let { mapToMediaItem(it) } }
 
-    override suspend fun resolve(mediaItem: MediaItem): String? {
-        val result = call("resolve", mediaItem.id)
-        return when (result) {
-            is String -> result.ifBlank { null }
-            is Map<*, *> -> result["url"] as? String ?: result["videoUrl"] as? String
-            is JSObject -> result.getStringProperty("url") ?: result.getStringProperty("videoUrl")
-            else -> null
-        }?.ifBlank { null }
-    }
+    override suspend fun resolve(mediaItem: MediaItem): String? =
+        withContextIO {
+            val result = call("resolve", mediaItem.id)
+            when (result) {
+                is String -> result.ifBlank { null }
+                is Map<*, *> -> result["url"] as? String ?: result["videoUrl"] as? String
+                is JSObject -> result.getStringProperty("url") ?: result.getStringProperty("videoUrl")
+                else -> null
+            }?.ifBlank { null }
+        }
 
     @Suppress("UNCHECKED_CAST")
-    private fun callList(functionName: String, vararg args: Any?): List<MediaItem>? {
-        val result = call(functionName, *args) ?: return null
+    private suspend fun callList(functionName: String, vararg args: Any?): List<MediaItem>? = withContextIO {
+        val result = call(functionName, *args) ?: return@withContextIO null
         val rawItems: List<Any?> = when (result) {
             is JSArray -> result.toArray()
             is Array<*> -> result.toList()
             is List<*> -> result
             is JSObject -> listOf(result)
-            else -> return null
+            else -> return@withContextIO null
         }
-        return rawItems.mapNotNull { item ->
+        rawItems.mapNotNull { item ->
             when (item) {
                 is Map<*, *> -> mapToMediaItem(item)
                 is JSObject -> mapToMediaItem(item.toMap())
@@ -86,22 +89,32 @@ class QuickJsMediaSource @Inject constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun callMap(functionName: String, vararg args: Any?): Map<String, Any?>? {
-        val result = call(functionName, *args) ?: return null
-        return when (result) {
+    private suspend fun callMap(functionName: String, vararg args: Any?): Map<String, Any?>? = withContextIO {
+        val result = call(functionName, *args) ?: return@withContextIO null
+        when (result) {
             is Map<*, *> -> result as? Map<String, Any?>
             is JSObject -> result.toMap() as? Map<String, Any?>
             else -> null
         }
     }
 
-    private fun call(functionName: String, vararg args: Any?): Any? {
-        return try {
+    private suspend fun call(functionName: String, vararg args: Any?): Any? = withContextIO {
+        try {
             engine.evaluate("$functionName(${args.joinToString(",") { toJsLiteral(it) }})")
         } catch (_: Exception) {
             null
         }
     }
+
+    private fun withContextOrEmpty(block: () -> Any?) {
+        try {
+            block()
+        } catch (_: Exception) {
+        }
+    }
+
+    private suspend fun <T> withContextIO(block: suspend () -> T): T =
+        withContext(Dispatchers.IO) { block() }
 
     private fun toJsLiteral(value: Any?): String {
         val quote = Char(34).toString()
@@ -133,6 +146,20 @@ class QuickJsMediaSource @Inject constructor(
             }.toMap()
             else -> emptyMap()
         }
+        val subtitleHeadersMap = map["subtitleHeaders"]
+        val subtitleHeaders = when (subtitleHeadersMap) {
+            is Map<*, *> -> subtitleHeadersMap.mapNotNull { (k, v) ->
+                val key = k as? String ?: return@mapNotNull null
+                val value = v as? String ?: v?.toString() ?: return@mapNotNull null
+                key to value
+            }.toMap()
+            is JSObject -> subtitleHeadersMap.toMap().mapNotNull { (k, v) ->
+                val key = k as? String ?: return@mapNotNull null
+                val value = v as? String ?: v?.toString() ?: return@mapNotNull null
+                key to value
+            }.toMap()
+            else -> headers
+        }
         return MediaItem(
             id = map["id"] as String,
             title = map["title"] as? String ?: "",
@@ -150,7 +177,9 @@ class QuickJsMediaSource @Inject constructor(
             season = (map["season"] as? Number)?.toInt(),
             episode = (map["episode"] as? Number)?.toInt(),
             videoUrl = map["videoUrl"] as? String ?: map["url"] as? String,
-            headers = headers
+            headers = headers,
+            subtitleUrl = map["subtitleUrl"] as? String,
+            subtitleLanguage = (map["subtitleLanguage"] as? String) ?: "pl"
         )
     }
 }

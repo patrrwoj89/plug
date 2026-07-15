@@ -37,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,10 +56,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem as ExoMediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
+import androidx.media3.common.TrackGroup
 import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -170,8 +175,6 @@ fun PlayerScreen(
     BackHandler { onNavigate(Screen.Home) }
 
     val activity = context.findActivity()
-    val onCycleAudio = remember(exoPlayer) { { cycleAudioTrack(exoPlayer) } }
-    val onCycleSubtitle = remember(exoPlayer) { { cycleSubtitleTrack(exoPlayer) } }
 
     PlayerContent(
         exoPlayer = exoPlayer,
@@ -183,8 +186,6 @@ fun PlayerScreen(
         onScrobbleStart = { position, duration -> viewModel.scrobbleStart(position, duration) },
         onScrobbleStop = { position, duration -> viewModel.scrobbleStop(position, duration) },
         onEnterPip = { activity?.enterPipMode() },
-        onCycleAudio = onCycleAudio,
-        onCycleSubtitle = onCycleSubtitle,
         modifier = modifier
     )
 }
@@ -195,8 +196,6 @@ private fun PlayerContent(
     title: String,
     onBack: () -> Unit,
     onEnterPip: () -> Unit,
-    onCycleAudio: () -> Unit,
-    onCycleSubtitle: () -> Unit,
     onSaveProgress: (Long, Long) -> Unit,
     onScrobbleStart: (Long, Long) -> Unit,
     onScrobbleStop: (Long, Long) -> Unit,
@@ -206,8 +205,12 @@ private fun PlayerContent(
     var isPlaying by remember { mutableStateOf(exoPlayer.isPlaying) }
     var currentPosition by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
+    var audioOptions by remember { mutableStateOf<List<TrackOption>>(emptyList()) }
+    var selectedAudioIndex by remember { mutableIntStateOf(-1) }
     var audioLabel by remember { mutableStateOf("") }
-    var subtitleLabel by remember { mutableStateOf("") }
+    var subtitleOptions by remember { mutableStateOf<List<TrackOption>>(emptyList()) }
+    var selectedSubtitleIndex by remember { mutableIntStateOf(-1) }
+    var subtitleLabel by remember { mutableStateOf("Off") }
 
     LaunchedEffect(exoPlayer) {
         val listener = object : Player.Listener {
@@ -222,12 +225,28 @@ private fun PlayerContent(
                     duration = exoPlayer.duration.coerceAtLeast(0L)
                 }
             }
-            override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
-                updateTrackLabels(tracks, onAudio = { audioLabel = it }, onSubtitle = { subtitleLabel = it })
+            override fun onTracksChanged(tracks: Tracks) {
+                audioOptions = tracks.audioOptions()
+                subtitleOptions = tracks.textOptions()
+                if (selectedAudioIndex == -1 && audioOptions.isNotEmpty()) {
+                    selectedAudioIndex = audioOptions.preferredAudioIndex()
+                    exoPlayer.applyAudioOption(selectedAudioIndex, audioOptions)
+                }
+                selectedAudioIndex = exoPlayer.findSelectedAudioIndex(audioOptions)
+                audioLabel = audioOptions.getOrNull(selectedAudioIndex)?.label ?: ""
+                selectedSubtitleIndex = exoPlayer.findSelectedSubtitleIndex(subtitleOptions)
+                subtitleLabel = subtitleOptions.getOrNull(selectedSubtitleIndex)?.label ?: "Off"
             }
         }
         exoPlayer.addListener(listener)
-        updateTrackLabels(exoPlayer.currentTracks, onAudio = { audioLabel = it }, onSubtitle = { subtitleLabel = it })
+        val tracks = exoPlayer.currentTracks
+        audioOptions = tracks.audioOptions()
+        subtitleOptions = tracks.textOptions()
+        if (audioOptions.isNotEmpty()) {
+            selectedAudioIndex = audioOptions.preferredAudioIndex()
+            exoPlayer.applyAudioOption(selectedAudioIndex, audioOptions)
+            audioLabel = audioOptions[selectedAudioIndex].label
+        }
 
         while (true) {
             currentPosition = exoPlayer.currentPosition.coerceAtLeast(0L)
@@ -268,11 +287,17 @@ private fun PlayerContent(
                         true
                     }
                     KeyEvent.KEYCODE_BUTTON_X -> {
-                        onCycleAudio()
+                        if (audioOptions.isNotEmpty()) {
+                            selectedAudioIndex = (selectedAudioIndex + 1) % audioOptions.size
+                            exoPlayer.applyAudioOption(selectedAudioIndex, audioOptions)
+                            audioLabel = audioOptions[selectedAudioIndex].label
+                        }
                         true
                     }
                     KeyEvent.KEYCODE_BUTTON_Y -> {
-                        onCycleSubtitle()
+                        selectedSubtitleIndex = if (subtitleOptions.isEmpty()) -1 else (selectedSubtitleIndex + 1) % (subtitleOptions.size + 1)
+                        exoPlayer.applySubtitleOption(selectedSubtitleIndex, subtitleOptions)
+                        subtitleLabel = subtitleOptions.getOrNull(selectedSubtitleIndex)?.label ?: "Off"
                         true
                     }
                     KeyEvent.KEYCODE_BACK -> {
@@ -309,8 +334,18 @@ private fun PlayerContent(
                 onPlayPause = { exoPlayer.playPause() },
                 onSeek = { position -> exoPlayer.seekTo(position.toLong()) },
                 onEnterPip = onEnterPip,
-                onCycleAudio = onCycleAudio,
-                onCycleSubtitle = onCycleSubtitle
+                onCycleAudio = {
+                    if (audioOptions.isNotEmpty()) {
+                        selectedAudioIndex = (selectedAudioIndex + 1) % audioOptions.size
+                        exoPlayer.applyAudioOption(selectedAudioIndex, audioOptions)
+                        audioLabel = audioOptions[selectedAudioIndex].label
+                    }
+                },
+                onCycleSubtitle = {
+                    selectedSubtitleIndex = if (subtitleOptions.isEmpty()) -1 else (selectedSubtitleIndex + 1) % (subtitleOptions.size + 1)
+                    exoPlayer.applySubtitleOption(selectedSubtitleIndex, subtitleOptions)
+                    subtitleLabel = subtitleOptions.getOrNull(selectedSubtitleIndex)?.label ?: "Off"
+                }
             )
         }
     }
@@ -437,67 +472,6 @@ private fun ExoPlayer.seekBy(deltaMs: Long) {
     seekTo((currentPosition + deltaMs).coerceAtLeast(0L))
 }
 
-private fun cycleAudioTrack(player: ExoPlayer) {
-    val audioGroups = player.currentTracks.groups.filter { it.type == androidx.media3.common.C.TRACK_TYPE_AUDIO }
-    if (audioGroups.isEmpty()) return
-    val currentIndex = audioGroups.indexOfFirst { group ->
-        (0 until group.length).any { group.isTrackSelected(it) }
-    }
-    val nextIndex = (currentIndex + 1) % audioGroups.size
-    val builder = player.trackSelectionParameters.buildUpon()
-    for (i in audioGroups.indices) {
-        val group = audioGroups[i]
-        val indices = if (i == nextIndex) listOf(0) else emptyList()
-        builder.setOverrideForType(
-            androidx.media3.common.TrackSelectionOverride(group.mediaTrackGroup, indices)
-        )
-    }
-    player.trackSelectionParameters = builder.build()
-}
-
-private fun cycleSubtitleTrack(player: ExoPlayer) {
-    val textGroups = player.currentTracks.groups.filter { it.type == androidx.media3.common.C.TRACK_TYPE_TEXT }
-    if (textGroups.isEmpty()) return
-    val currentIndex = textGroups.indexOfFirst { group ->
-        (0 until group.length).any { group.isTrackSelected(it) }
-    }
-    val nextIndex = if (currentIndex == -1) 0 else (currentIndex + 1) % (textGroups.size + 1)
-    val builder = player.trackSelectionParameters.buildUpon()
-    for (i in textGroups.indices) {
-        val group = textGroups[i]
-        val indices = if (i == nextIndex) listOf(0) else emptyList()
-        builder.setOverrideForType(
-            androidx.media3.common.TrackSelectionOverride(group.mediaTrackGroup, indices)
-        )
-    }
-    if (nextIndex == textGroups.size) {
-        builder.clearOverridesOfType(androidx.media3.common.C.TRACK_TYPE_TEXT)
-    }
-    player.trackSelectionParameters = builder.build()
-}
-
-private fun updateTrackLabels(
-    tracks: androidx.media3.common.Tracks,
-    onAudio: (String) -> Unit,
-    onSubtitle: (String) -> Unit
-) {
-    val audioGroup = tracks.groups.find { it.type == androidx.media3.common.C.TRACK_TYPE_AUDIO && it.isSelected }
-    val audioFormat = audioGroup?.let { group ->
-        (0 until group.length).find { group.isTrackSelected(it) }?.let { index ->
-            group.getTrackFormat(index).language?.uppercase() ?: ""
-        }
-    } ?: ""
-    onAudio(audioFormat)
-
-    val textGroup = tracks.groups.find { it.type == androidx.media3.common.C.TRACK_TYPE_TEXT && it.isSelected }
-    val textFormat = textGroup?.let { group ->
-        (0 until group.length).find { group.isTrackSelected(it) }?.let { index ->
-            group.getTrackFormat(index).language?.uppercase() ?: ""
-        }
-    } ?: "Off"
-    onSubtitle(textFormat)
-}
-
 private fun formatMs(ms: Long): String {
     if (ms <= 0) return "00:00"
     val totalSeconds = ms / 1000
@@ -509,4 +483,113 @@ private fun formatMs(ms: Long): String {
     } else {
         "%02d:%02d".format(minutes, seconds)
     }
+}
+
+private data class TrackOption(
+    val group: TrackGroup,
+    val index: Int,
+    val format: Format,
+    val label: String,
+    val language: String,
+    val isAudioDescription: Boolean
+)
+
+private fun Tracks.audioOptions(): List<TrackOption> {
+    return groups
+        .filter { it.type == C.TRACK_TYPE_AUDIO }
+        .flatMap { group ->
+            (0 until group.length).mapNotNull { index ->
+                val format = group.getTrackFormat(index)
+                val label = format.trackLabel()
+                val language = format.language?.lowercase() ?: "und"
+                val isAd = (format.roleFlags and C.ROLE_FLAG_DESCRIBES_VIDEO) != 0
+                TrackOption(group.mediaTrackGroup, index, format, label, language, isAd)
+            }
+        }
+}
+
+private fun Tracks.textOptions(): List<TrackOption> {
+    return groups
+        .filter { it.type == C.TRACK_TYPE_TEXT }
+        .flatMap { group ->
+            (0 until group.length).mapNotNull { index ->
+                val format = group.getTrackFormat(index)
+                val label = format.trackLabel()
+                val language = format.language?.lowercase() ?: "und"
+                TrackOption(group.mediaTrackGroup, index, format, label, language, isAudioDescription = false)
+            }
+        }
+}
+
+private fun Format.trackLabel(): String {
+    val formatLabel = this.label
+    if (!formatLabel.isNullOrBlank()) return formatLabel
+    val lang = language?.lowercase() ?: "und"
+    val base = when (lang) {
+        "pl", "pol" -> "Polski"
+        "en", "eng", "en-gb", "en-us" -> "English"
+        else -> java.util.Locale(lang).getDisplayLanguage(java.util.Locale.getDefault())
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() }
+    }
+    val role = when {
+        (roleFlags and C.ROLE_FLAG_DESCRIBES_VIDEO) != 0 -> " (Audiodeskrypcja)"
+        (roleFlags and C.ROLE_FLAG_DUB) != 0 -> " (Dubbing)"
+        (roleFlags and C.ROLE_FLAG_COMMENTARY) != 0 -> " (Komentarz)"
+        (roleFlags and C.ROLE_FLAG_ALTERNATE) != 0 -> " (Lektor)"
+        (roleFlags and C.ROLE_FLAG_MAIN) != 0 -> " (Oryginał)"
+        else -> ""
+    }
+    return "$base$role"
+}
+
+private fun List<TrackOption>.preferredAudioIndex(): Int {
+    val plIndex = indexOfFirst { it.language == "pl" && !it.isAudioDescription }
+    if (plIndex != -1) return plIndex
+    val nonAdIndex = indexOfFirst { !it.isAudioDescription }
+    return if (nonAdIndex != -1) nonAdIndex else 0
+}
+
+private fun ExoPlayer.applyAudioOption(index: Int, options: List<TrackOption>) {
+    if (options.isEmpty() || index !in options.indices) return
+    val selected = options[index]
+    trackSelectionParameters = trackSelectionParameters.buildUpon()
+        .setOverrideForType(TrackSelectionOverride(selected.group, listOf(selected.index)))
+        .build()
+}
+
+private fun ExoPlayer.applySubtitleOption(index: Int, options: List<TrackOption>) {
+    val builder = trackSelectionParameters.buildUpon()
+    if (index == -1 || options.isEmpty()) {
+        builder.clearOverridesOfType(C.TRACK_TYPE_TEXT)
+    } else if (index in options.indices) {
+        val selected = options[index]
+        builder.setOverrideForType(TrackSelectionOverride(selected.group, listOf(selected.index)))
+    }
+    trackSelectionParameters = builder.build()
+}
+
+private fun ExoPlayer.findSelectedAudioIndex(options: List<TrackOption>): Int {
+    if (options.isEmpty()) return -1
+    val selected = currentTracks.groups
+        .filter { it.type == C.TRACK_TYPE_AUDIO }
+        .flatMap { group ->
+            (0 until group.length)
+                .filter { group.isTrackSelected(it) }
+                .map { group to it }
+        }
+        .firstOrNull() ?: return -1
+    return options.indexOfFirst { it.group == selected.first.mediaTrackGroup && it.index == selected.second }
+}
+
+private fun ExoPlayer.findSelectedSubtitleIndex(options: List<TrackOption>): Int {
+    if (options.isEmpty()) return -1
+    val selected = currentTracks.groups
+        .filter { it.type == C.TRACK_TYPE_TEXT }
+        .flatMap { group ->
+            (0 until group.length)
+                .filter { group.isTrackSelected(it) }
+                .map { group to it }
+        }
+        .firstOrNull() ?: return -1
+    return options.indexOfFirst { it.group == selected.first.mediaTrackGroup && it.index == selected.second }
 }

@@ -131,12 +131,15 @@ class PluginRepository @Inject constructor(
             }
         }
         val uniqueSources = sources.distinct()
-        val oldQuickJs = previousSources.filterIsInstance<QuickJsMediaSource>() - uniqueSources.filterIsInstance<QuickJsMediaSource>().toSet()
-        mutex.withLock {
+        val oldSources = mutex.withLock {
+            val previous = previousSources
             previousSources = uniqueSources
             _activeSources.value = uniqueSources
+            previous
         }
-        oldQuickJs.forEach { it.dispose() }
+        oldSources.filterIsInstance<QuickJsMediaSource>().forEach { old ->
+            if (old !in uniqueSources) old.dispose()
+        }
     }
 
     private fun applyPlugin(manifest: PluginManifest): List<MediaSource> {
