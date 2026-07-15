@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<network-security-config>
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
     <!-- Allow cleartext (HTTP) traffic on the device itself for local proxies
          such as the TorrentHttpServer and AdminHttpServer. -->
     <domain-config cleartextTrafficPermitted="true">
@@ -11,7 +11,8 @@
          (e.g. self-hosted Kodi, Jellyfin, Plex, Emby).  Private IP ranges
          cannot be expressed as CIDR in the manifest; set android:usesCleartextTraffic="true"
          for the application and trust the local network explicitly here. -->
-    <base-config cleartextTrafficPermitted="true">
+    <base-config cleartextTrafficPermitted="true"
+        tools:ignore="InsecureBaseConfiguration">
         <trust-anchors>
             <certificates src="system"/>
         </trust-anchors>

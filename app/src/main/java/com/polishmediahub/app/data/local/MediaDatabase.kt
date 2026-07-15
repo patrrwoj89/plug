@@ -1,5 +1,6 @@
 package com.polishmediahub.app.data.local
 
+import android.util.Log
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
@@ -30,6 +31,8 @@ abstract class MediaDatabase : RoomDatabase() {
     abstract fun audioHistoryDao(): AudioHistoryDao
 
     companion object {
+
+        private const val TAG = "MediaDatabase"
 
         /**
          * Stable migrations from every previous schema version to the current one (9).
@@ -116,7 +119,8 @@ abstract class MediaDatabase : RoomDatabase() {
                     """.trimIndent(),
                     arrayOf<Any?>(defaultProfileId)
                 )
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "migrate watched table failed: ${e.message}", e)
             }
             db.execSQL("DROP TABLE IF EXISTS watched")
             db.execSQL("ALTER TABLE watched_new RENAME TO watched")
@@ -152,7 +156,8 @@ abstract class MediaDatabase : RoomDatabase() {
                     """.trimIndent(),
                     arrayOf<Any?>(defaultProfileId)
                 )
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "migrate saved_media table failed: ${e.message}", e)
             }
             db.execSQL("DROP TABLE IF EXISTS saved_media")
             db.execSQL("ALTER TABLE saved_media_new RENAME TO saved_media")
@@ -179,7 +184,8 @@ abstract class MediaDatabase : RoomDatabase() {
                     """.trimIndent(),
                     arrayOf<Any?>(defaultProfileId)
                 )
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "migrate custom_lists table failed: ${e.message}", e)
             }
             db.execSQL("DROP TABLE IF EXISTS custom_lists")
             db.execSQL("ALTER TABLE custom_lists_new RENAME TO custom_lists")
@@ -206,7 +212,8 @@ abstract class MediaDatabase : RoomDatabase() {
                     """.trimIndent(),
                     arrayOf<Any?>(defaultProfileId)
                 )
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "migrate custom_list_items table failed: ${e.message}", e)
             }
             db.execSQL("DROP TABLE IF EXISTS custom_list_items")
             db.execSQL("ALTER TABLE custom_list_items_new RENAME TO custom_list_items")
@@ -402,8 +409,8 @@ abstract class MediaDatabase : RoomDatabase() {
         ) {
             try {
                 db.execSQL("ALTER TABLE $table ADD COLUMN $column $type")
-            } catch (_: Exception) {
-                // Column likely already exists; ignore.
+            } catch (e: Exception) {
+                Log.w(TAG, "addColumnIfMissing failed for $table.$column: ${e.message}", e)
             }
         }
     }

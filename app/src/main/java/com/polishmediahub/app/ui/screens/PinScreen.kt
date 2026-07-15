@@ -28,9 +28,9 @@ import com.polishmediahub.app.ui.theme.Spacing
 fun PinScreen(
     onPinEntered: (String) -> Unit,
     onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
     onPinChanged: () -> Unit = {},
-    isError: Boolean = false,
-    modifier: Modifier = Modifier
+    isError: Boolean = false
 ) {
     var pin by remember { mutableStateOf("") }
 

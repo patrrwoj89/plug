@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,26 +32,32 @@ fun WatchlistScreen(
 ) {
     val savedItems by viewModel.watchlistItems.collectAsStateWithLifecycle()
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize().padding(Spacing.lg),
-        verticalArrangement = Arrangement.spacedBy(Spacing.md),
-        contentPadding = PaddingValues(vertical = Spacing.md)
-    ) {
-        item { Text(stringResource(id = R.string.watchlist), style = AppTypography.headline, modifier = Modifier.padding(bottom = Spacing.md)) }
-
-        if (savedItems.isEmpty()) {
-            item {
-                EmptyState(
-                    message = stringResource(id = R.string.watchlist_empty),
-                    modifier = Modifier.fillParentMaxSize()
+    if (savedItems.isEmpty()) {
+        EmptyState(
+            message = stringResource(id = R.string.watchlist_empty),
+            modifier = modifier.fillMaxSize()
+        )
+    } else {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(5),
+            modifier = modifier.fillMaxSize().padding(Spacing.lg),
+            contentPadding = PaddingValues(vertical = Spacing.md),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
+            item(span = { GridItemSpan(5) }) {
+                Text(
+                    text = stringResource(id = R.string.watchlist),
+                    style = AppTypography.headline,
+                    modifier = Modifier.padding(bottom = Spacing.md)
                 )
             }
-        } else {
+
             items(savedItems, key = { it.id }) { item ->
                 MediaCard(
                     item = item,
                     onClick = { onNavigate(Screen.Detail(item.id)) },
-                    modifier = Modifier.fillParentMaxWidth(0.25f)
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }

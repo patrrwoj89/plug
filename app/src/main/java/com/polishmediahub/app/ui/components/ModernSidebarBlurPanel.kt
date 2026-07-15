@@ -90,10 +90,11 @@ internal fun CollapsedSidebarPill(
                 contentAlignment = Alignment.Center
             ) {
                 val avatar = profile?.avatarUrl
+                val avatarDescription = profile?.name ?: stringResource(id = R.string.profile_default)
                 if (!avatar.isNullOrBlank()) {
                     AsyncImage(
                         model = avatar,
-                        contentDescription = null,
+                        contentDescription = avatarDescription,
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {

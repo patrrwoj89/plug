@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Dependency version checks are informational and intentionally pinned for stability. -->
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <issue id="GradleDependency" severity="ignore" />
+    <issue id="NewerVersionAvailable" severity="ignore" />
+
+    <!-- Launcher icon design/density warnings are pre-existing assets and out of scope. -->
+    <issue id="IconLauncherShape" severity="ignore" />
+    <issue id="IconDensities" severity="ignore" />
+    <issue id="IconMissingDensityFolder" severity="ignore" />
+    <issue id="IconDuplicates" severity="ignore" />
+    <issue id="MonochromeLauncherIcon" severity="ignore" />
+</lint>

@@ -70,8 +70,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.tooling.preview)
 
-    implementation(libs.androidx.tv.foundation)
-    implementation(libs.androidx.tv.material)
     implementation(libs.androidx.tv.provider)
 
     implementation(libs.androidx.navigation.compose)
@@ -122,6 +120,7 @@ dependencies {
     implementation(libs.jlibtorrent.android.arm)
     implementation(libs.jlibtorrent.android.arm64)
     implementation(libs.jlibtorrent.android.x86)
+    //noinspection UseTomlInstead
     implementation("com.frostwire:jlibtorrent-android-x86_64:${libs.versions.jlibtorrent.get()}")
 
     // QuickJS JavaScript engine for plugin scripts

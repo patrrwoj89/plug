@@ -1,5 +1,6 @@
 package com.polishmediahub.app.ui.components
 
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -33,6 +35,9 @@ fun CategoryRow(
         )
 
         LazyRow(
+            modifier = Modifier
+                .focusGroup()
+                .focusRestorer(),
             contentPadding = PaddingValues(horizontal = Spacing.lg),
             horizontalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {

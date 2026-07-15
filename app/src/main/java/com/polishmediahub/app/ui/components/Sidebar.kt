@@ -46,6 +46,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -90,11 +92,11 @@ fun Sidebar(
     onExpandedChange: (Boolean) -> Unit,
     hazeState: HazeState,
     onNavigate: (Screen) -> Unit,
+    modifier: Modifier = Modifier,
     profile: ProfileEntity? = null,
     profiles: List<ProfileEntity> = emptyList(),
     onSelectProfile: (ProfileEntity) -> Unit = {},
-    onVerifyPin: (ProfileEntity, String) -> Boolean = { _, _ -> false },
-    modifier: Modifier = Modifier
+    onVerifyPin: (ProfileEntity, String) -> Boolean = { _, _ -> false }
 ) {
     var showProfileDialog by remember { mutableStateOf(false) }
     var pinLockedProfile by remember { mutableStateOf<ProfileEntity?>(null) }
@@ -230,7 +232,7 @@ internal fun ProfileHeader(
                 if (profile != null && !profile.avatarUrl.isNullOrBlank()) {
                     AsyncImage(
                         model = profile.avatarUrl,
-                        contentDescription = null,
+                        contentDescription = name,
                         modifier = Modifier.fillMaxHeight()
                     )
                 } else {
@@ -276,9 +278,12 @@ internal fun ProfileSelectionDialog(
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 profiles.forEach { profile ->
                     val selected = profile.id == currentProfile?.id
+                    val profileDescription = profile.name + if (selected) ", " + stringResource(id = R.string.state_selected) else ""
                     FocusableSurface(
                         onClick = { onSelect(profile) },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics { contentDescription = profileDescription },
                         backgroundColor = if (selected) AppColor.Accent.copy(alpha = 0.2f) else AppColor.Surface,
                         focusedBackgroundColor = AppColor.SurfaceHover
                     ) {
@@ -332,10 +337,13 @@ internal fun SidebarRow(
     val containerColor = if (selected) AppColor.Accent.copy(alpha = 0.2f) else androidx.compose.ui.graphics.Color.Transparent
     val contentColor = if (selected) AppColor.Accent else AppColor.OnSurfaceVariant
     val label = stringResource(id = item.labelRes)
+    val selectionState = stringResource(id = if (selected) R.string.state_selected else R.string.state_not_selected)
 
     FocusableSurface(
         onClick = onClick,
-        modifier = modifier.height(48.dp),
+        modifier = modifier
+            .height(48.dp)
+            .semantics { contentDescription = "$label, $selectionState" },
         scale = 1.02f,
         shape = RoundedCornerShape(8.dp),
         backgroundColor = containerColor,

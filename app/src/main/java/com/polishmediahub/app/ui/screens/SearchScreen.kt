@@ -28,6 +28,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -117,7 +118,7 @@ fun SearchScreen(
         }
 
         if (uiState.query.isNotBlank() && !uiState.isLoading && uiState.error == null) {
-            Text(stringResource(id = R.string.results_count, uiState.results.size), style = AppTypography.title)
+            Text(pluralStringResource(id = R.plurals.results_count, count = uiState.results.size, uiState.results.size), style = AppTypography.title)
 
             if (uiState.results.isEmpty()) {
                 Spacer(modifier = Modifier.height(Spacing.lg))

@@ -47,7 +47,7 @@ fun DownloadsScreen(
             downloads.forEach { download ->
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(download.title, style = AppTypography.title)
-                    Text("Status: ${download.status}", style = AppTypography.body)
+                    Text(stringResource(id = R.string.downloads_status, download.status), style = AppTypography.body)
                     if (download.totalBytes > 0) {
                         LinearProgressIndicator(
                             progress = { download.bytesDownloaded.toFloat() / download.totalBytes },

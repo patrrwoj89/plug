@@ -58,7 +58,8 @@ class AdminHttpServer @Inject constructor(
         try {
             serverSocket?.close()
             scope.cancel()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w("AdminHttpServer", "stop failed: ${e.message}", e)
         }
         serverSocket = null
         port = 0
@@ -201,8 +202,8 @@ class AdminHttpServer @Inject constructor(
             if (traktId.isNotBlank()) {
                 kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "trakt_token", traktId)
             }
-        } catch (_: Exception) {
-            // Non-fatal; Kodi may be offline.
+        } catch (e: Exception) {
+            Log.w("AdminHttpServer", "pushAddonSettingsIfKodiConfigured failed: ${e.message}", e)
         }
     }
 

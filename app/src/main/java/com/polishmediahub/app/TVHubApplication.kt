@@ -25,7 +25,8 @@ class TVHubApplication : Application(), Configuration.Provider {
         // The crash-report process should not schedule workers, configure torrents,
         // or install another crash handler, to avoid recursion and heavy init.
         if (GlobalExceptionHandler.shouldInstallHandler(this)) {
-            Thread.setDefaultUncaughtExceptionHandler(GlobalExceptionHandler(this))
+            val previousHandler = Thread.getDefaultUncaughtExceptionHandler()
+            Thread.setDefaultUncaughtExceptionHandler(GlobalExceptionHandler(this, previousHandler))
             File(filesDir, "torrents").apply { mkdirs() }
             torrentMediaSource.configure()
             RecommendationsWorker.schedule(this)

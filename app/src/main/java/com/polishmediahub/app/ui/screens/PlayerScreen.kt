@@ -12,6 +12,7 @@ import android.view.KeyEvent
 import android.graphics.Color as AndroidColor
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.core.net.toUri
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -192,7 +193,7 @@ fun PlayerScreen(
                     subUrl.endsWith(".srt", ignoreCase = true) -> MimeTypes.APPLICATION_SUBRIP
                     else -> MimeTypes.TEXT_VTT
                 }
-                val subUri = android.net.Uri.parse(subUrl)
+                val subUri = subUrl.toUri()
                 val subConfig = androidx.media3.common.MediaItem.SubtitleConfiguration.Builder(subUri)
                     .setMimeType(subMimeType)
                     .setLanguage(mediaItem.subtitleLanguage ?: "pl")
@@ -209,7 +210,7 @@ fun PlayerScreen(
                 }
                 if (drmUuid != null && !item.drmLicenseUrl.isNullOrBlank()) {
                     val drmConfig = ExoMediaItem.DrmConfiguration.Builder(drmUuid)
-                        .setLicenseUri(android.net.Uri.parse(item.drmLicenseUrl))
+                        .setLicenseUri(item.drmLicenseUrl.toUri())
                         .setLicenseRequestHeaders(item.drmHeaders)
                         .build()
                     mediaItemBuilder.setDrmConfiguration(drmConfig)

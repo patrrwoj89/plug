@@ -10,7 +10,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 
 ### Podstawowe źródła i odtwarzanie
 
-- **Interfejs TV-first** oparty na `androidx.tv.material3`, obsługa focusu pilotem D-Pad, efekty powiększenia / podświetlenia oraz nowoczesny **panel boczny**.
+- **Interfejs TV-first** oparty na Jetpack Compose Foundation i Material3, obsługa focusu pilotem D-Pad, efekty powiększenia / podświetlenia oraz nowoczesny **panel boczny**.
 - **Sfera źródeł mediów** agregowana przez `FederatedMediaRepository` i `SourceRegistry`:
   - **Kodi** — integracja JSON-RPC ze wsparciem DRM, przeglądaniem katalogów wtyczek (`Files.GetDirectory`), automatycznym wykrywaniem serwera w LAN (`KodiDiscoveryManager`) i zdalnym zapisem ustawień (`Settings.SetSettingValue`).
   - **Cloudstream** — repozytoria i wtyczki oraz **Aniyomi** rozszerzenia `.apk` ładowane dynamicznie przez `DexClassLoader`.
@@ -79,7 +79,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 ## Tech stack
 
 - Android Gradle Plugin 9.0.0, Gradle 9.1.0, Kotlin 2.3.0
-- Jetpack Compose BOM 2026.06.01 (`compose.material3`, `compose.ui`, `tv.foundation`, `tv.material`)
+- Jetpack Compose BOM 2026.06.01 (`compose.material3`, `compose.ui`, `compose.foundation`)
 - Hilt 2.60.1 + `androidx.hilt` + `hilt-navigation-compose`
 - ExoPlayer / Media3 1.10.1
 - Room 2.8.4, DataStore 1.2.1, WorkManager 2.11.2

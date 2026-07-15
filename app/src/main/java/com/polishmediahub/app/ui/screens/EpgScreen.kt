@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -43,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -77,9 +79,9 @@ private val LookBackMinutes = 30
 
 @Composable
 fun EpgScreen(
+    modifier: Modifier = Modifier,
     channelId: String? = null,
     onNavigate: (Screen) -> Unit = {},
-    modifier: Modifier = Modifier,
     viewModel: EpgViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -103,7 +105,7 @@ fun EpgScreen(
             TvOutlinedTextField(
                 value = m3uUrl,
                 onValueChange = { m3uUrl = it },
-                label = { Text("M3U URL") },
+                label = { Text(stringResource(id = R.string.epg_m3u_url)) },
                 modifier = Modifier.weight(1f),
                 singleLine = true
             )
@@ -210,11 +212,12 @@ private fun EpgTimelineGrid(
 
         val nowMinutes = ((now - windowStart) / 60_000).toInt()
         val nowOffset = (nowMinutes * PixelsPerMinute).dp
+        val currentIndicatorOffset by remember { derivedStateOf { ChannelColumnWidth + nowOffset - scrollState.value.dp } }
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .width(2.dp)
-                .offset(x = ChannelColumnWidth + nowOffset - scrollState.value.dp)
+                .offset { IntOffset(currentIndicatorOffset.roundToPx(), 0) }
                 .background(Color.Red)
         )
     }

@@ -55,7 +55,8 @@ class TorrentHttpServer @Inject constructor(
         try {
             serverSocket?.close()
             scope.cancel()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w("TorrentHttpServer", "stop failed: ${e.message}", e)
         }
         serverSocket = null
         port = 0
@@ -253,7 +254,8 @@ private class TorrentInputStream(
     override fun close() {
         try {
             raf.close()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w("TorrentHttpServer", "close failed: ${e.message}", e)
         }
     }
 

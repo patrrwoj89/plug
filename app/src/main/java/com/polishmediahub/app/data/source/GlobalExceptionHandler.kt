@@ -19,7 +19,10 @@ import java.util.Locale
  * launches [CrashReportActivity] in a separate process before killing the
  * failing process.
  */
-class GlobalExceptionHandler(private val application: Application) : Thread.UncaughtExceptionHandler {
+class GlobalExceptionHandler(
+    private val application: Application,
+    private val previousHandler: Thread.UncaughtExceptionHandler?
+) : Thread.UncaughtExceptionHandler {
 
     override fun uncaughtException(thread: Thread, throwable: Throwable) {
         try {
@@ -39,9 +42,11 @@ class GlobalExceptionHandler(private val application: Application) : Thread.Unca
             // Allow the activity manager to launch the crash-report process before we die.
             try {
                 Thread.sleep(HANDOFF_DELAY_MS)
-            } catch (_: InterruptedException) {
-                // ignore
+            } catch (e: InterruptedException) {
+                Log.w("GlobalExceptionHandler", "Hand-off sleep interrupted: ${e.message}")
             }
+
+            previousHandler?.uncaughtException(thread, throwable)
         } catch (e: Exception) {
             Log.e("GlobalExceptionHandler", "Failed to launch crash reporter", e)
         } finally {

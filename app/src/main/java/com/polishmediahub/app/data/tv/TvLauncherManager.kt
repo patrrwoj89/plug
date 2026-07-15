@@ -3,8 +3,10 @@ package com.polishmediahub.app.data.tv
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.net.Uri
 import android.os.Build
+import android.util.Log
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.tvprovider.media.tv.PreviewChannel
 import androidx.tvprovider.media.tv.PreviewChannelHelper
 import androidx.tvprovider.media.tv.PreviewProgram
@@ -43,7 +45,7 @@ class TvLauncherManager @Inject constructor(
 
     private var previewChannelId: Long
         get() = prefs.getLong(KEY_PREVIEW_CHANNEL_ID, -1L)
-        set(value) = prefs.edit().putLong(KEY_PREVIEW_CHANNEL_ID, value).apply()
+        set(value) = prefs.edit { putLong(KEY_PREVIEW_CHANNEL_ID, value) }
 
     init {
         scope.launch { startWatchingHistory() }
@@ -69,7 +71,8 @@ class TvLauncherManager @Inject constructor(
                     history.forEach { (item, entity) ->
                         syncWatchNext(item, entity.positionMs, entity.durationMs, force = true)
                     }
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    Log.w(TAG, "observeProfileChanges failed: ${e.message}", e)
                 }
             }
         }
@@ -133,10 +136,12 @@ class TvLauncherManager @Inject constructor(
                     try {
                         val program = buildPreviewProgram(item, channelId)
                         previewChannelHelper.publishPreviewProgram(program)
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        Log.w(TAG, "publishPreviewProgram failed for ${item.id}: ${e.message}", e)
                     }
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "syncRecommendations failed: ${e.message}", e)
             }
         }
     }
@@ -155,12 +160,13 @@ class TvLauncherManager @Inject constructor(
                     .setAppLinkIntent(
                         android.content.Intent(context, com.polishmediahub.app.MainActivity::class.java)
                             .setAction(android.content.Intent.ACTION_VIEW)
-                            .setData(Uri.parse("polishmediahub://home"))
+                            .setData("polishmediahub://home".toUri())
                     )
                     .build()
                 id = previewChannelHelper.publishChannel(channel)
                 previewChannelId = id
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "ensurePreviewChannel failed: ${e.message}", e)
             }
         }
     }
@@ -181,13 +187,14 @@ class TvLauncherManager @Inject constructor(
                         previewChannelHelper.deletePreviewProgram(programId)
                     }
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "deleteExistingPreviewPrograms failed: ${e.message}", e)
             }
         }
     }
 
     private fun buildPreviewProgram(item: MediaItem, channelId: Long): PreviewProgram {
-        val intentUri = Uri.parse("polishmediahub://detail/${item.id}")
+        val intentUri = "polishmediahub://detail/${item.id}".toUri()
         val type = when (item.type) {
             MediaItem.Type.SERIES, MediaItem.Type.EPISODE -> TvContractCompat.PreviewProgramColumns.TYPE_TV_SERIES
             MediaItem.Type.CHANNEL -> TvContractCompat.PreviewProgramColumns.TYPE_CHANNEL
@@ -197,7 +204,7 @@ class TvLauncherManager @Inject constructor(
             .setChannelId(channelId)
             .setTitle(item.title)
             .setDescription(item.description)
-            .setPosterArtUri(item.posterUrl?.let { Uri.parse(it) })
+            .setPosterArtUri(item.posterUrl?.let { it.toUri() })
             .setIntentUri(intentUri)
             .setInternalProviderId(item.id)
             .setType(type)
@@ -226,6 +233,7 @@ class TvLauncherManager @Inject constructor(
     }
 
     companion object {
+        private const val TAG = "TvLauncherManager"
         private const val PREFS_NAME = "tv_launcher_manager"
         private const val KEY_PREVIEW_CHANNEL_ID = "preview_channel_id"
         private const val FINISHED_THRESHOLD_MS = 10_000L

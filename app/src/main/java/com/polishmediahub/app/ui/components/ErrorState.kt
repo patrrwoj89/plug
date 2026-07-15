@@ -22,8 +22,8 @@ import com.polishmediahub.app.ui.theme.Spacing
 @Composable
 fun ErrorState(
     message: String,
-    onRetry: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onRetry: (() -> Unit)? = null
 ) {
     Column(
         modifier = modifier.fillMaxSize(),

@@ -2,8 +2,9 @@
 package com.polishmediahub.app.data.tv
 
 import android.content.Context
-import android.net.Uri
 import android.os.Build
+import android.util.Log
+import androidx.core.net.toUri
 import androidx.tvprovider.media.tv.PreviewChannelHelper
 import androidx.tvprovider.media.tv.TvContractCompat
 import androidx.tvprovider.media.tv.WatchNextProgram
@@ -28,7 +29,7 @@ class WatchNextHelper @Inject constructor(
             try {
                 val existingId = findExistingWatchNextId(mediaItem.id)
                 val intentUri = buildDeepLink(mediaItem)
-                val posterUri = mediaItem.posterUrl?.let { Uri.parse(it) }
+                val posterUri = mediaItem.posterUrl?.let { it.toUri() }
 
                 val builder = WatchNextProgram.Builder()
                     .setTitle(mediaItem.title)
@@ -53,10 +54,13 @@ class WatchNextHelper @Inject constructor(
                 } else {
                     helper.publishWatchNextProgram(builder.build())
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "publishWatchNext failed: ${e.message}", e)
             }
         }
     }
+
+    private val TAG = "WatchNextHelper"
 
     suspend fun removeFromWatchNext(internalId: String) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
@@ -65,7 +69,8 @@ class WatchNextHelper @Inject constructor(
                 findExistingWatchNextId(internalId)?.let { id ->
                     context.contentResolver.delete(TvContractCompat.buildWatchNextProgramUri(id), null, null)
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "removeFromWatchNext failed: ${e.message}", e)
             }
         }
     }
@@ -75,14 +80,13 @@ class WatchNextHelper @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 context.contentResolver.delete(TvContractCompat.WatchNextPrograms.CONTENT_URI, null, null)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "clearAll failed: ${e.message}", e)
             }
         }
     }
 
-    private fun buildDeepLink(mediaItem: MediaItem): Uri {
-        return Uri.parse("polishmediahub://play/${mediaItem.id}")
-    }
+    private fun buildDeepLink(mediaItem: MediaItem) = "polishmediahub://play/${mediaItem.id}".toUri()
 
     private fun findExistingWatchNextId(internalId: String): Long? {
         return try {

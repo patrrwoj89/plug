@@ -2,7 +2,7 @@ package com.polishmediahub.app.search
 
 import android.app.SearchManager
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import android.os.Bundle
 import android.provider.SearchRecentSuggestions
 import android.util.Log
@@ -107,7 +107,7 @@ class SearchActivity : ComponentActivity() {
     }
 
     private fun startMainActivity(deepLink: String) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deepLink))
+        val intent = Intent(Intent.ACTION_VIEW, deepLink.toUri())
             .setClass(this, MainActivity::class.java)
             .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         startActivity(intent)

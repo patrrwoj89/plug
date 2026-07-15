@@ -23,6 +23,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -75,7 +77,7 @@ fun AdminScreen(
 
         state.adminQrBitmap?.let { bitmap ->
             Text(
-                text = "Zeskanuj kod QR telefonem, aby wygodnie zarządzać wtyczkami i źródłami z przeglądarki",
+                text = stringResource(id = R.string.admin_qr_hint),
                 style = AppTypography.body
             )
             state.adminUrl?.let { url ->
@@ -83,7 +85,7 @@ fun AdminScreen(
             }
             Image(
                 bitmap = bitmap.asImageBitmap(),
-                contentDescription = "Admin QR code",
+                contentDescription = stringResource(id = R.string.admin_qr_code_content_description),
                 modifier = Modifier.size(256.dp)
             )
         }
@@ -165,13 +167,13 @@ fun AdminScreen(
             TvOutlinedTextField(
                 value = state.debridApiKey,
                 onValueChange = viewModel::setDebridApiKey,
-                label = { Text("TorBox API key") },
+                label = { Text(stringResource(id = R.string.admin_torbox_api_key)) },
                 modifier = Modifier.fillMaxWidth(0.5f),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
             )
             if (state.debridApiKey.isNotBlank()) {
                 TvButton(onClick = { viewModel.showQrForApiKey(state.debridApiKey) }) {
-                    Text("Show API key QR")
+                    Text(stringResource(id = R.string.admin_show_api_key_qr))
                 }
             }
         }
@@ -199,7 +201,7 @@ fun AdminScreen(
             Text(code.userCode, style = AppTypography.hero)
             Image(
                 bitmap = QrCodeGenerator.generate(qrContent, 256).asImageBitmap(),
-                contentDescription = "QR code",
+                contentDescription = stringResource(id = R.string.admin_qr_code),
                 modifier = Modifier.size(256.dp)
             )
         }
@@ -296,6 +298,8 @@ fun AdminScreen(
         }
 
         state.plugins.forEachIndexed { index, plugin ->
+            val moveUp = stringResource(id = R.string.plugin_move_up)
+            val moveDown = stringResource(id = R.string.plugin_move_down)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                 modifier = Modifier.padding(vertical = Spacing.sm)
@@ -309,7 +313,8 @@ fun AdminScreen(
                         }
                         viewModel.reorderPlugins(reordered.map { it.pluginId })
                     },
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(Radius.md)
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(Radius.md),
+                    modifier = Modifier.semantics { contentDescription = moveUp }
                 ) {
                     Text("↑", modifier = Modifier.padding(Spacing.sm))
                 }
@@ -321,7 +326,8 @@ fun AdminScreen(
                         }
                         viewModel.reorderPlugins(reordered.map { it.pluginId })
                     },
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(Radius.md)
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(Radius.md),
+                    modifier = Modifier.semantics { contentDescription = moveDown }
                 ) {
                     Text("↓", modifier = Modifier.padding(Spacing.sm))
                 }
@@ -390,7 +396,7 @@ private fun ServerConfigFields(
             )
             if (token.isNotBlank()) {
                 TvButton(onClick = onShowQr) {
-                    Text("QR")
+                    Text(stringResource(id = R.string.admin_qr_button))
                 }
             }
         }

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Polish Media Hub</string>
-    <string name="app_description">Android TV hub dla wideo, audio i źródeł multimediów</string>
 
     <string name="home">Strona główna</string>
     <string name="search">Szukaj</string>
@@ -11,12 +10,10 @@
     <string name="settings">Ustawienia</string>
     <string name="sources">Źródła</string>
     <string name="downloads">Pobrane</string>
-    <string name="admin">Admin</string>
 
     <string name="play">Odtwórz</string>
     <string name="pause">Pauza</string>
     <string name="back">Wstecz</string>
-    <string name="more_info">Więcej informacji</string>
     <string name="overview">Opis</string>
     <string name="genres">Gatunki</string>
     <string name="year">Rok</string>
@@ -33,7 +30,12 @@
     <string name="search_placeholder">Wpisz tytuł lub gatunek…</string>
     <string name="recent_searches">Ostatnie wyszukiwania</string>
     <string name="clear_history">Wyczyść historię</string>
-    <string name="results_count">%1$d wyników</string>
+    <plurals name="results_count">
+        <item quantity="one">%1$d wynik</item>
+        <item quantity="few">%1$d wyniki</item>
+        <item quantity="many">%1$d wyników</item>
+        <item quantity="other">%1$d wyników</item>
+    </plurals>
     <string name="searching">Wyszukiwanie…</string>
     <string name="continue_watching">Kontynuuj oglądanie</string>
     <string name="recommendations_channel_description">Polecane filmy, seriale i kanały</string>
@@ -78,6 +80,18 @@
     <string name="admin_plugin_add">Dodaj plugin</string>
     <string name="admin_plugin_remove">Usuń</string>
     <string name="admin_plugin_show_qr">Pokaż QR konfiguracji</string>
+    <string name="admin_qr_hint">Zeskanuj kod QR telefonem, aby wygodnie zarządzać wtyczkami i źródłami z przeglądarki.</string>
+    <string name="admin_qr_code_content_description">Kod QR panelu admina</string>
+    <string name="admin_torbox_api_key">Klucz API TorBox</string>
+    <string name="admin_show_api_key_qr">Pokaż QR klucza API</string>
+    <string name="admin_qr_code">Kod QR</string>
+    <string name="admin_qr_button">QR</string>
+    <string name="epg_m3u_url">URL M3U</string>
+    <string name="downloads_status">Status: %1$s</string>
+    <string name="plugin_move_up">Przesuń wtyczkę w górę</string>
+    <string name="plugin_move_down">Przesuń wtyczkę w dół</string>
+    <string name="state_selected">zaznaczone</string>
+    <string name="state_not_selected">niezaznaczone</string>
     <string name="downloads_title">Pobrane</string>
     <string name="downloads_empty">Brak pobranych materiałów</string>
     <string name="downloads_delete">Usuń</string>
@@ -92,9 +106,6 @@
     <string name="music_title">Muzyka</string>
     <string name="music_search_placeholder">Szukaj muzyki / radia</string>
     <string name="music_empty">Brak skonfigurowanych źródeł muzyki. Dodaj pliki lokalne lub playlistę radiową w panelu Admin.</string>
-    <string name="music_source_local">Muzyka lokalna</string>
-    <string name="music_source_radio">Radio internetowe</string>
-    <string name="music_source_subsonic">Subsonic / Airsonic</string>
     <string name="admin_subsonic_url">URL serwera Subsonic</string>
     <string name="admin_subsonic_user">Użytkownik Subsonic</string>
     <string name="admin_subsonic_password">Hasło Subsonic</string>
@@ -106,6 +117,7 @@
     <string name="item_not_found">Nie znaleziono pozycji</string>
     <string name="custom_lists_title">Własne listy</string>
     <string name="new_list_name">Nazwa nowej listy</string>
+    <string name="custom_list_empty">Ta lista jest pusta.</string>
     <string name="epg_title">Program TV</string>
     <string name="torrents_title">Torrenty</string>
     <string name="torrents_magnet">Magnet URI lub URL .torrent</string>
@@ -122,7 +134,6 @@
     <string name="clear">Wyczyść</string>
     <string name="cancel">Anuluj</string>
     <string name="settings_pin">Kontrola rodzicielska PIN</string>
-    <string name="settings_pin_subtitle">4-cyfrowy kod blokujący Ustawienia i Admin</string>
     <string name="settings_pin_enabled">PIN włączony</string>
     <string name="download_audio">Pobierz audio</string>
     <string name="profile_default">Domyślny</string>

@@ -1,5 +1,6 @@
 package com.polishmediahub.app.data.source
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Handler
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -29,6 +30,7 @@ class HeadlessWebSolver @Inject constructor(
         private const val POLL_MS = 500L
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     suspend fun solveAndGetCookies(url: String): String = withContext(Dispatchers.Main) {
         suspendCancellableCoroutine { cont ->
             val handler = Handler(Looper.getMainLooper())

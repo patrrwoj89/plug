@@ -124,7 +124,8 @@ class PluginRepository @Inject constructor(
                         )
                     )
                     updated++
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    Log.w(TAG, "checkUpdates failed for ${entity.pluginId}: ${e.message}", e)
                 }
             }
         }
@@ -338,7 +339,8 @@ class PluginRepository @Inject constructor(
     private suspend fun fetch(url: String): String? {
         return try {
             client.newCall(Request.Builder().url(url).build()).execute().body?.string()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "fetch failed for $url: ${e.message}", e)
             null
         }
     }

@@ -20,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import com.polishmediahub.app.R
+import com.polishmediahub.app.navigation.Screen
 import com.polishmediahub.app.ui.components.FocusableSurface
 import com.polishmediahub.app.ui.components.TvButton
 import com.polishmediahub.app.ui.components.TvOutlinedTextField
@@ -28,6 +29,7 @@ import com.polishmediahub.app.ui.viewmodel.CustomListsViewModel
 
 @Composable
 fun CustomListsScreen(
+    onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CustomListsViewModel = hiltViewModel()
 ) {
@@ -74,7 +76,7 @@ fun CustomListsScreen(
         ) {
             items(lists, key = { it.listId }) { list ->
                 FocusableSurface(
-                    onClick = {},
+                    onClick = { onNavigate(Screen.CustomListDetail(list.listId)) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(

@@ -10,7 +10,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 
 ### Core playback & sources
 
-- **TV-first UI** with `androidx.tv.material3`, D-Pad focus handling, scale/glow outlines and the **Modern Sidebar**.
+- **TV-first UI** built with Jetpack Compose Foundation and Material3, D-Pad focus handling, scale/glow outlines and the **Modern Sidebar**.
 - **Federated media sources** aggregated through `FederatedMediaRepository` and `SourceRegistry`:
   - **Kodi** JSON-RPC integration with DRM stream support, plugin directory browsing (`Files.GetDirectory`), automatic LAN discovery (`KodiDiscoveryManager`) and remote setting updates (`Settings.SetSettingValue`).
   - **Cloudstream** plugin-style repositories and **Aniyomi** `.apk` extensions loaded dynamically via `DexClassLoader`.
@@ -80,7 +80,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 ## Tech stack
 
 - Android Gradle Plugin 9.0.0, Gradle 9.1.0, Kotlin 2.3.0
-- Jetpack Compose BOM 2026.06.01 (`compose.material3`, `compose.ui`, `tv.foundation`, `tv.material`)
+- Jetpack Compose BOM 2026.06.01 (`compose.material3`, `compose.ui`, `compose.foundation`)
 - Hilt 2.60.1 + `androidx.hilt` + `hilt-navigation-compose`
 - ExoPlayer / Media3 1.10.1
 - Room 2.8.4, DataStore 1.2.1, WorkManager 2.11.2

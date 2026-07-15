@@ -126,7 +126,8 @@ class DynamicPluginLoader @Inject constructor(
                 val instance = it.newInstance(*Array(it.getParameterTypes().size) { null })
                 injectDependencies(instance)
                 return instance
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "constructor fallback failed: ${e.message}", e)
             }
         }
 
@@ -145,7 +146,8 @@ class DynamicPluginLoader @Inject constructor(
         try {
             isAccessible = true
             invoke(instance, value)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "invokeSafe failed: ${e.message}", e)
         }
     }
 

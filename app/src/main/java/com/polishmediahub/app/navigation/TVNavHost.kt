@@ -30,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.polishmediahub.app.ui.components.Sidebar
 import com.polishmediahub.app.ui.screens.AdminScreen
 import com.polishmediahub.app.ui.screens.AnimeScreen
+import com.polishmediahub.app.ui.screens.CustomListDetailScreen
 import com.polishmediahub.app.ui.screens.CustomListsScreen
 import com.polishmediahub.app.ui.screens.DetailScreen
 import com.polishmediahub.app.ui.screens.DownloadsScreen
@@ -81,6 +82,9 @@ fun TVApp(
             )
             route.startsWith("player/") -> Screen.Player(
                 navBackStackEntry?.arguments?.getString("id") ?: ""
+            )
+            route.startsWith("custom_list/") -> Screen.CustomListDetail(
+                navBackStackEntry?.arguments?.getString("listId") ?: ""
             )
             else -> Screen.Home
         }
@@ -188,7 +192,19 @@ fun TVApp(
                 DownloadsScreen(modifier = Modifier.fillMaxSize())
             }
             composable(Screen.CustomLists.route) {
-                CustomListsScreen(modifier = Modifier.fillMaxSize())
+                CustomListsScreen(
+                    onNavigate = { navController.navigate(it.route) },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            composable(
+                route = "custom_list/{listId}",
+                arguments = listOf(navArgument("listId") { type = NavType.StringType })
+            ) {
+                CustomListDetailScreen(
+                    onNavigate = { navController.navigate(it.route) },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
             composable(
                 route = Screen.Settings.route,

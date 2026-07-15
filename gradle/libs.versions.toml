@@ -13,8 +13,6 @@ hiltAndroidx = "1.4.0"
 hiltNavigationCompose = "1.2.0"
 ksp = "2.3.10"
 media3 = "1.10.1"
-tvFoundation = "1.0.0-alpha11"
-tvMaterial = "1.0.0"
 tvProvider = "1.1.0"
 coil = "2.7.0"
 retrofit = "2.11.0"
@@ -48,8 +46,6 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime" }
 
-androidx-tv-foundation = { group = "androidx.tv", name = "tv-foundation", version.ref = "tvFoundation" }
-androidx-tv-material = { group = "androidx.tv", name = "tv-material", version.ref = "tvMaterial" }
 androidx-tv-provider = { group = "androidx.tvprovider", name = "tvprovider", version.ref = "tvProvider" }
 
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }

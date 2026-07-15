@@ -11,6 +11,7 @@ sealed class Screen(val route: String) {
     data object Admin : Screen("admin")
     data object Downloads : Screen("downloads")
     data object CustomLists : Screen("custom_lists")
+    data class CustomListDetail(val id: String) : Screen("custom_list/$id")
     data object Epg : Screen("epg")
     data object Torrents : Screen("torrents")
     data object EssentialSetup : Screen("essential_setup")

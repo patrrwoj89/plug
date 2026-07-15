@@ -183,8 +183,8 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 reportProgress(current, positionMs, durationMs, state)
-            } catch (_: Exception) {
-                // Ignore network errors; do not interrupt playback.
+            } catch (e: Exception) {
+                Log.w("PlayerViewModel", "reportPlaybackProgress failed: ${e.message}", e)
             }
         }
     }
@@ -229,7 +229,9 @@ class PlayerViewModel @Inject constructor(
             // done via the stored ExoPlayer reference.
         }
         analyticsListener?.let { listener ->
-            try { currentExoPlayer?.removeAnalyticsListener(listener) } catch (_: Exception) {}
+            try { currentExoPlayer?.removeAnalyticsListener(listener) } catch (e: Exception) {
+                Log.w("PlayerViewModel", "removeAnalyticsListener failed: ${e.message}", e)
+            }
         }
         analyticsListener = null
         currentExoPlayer = null
@@ -245,7 +247,9 @@ class PlayerViewModel @Inject constructor(
 
     override fun onCleared() {
         analyticsListener?.let { listener ->
-            try { currentExoPlayer?.removeAnalyticsListener(listener) } catch (_: Exception) {}
+            try { currentExoPlayer?.removeAnalyticsListener(listener) } catch (e: Exception) {
+                Log.w("PlayerViewModel", "removeAnalyticsListener failed: ${e.message}", e)
+            }
         }
         analyticsListener = null
         currentExoPlayer = null
@@ -265,7 +269,8 @@ class PlayerViewModel @Inject constructor(
         val query = buildSearchQuery(current)
         val results = try {
             mediaRepository.search(query)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w("PlayerViewModel", "findNextEpisode search failed: ${e.message}", e)
             emptyList()
         }
 
@@ -358,8 +363,8 @@ class PlayerViewModel @Inject constructor(
             } else {
                 mediaRepository.reportProgress(mediaItem, positionMs, durationMs, state)
             }
-        } catch (_: Exception) {
-            // Ignore network errors.
+        } catch (e: Exception) {
+            Log.w("PlayerViewModel", "reportProgress failed: ${e.message}", e)
         }
     }
 
