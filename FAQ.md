@@ -30,6 +30,12 @@ Selected packages are applied on a background thread, saved to DataStore, and th
 
 Clear app data or uninstall/reinstall. The `isFirstLaunch` flag is stored in DataStore and there is no in-app reset button to avoid accidental data loss.
 
+## Search
+
+### How does voice search work?
+
+On the **Search** screen, move focus to the **microphone** button next to the search field and press SELECT. The app launches the system speech recognizer configured for Polish (`pl-PL`). Once you speak, the recognized text is inserted into the search field and a search is started automatically. Voice search requires a Google / system speech recognizer app on the device.
+
 ## Sources & Content
 
 ### How do I add sources?
@@ -53,6 +59,16 @@ See [ADMIN_PANEL.md](ADMIN_PANEL.md) for detailed endpoint descriptions and JSON
 - TMDB, AniList, Trakt metadata.
 - Podcasts RSS, internet radio M3U/PLS, Deezer proxy.
 - Legal BitTorrent (`.torrent` / magnet) for content you own or that is freely distributable.
+
+## Live TV & EPG
+
+### When does the EPG update?
+
+`IptvUpdateWorker` refreshes configured M3U playlists and XMLTV EPG files every 12 hours and also on a cold app start. The update runs only on an unmetered (Wi-Fi / Ethernet) connection while the device is idle and the battery is not low. Channels and programs are cached in Room, so the **TV Guide** screen opens instantly from local storage.
+
+### Where can I see the last EPG sync status?
+
+The status is shown at the bottom of the **TV Guide** screen, on the **Settings** screen and in the wireless **Admin** panel (`lastEpgSyncAt`, `lastEpgSyncStatus` and `lastEpgSyncError`).
 
 ### Can I use my NAS / home server?
 

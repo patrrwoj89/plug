@@ -124,8 +124,12 @@
     <string name="torrents_add">Dodaj torrent</string>
     <string name="torrents_empty">Brak aktywnych torrentów. Dodaj legalny magnet/torrent, do którego masz prawa.</string>
     <string name="epg_url">URL XMLTV EPG</string>
-    <string name="epg_load">Załaduj EPG</string>
     <string name="epg_empty">Brak danych EPG. Dodaj URL w panelu Admin.</string>
+    <string name="epg_refresh">Odśwież EPG / kanały</string>
+    <string name="epg_last_sync">Ostatnia synchronizacja: %1$s — %2$s</string>
+    <string name="epg_status_success">Sukces</string>
+    <string name="epg_status_error">Błąd</string>
+    <string name="epg_status_never">Nigdy</string>
     <string name="add">Dodaj</string>
     <string name="check_updates">Sprawdź aktualizacje</string>
     <string name="load_legal_samples">Załaduj przykładowe legalne źródła</string>
@@ -161,6 +165,9 @@
     <string name="essential_setup_web_title">Katalogi Publiczne Web</string>
     <string name="essential_setup_web_subtitle">Skonfigurowane legalne crawlery stron wideo</string>
     <string name="essential_setup_confirm">Zatwierdź i Uruchom</string>
+    <string name="voice_search">Wyszukiwanie głosowe</string>
+    <string name="voice_search_prompt">Wymów tytuł do wyszukania</string>
+    <string name="voice_search_no_results">Rozpoznawanie mowy nie zwróciło tekstu</string>
     <string name="crash_report_title">Aplikacja napotkała niespodziewany problem</string>
     <string name="crash_report_hint">Możesz zapoznać się z poniższymi szczegółami lub zrestartować aplikację.</string>
     <string name="crash_report_restart">Uruchom ponownie aplikację</string>

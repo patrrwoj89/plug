@@ -2,17 +2,20 @@ package com.polishmediahub.app.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    apiConfigRepository: ApiConfigRepository
 ) : ViewModel() {
 
     val darkTheme: StateFlow<Boolean> = settingsRepository.darkTheme
@@ -44,6 +47,13 @@ class SettingsViewModel @Inject constructor(
 
     val isFirstLaunch: StateFlow<Boolean?> = settingsRepository.isFirstLaunch
         .stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = null)
+
+    val lastEpgSync: StateFlow<LastEpgSyncState> = combine(
+        apiConfigRepository.lastEpgSyncAt,
+        apiConfigRepository.lastEpgSyncStatus,
+        apiConfigRepository.lastEpgSyncError
+    ) { at, status, error -> LastEpgSyncState(at, status, error) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = LastEpgSyncState())
 
     fun setDarkTheme(value: Boolean) = viewModelScope.launch { settingsRepository.setDarkTheme(value) }
     fun setAutoplayTrailers(value: Boolean) = viewModelScope.launch { settingsRepository.setAutoplayTrailers(value) }

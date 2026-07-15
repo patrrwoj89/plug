@@ -25,6 +25,18 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
   - Opisy nieobejrzanych odcinków są rozmywane `Modifier.blur(16.dp)`.
   - D-Pad Center/SELECT odsłania opis na czas seansu.
 
+#### Wyszukiwanie i TV na żywo
+- **Wyszukiwanie głosowe** (`SearchScreen`, `SearchViewModel`)
+  - D-Pad przycisk `TvIconButton` z ikoną mikrofonu obok pola wyszukiwania.
+  - Uruchamia `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` z `LANGUAGE_MODEL_FREE_FORM` i językiem polskim (`pl-PL`).
+  - Rozpoznany tekst jest wstawiany do pola wyszukiwania i wywoływane jest `SearchViewModel.submitSearch(query)`.
+- **Tło aktualizowanie cache EPG/IPTV** (`IptvUpdateWorker`)
+  - `CoroutineWorker` uruchamiany co 12 godzin i przy zimnym starcie przez `WorkManager`.
+  - Pobiera skonfigurowane playlisty M3U oraz pliki XMLTV EPG, parsuje je i zapisuje kanały w nowej tabeli `ChannelEntity` oraz programy w istniejącej tabeli `EpgEntity` w Room.
+  - `Constraints`: `NetworkType.UNMETERED`, `requiresDeviceIdle`, `requiresBatteryNotLow`.
+  - `EpgViewModel` i `EpgTimelineGrid` ładują kanały i programy wyłącznie z lokalnego cache Room; ekran telewizji na żywo otwiera się natychmiast bez pobierania dużych plików XML.
+  - Data i status ostatniej synchronizacji są eksponowane przez `ApiConfigRepository` / DataStore i wyświetlane w `AdminHttpServer` oraz `SettingsScreen`.
+
 #### Odtwarzacz
 - Konfiguracja napisów w locie (`SettingsScreen`, `PlayerScreen`, `PlayerViewModel`)
   - Rozmiar (`14sp`, `18sp`, `24sp`, `32sp`), kolor (Biały / Żółty / Szary) i przesunięcie pionowe zapisywane w DataStore.

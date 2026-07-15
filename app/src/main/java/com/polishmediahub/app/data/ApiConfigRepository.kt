@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -47,6 +48,9 @@ class ApiConfigRepository @Inject constructor(
     val subsonicPassword: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_SUBSONIC_PASSWORD].orEmpty() }
     val podcastFeeds: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_PODCAST_FEEDS].orEmpty() }
     val deezerProxyUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_DEEZER_PROXY_URL].orEmpty() }
+    val lastEpgSyncAt: Flow<Long> = context.apiConfigDataStore.data.map { it[KEY_LAST_EPG_SYNC_AT] ?: 0L }
+    val lastEpgSyncStatus: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_LAST_EPG_SYNC_STATUS].orEmpty() }
+    val lastEpgSyncError: Flow<String?> = context.apiConfigDataStore.data.map { it[KEY_LAST_EPG_SYNC_ERROR] }
 
     suspend fun setTmdbApiKey(value: String) = edit(KEY_TMDB, value)
     suspend fun setAniListToken(value: String) = edit(KEY_ANILIST, value)
@@ -75,6 +79,18 @@ class ApiConfigRepository @Inject constructor(
     suspend fun setSubsonicPassword(value: String) = edit(KEY_SUBSONIC_PASSWORD, value)
     suspend fun setPodcastFeeds(value: String) = edit(KEY_PODCAST_FEEDS, value)
     suspend fun setDeezerProxyUrl(value: String) = edit(KEY_DEEZER_PROXY_URL, value)
+
+    suspend fun setLastEpgSync(timestamp: Long, status: String, error: String? = null) {
+        context.apiConfigDataStore.edit {
+            it[KEY_LAST_EPG_SYNC_AT] = timestamp
+            it[KEY_LAST_EPG_SYNC_STATUS] = status
+            if (error != null) {
+                it[KEY_LAST_EPG_SYNC_ERROR] = error
+            } else {
+                it.remove(KEY_LAST_EPG_SYNC_ERROR)
+            }
+        }
+    }
 
     private suspend fun edit(key: Preferences.Key<String>, value: String) {
         context.apiConfigDataStore.edit { it[key] = value }
@@ -112,5 +128,8 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_SUBSONIC_PASSWORD = stringPreferencesKey("subsonic_password")
         private val KEY_PODCAST_FEEDS = stringPreferencesKey("podcast_feeds")
         private val KEY_DEEZER_PROXY_URL = stringPreferencesKey("deezer_proxy_url")
+        private val KEY_LAST_EPG_SYNC_AT = longPreferencesKey("last_epg_sync_at")
+        private val KEY_LAST_EPG_SYNC_STATUS = stringPreferencesKey("last_epg_sync_status")
+        private val KEY_LAST_EPG_SYNC_ERROR = stringPreferencesKey("last_epg_sync_error")
     }
 }

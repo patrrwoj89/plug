@@ -16,7 +16,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
   - **Cloudstream** — repozytoria i wtyczki oraz **Aniyomi** rozszerzenia `.apk` ładowane dynamicznie przez `DexClassLoader`.
   - **Wtyczki QuickJS** (`.js`) z globalnym mostkiem sieciowym `httpFetch`, nagłówkami i asynchroniczną ewaluacją.
   - **Web scraping** przez konfigurację JSON z walidacją i dynamicznym fallbackiem do QuickJS.
-  - **IPTV/M3U** z obsługą XMLTV EPG oraz profesjonalną **siatką EPG Timeline Grid**.
+  - **IPTV/M3U** z obsługą XMLTV EPG, lokalnym cache Room, tłem odświeżaniem przez `IptvUpdateWorker` oraz profesjonalną **siatką EPG Timeline Grid**.
   - **Jellyfin, Plex, Emby, Subsonic/Airsonic, Stremio, AniList, TMDB, Trakt, podcasty (RSS)**, radio internetowe i proxy Deezer.
 - **Strumieniowanie BitTorrent** przez `jlibtorrent` z pobieraniem sekwencyjnym, lokalnym serwerem HTTP i UI buforowania.
 - **Muzyka i audio**:
@@ -31,6 +31,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - **Ekran pierwszej konfiguracji** (Essential Addon Setup) dla nowych profili: jednym kliknięciem ładuje legalne pakiety startowe (IPTV/EPG, muzyka/podcasty, katalogi web) przez `EssentialSetupScreen` i `EssentialSetupViewModel`.
 - **Biblioteka, Do obejrzenia i Listy własne** wyświetlają siatkę 5 kolumn (`CustomListDetailScreen` dla zawartości pojedynczej listy własnej).
 - **Przywracanie fokusu D-Pada** w poziomych `LazyRow` (`CategoryRow`) przez `Modifier.focusGroup()` + `focusRestorer()` — fokus wraca do ostatnio oglądanego kafelka przy przechodzeniu między rzędami.
+- **Wyszukiwanie głosowe** w `SearchScreen`: przycisk D-Pad z mikrofonem uruchamia `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` w języku polskim (`pl-PL`) i wstawia rozpoznaną frazę do pola wyszukiwania.
 - **Nakładka Auto-Play Next** dla seriali: 15-sekundowe odliczanie, metadata następnego odcinka, przyciski „Odtwórz teraz” i „Anuluj”, BACK działa jak Anuluj.
 - **Spoiler Blur** — opisy nieobejrzanych odcinków rozmyte `Modifier.blur(16.dp)`, odkrywane D-Pad Center/SELECT.
 - **Ustawienia napisów w locie**: rozmiar, kolor i przesunięcie pionowe zapisywane w DataStore i aplikane na żywo w `SubtitleView`.
@@ -53,7 +54,8 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 
 ### Admin i konfiguracja
 
-- **Bezprzewodowy panel administracyjny** serwowany lokalnie z kodem QR (ZXing) do łatwej konfiguracji źródeł z telefonu lub komputera.
+- **Bezprzewodowy panel administracyjny** serwowany lokalnie z kodem QR (ZXing) do łatwej konfiguracji źródeł z telefonu lub komputera; panel oraz Ustawienia wyświetlają datę i status ostatniej synchronizacji EPG.
+- **Tło aktualizowanie EPG/IPTV** (`IptvUpdateWorker`) uruchamia się co 12 godzin (i przy zimnym starcie) na `Dispatchers.IO` z ograniczeniami unmetered/idle/battery-not-low, zapisuje kanały i programy do Room, dzięki czemu ekran telewizji na żywo otwiera się natychmiast.
 - **Onboarding pierwszego uruchomienia** pozwala nowym użytkownikom wybrać legalne pakiety startowe.
 
 ### Integracja z Android TV

@@ -1,20 +1,25 @@
 package com.polishmediahub.app.ui.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.iptv.ChannelWithPrograms
 import com.polishmediahub.app.data.iptv.EpgRepository
-import com.polishmediahub.app.data.remote.iptv.IptvRepository
+import com.polishmediahub.app.data.local.ChannelDao
+import com.polishmediahub.app.data.local.ChannelEntity
+import com.polishmediahub.app.data.local.EpgChannel
+import com.polishmediahub.app.data.remote.iptv.IptvUpdateWorker
 import com.polishmediahub.app.model.MediaItem
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -27,7 +32,8 @@ import javax.inject.Inject
 class EpgViewModel @Inject constructor(
     private val apiConfigRepository: ApiConfigRepository,
     private val epgRepository: EpgRepository,
-    private val iptvRepository: IptvRepository
+    private val channelDao: ChannelDao,
+    @param:ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EpgUiState())
@@ -44,6 +50,9 @@ class EpgViewModel @Inject constructor(
 
     private val _channels = MutableStateFlow<List<MediaItem>>(emptyList())
 
+    private val _lastEpgSync = MutableStateFlow(LastEpgSyncState())
+    val lastEpgSync: StateFlow<LastEpgSyncState> = _lastEpgSync.asStateFlow()
+
     init {
         viewModelScope.launch {
             while (true) {
@@ -51,56 +60,54 @@ class EpgViewModel @Inject constructor(
                 delay(60_000L)
             }
         }
-    }
 
-    fun loadEpg(xmltvUrl: String) {
-        _epgUrl.value = xmltvUrl
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            try {
-                epgRepository.loadEpg(xmltvUrl)
-                _uiState.value = _uiState.value.copy(isLoading = false)
-                loadChannelsForEpg()
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message, isLoading = false)
-            }
+            apiConfigRepository.iptvSourceUrls.collect { _m3uUrl.value = it }
+        }
+
+        viewModelScope.launch {
+            apiConfigRepository.epgUrl.collect { _epgUrl.value = it }
+        }
+
+        viewModelScope.launch {
+            combine(
+                apiConfigRepository.lastEpgSyncAt,
+                apiConfigRepository.lastEpgSyncStatus,
+                apiConfigRepository.lastEpgSyncError
+            ) { at, status, error ->
+                LastEpgSyncState(at, status, error)
+            }.collect { _lastEpgSync.value = it }
+        }
+
+        viewModelScope.launch {
+            combine(
+                channelDao.observeAll(),
+                epgRepository.observeDistinctChannels(0L, Long.MAX_VALUE)
+            ) { cachedChannels, epgChannels ->
+                if (cachedChannels.isNotEmpty()) {
+                    cachedChannels.map { it.toMediaItem() }
+                } else {
+                    epgChannels.map { it.toMediaItem() }
+                }
+            }.collect { _channels.value = it }
         }
     }
 
     fun loadChannels(m3uUrl: String) {
-        _m3uUrl.value = m3uUrl
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            try {
-                val items = fetchChannels(m3uUrl)
-                _channels.value = items
-                _uiState.value = _uiState.value.copy(isLoading = false)
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message, isLoading = false)
-            }
+        viewModelScope.launch(Dispatchers.IO) {
+            apiConfigRepository.setIptvSourceUrls(m3uUrl)
         }
     }
 
-    private suspend fun fetchChannels(m3uUrl: String): List<MediaItem> {
-        if (m3uUrl.isNotBlank()) apiConfigRepository.setIptvSourceUrls(m3uUrl)
-        return iptvRepository.categories().flatMap { it.items }
-            .ifEmpty { iptvRepository.featured() }
+    fun loadEpg(url: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            apiConfigRepository.setEpgUrl(url)
+        }
     }
 
-    private fun loadChannelsForEpg() {
-        viewModelScope.launch {
-            val epgChannels = epgRepository.observeDistinctChannels(windowStart, windowEnd).first()
-            val current = _channels.value
-            if (current.isEmpty()) {
-                _channels.value = epgChannels.map { ch ->
-                    MediaItem(
-                        id = "epg:${ch.channelId}",
-                        title = ch.channelName ?: ch.channelId,
-                        tvgId = ch.channelId,
-                        type = MediaItem.Type.CHANNEL
-                    )
-                }
-            }
+    fun refresh() {
+        viewModelScope.launch(Dispatchers.IO) {
+            IptvUpdateWorker.startImmediate(appContext)
         }
     }
 
@@ -132,7 +139,7 @@ class EpgViewModel @Inject constructor(
     val channelsWithPrograms: StateFlow<List<ChannelWithPrograms>> = timelineState
         .flatMapLatest { state ->
             if (state.channelIds.isEmpty()) {
-                kotlinx.coroutines.flow.flowOf(emptyList())
+                flowOf(emptyList())
             } else {
                 epgRepository.observeForChannels(state.channelIds, state.windowStart, state.windowEnd)
                     .map { programsByChannel ->
@@ -148,6 +155,28 @@ class EpgViewModel @Inject constructor(
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private fun ChannelEntity.toMediaItem(): MediaItem = MediaItem(
+        id = id,
+        title = name,
+        subtitle = groupTitle ?: "",
+        description = "IPTV channel",
+        posterUrl = logoUrl,
+        videoUrl = streamUrl,
+        tvgId = tvgId,
+        channelNumber = channelNumber,
+        genres = groupTitle?.let { listOf(it) } ?: emptyList(),
+        isLive = true,
+        type = MediaItem.Type.CHANNEL
+    )
+
+    private fun EpgChannel.toMediaItem(): MediaItem = MediaItem(
+        id = "epg:${channelId}",
+        title = channelName ?: channelId,
+        tvgId = channelId,
+        isLive = true,
+        type = MediaItem.Type.CHANNEL
+    )
 }
 
 data class EpgUiState(
@@ -162,4 +191,10 @@ data class EpgTimelineState(
     val channelIds: List<String> = emptyList(),
     val channels: List<MediaItem> = emptyList(),
     val pixelsPerMinute: Float = 4f
+)
+
+data class LastEpgSyncState(
+    val at: Long = 0L,
+    val status: String = "",
+    val error: String? = null
 )

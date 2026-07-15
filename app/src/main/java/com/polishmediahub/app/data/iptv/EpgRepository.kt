@@ -1,6 +1,7 @@
 package com.polishmediahub.app.data.iptv
 
 import android.content.Context
+import android.util.Log
 import com.polishmediahub.app.data.local.EpgDao
 import com.polishmediahub.app.data.local.EpgEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -72,7 +73,9 @@ class EpgRepository @Inject constructor(
                     epgDao.deleteOlderThan(System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L)
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w("EpgRepository", "loadEpg failed for $xmltvUrl: ${e.message}", e)
+            throw e
         }
     }
 

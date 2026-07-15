@@ -25,6 +25,18 @@ All notable changes to Polish Media Hub are documented in this file.
   - Unwatched episode descriptions are blurred with `Modifier.blur(16.dp)`.
   - D-Pad Center/SELECT reveals the description for the current session.
 
+#### Search & live TV
+- **Voice Search** (`SearchScreen`, `SearchViewModel`)
+  - D-Pad Mic `TvIconButton` next to the search field.
+  - Launches `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` with `LANGUAGE_MODEL_FREE_FORM` and Polish (`pl-PL`).
+  - Recognized text is inserted into the search field and `SearchViewModel.submitSearch(query)` is called.
+- **Background EPG/IPTV cache updater** (`IptvUpdateWorker`)
+  - `CoroutineWorker` running every 12 hours and on cold start via `WorkManager`.
+  - Fetches configured M3U playlists and XMLTV EPG, parses them and stores channels in the new `ChannelEntity` Room table and programs in the existing `EpgEntity` table.
+  - `Constraints`: `NetworkType.UNMETERED`, `requiresDeviceIdle`, `requiresBatteryNotLow`.
+  - `EpgViewModel` and `EpgTimelineGrid` now load channels/programs from local Room cache only; the live-TV screen opens instantly without downloading large XML files on entry.
+  - Last sync timestamp and status are exposed through `ApiConfigRepository` / DataStore and displayed in `AdminHttpServer` and `SettingsScreen`.
+
 #### Player
 - Live subtitle configuration (`SettingsScreen`, `PlayerScreen`, `PlayerViewModel`)
   - Size (`14sp`, `18sp`, `24sp`, `32sp`), color (White / Yellow / Gray) and vertical offset stored in DataStore.

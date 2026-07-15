@@ -126,8 +126,12 @@
     <string name="torrents_add">Add torrent</string>
     <string name="torrents_empty">No active torrents. Add a legal magnet/torrent you own.</string>
     <string name="epg_url">XMLTV EPG URL</string>
-    <string name="epg_load">Load EPG</string>
     <string name="epg_empty">No EPG data. Add a URL in Admin.</string>
+    <string name="epg_refresh">Refresh EPG / channels</string>
+    <string name="epg_last_sync">Last sync: %1$s — %2$s</string>
+    <string name="epg_status_success">Success</string>
+    <string name="epg_status_error">Error</string>
+    <string name="epg_status_never">Never</string>
     <string name="add">Add</string>
     <string name="check_updates">Check for updates</string>
     <string name="load_legal_samples">Load legal sample sources</string>
@@ -164,6 +168,9 @@
     <string name="essential_setup_web_title">Public Web Catalogs</string>
     <string name="essential_setup_web_subtitle">Configured legal video site crawlers</string>
     <string name="essential_setup_confirm">Confirm &amp; Launch</string>
+    <string name="voice_search">Voice search</string>
+    <string name="voice_search_prompt">Say a title to search for</string>
+    <string name="voice_search_no_results">Voice recognition did not return any text</string>
     <string name="crash_report_title">The application encountered an unexpected problem</string>
     <string name="crash_report_hint">You can report the details below or restart the app.</string>
     <string name="crash_report_restart">Restart app</string>

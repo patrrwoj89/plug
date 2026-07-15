@@ -56,15 +56,14 @@ import com.polishmediahub.app.data.local.EpgEntity
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.navigation.Screen
 import com.polishmediahub.app.ui.components.EmptyState
-import com.polishmediahub.app.ui.components.ErrorState
 import com.polishmediahub.app.ui.components.FocusableSurface
-import com.polishmediahub.app.ui.components.ShimmerBox
 import com.polishmediahub.app.ui.components.TvOutlinedTextField
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Radius
 import com.polishmediahub.app.ui.theme.Spacing
 import com.polishmediahub.app.ui.viewmodel.EpgViewModel
+import com.polishmediahub.app.ui.viewmodel.LastEpgSyncState
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -84,14 +83,24 @@ fun EpgScreen(
     onNavigate: (Screen) -> Unit = {},
     viewModel: EpgViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val lastEpgSync by viewModel.lastEpgSync.collectAsStateWithLifecycle()
     val timelineState by viewModel.timelineState.collectAsStateWithLifecycle()
     val channelsWithPrograms by viewModel.channelsWithPrograms.collectAsStateWithLifecycle()
 
     var url by remember { mutableStateOf(viewModel.epgUrl.value) }
     var m3uUrl by remember { mutableStateOf(viewModel.m3uUrl.value) }
+
+    LaunchedEffect(Unit) {
+        viewModel.m3uUrl.collect { m3uUrl = it }
+    }
+    LaunchedEffect(Unit) {
+        viewModel.epgUrl.collect { url = it }
+    }
+
     var selectedProgram by remember { mutableStateOf<EpgEntity?>(null) }
     var selectedChannel by remember { mutableStateOf<MediaItem?>(null) }
+    val syncStatusText = remember(lastEpgSync) { formatEpgSyncStatus(context, lastEpgSync) }
 
     Column(
         modifier = modifier
@@ -120,23 +129,24 @@ fun EpgScreen(
                 onClick = {
                     if (m3uUrl.isNotBlank()) viewModel.loadChannels(m3uUrl)
                     if (url.isNotBlank()) viewModel.loadEpg(url)
+                    viewModel.refresh()
                 },
                 modifier = Modifier.height(56.dp)
             ) {
-                Text(stringResource(id = R.string.epg_load), modifier = Modifier.padding(horizontal = Spacing.md))
+                Text(stringResource(id = R.string.epg_refresh), modifier = Modifier.padding(horizontal = Spacing.md))
             }
         }
 
+        Spacer(modifier = Modifier.height(Spacing.sm))
+        Text(
+            text = syncStatusText,
+            style = AppTypography.caption,
+            color = AppColor.OnSurfaceVariant
+        )
+
         Spacer(modifier = Modifier.height(Spacing.lg))
 
-        if (uiState.isLoading) {
-            repeat(4) {
-                ShimmerBox(modifier = Modifier.fillMaxWidth().height(64.dp))
-                Spacer(modifier = Modifier.height(Spacing.md))
-            }
-        } else if (uiState.error != null) {
-            ErrorState(message = uiState.error ?: "", onRetry = { if (url.isNotBlank()) viewModel.loadEpg(url) })
-        } else if (channelsWithPrograms.isEmpty()) {
+        if (channelsWithPrograms.isEmpty()) {
             EmptyState(message = stringResource(id = R.string.epg_empty))
         } else {
             EpgTimelineGrid(
@@ -484,6 +494,20 @@ private fun ProgramDetailsPanel(
             )
         }
     }
+}
+
+private fun formatEpgSyncStatus(context: android.content.Context, state: LastEpgSyncState): String {
+    val date = if (state.at > 0L) {
+        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(state.at))
+    } else {
+        context.getString(R.string.epg_status_never)
+    }
+    val status = when (state.status) {
+        "success" -> context.getString(R.string.epg_status_success)
+        "error" -> context.getString(R.string.epg_status_error) + (state.error?.let { " ($it)" } ?: "")
+        else -> if (state.at > 0L) state.status else ""
+    }
+    return context.getString(R.string.epg_last_sync, date, status)
 }
 
 private fun formatTime(timestamp: Long): String {

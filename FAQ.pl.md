@@ -30,6 +30,12 @@ Wybrane pakiety są aplikowane w tle, zapisywane w DataStore, a następnie aplik
 
 Wyczyść dane aplikacji lub odinstaluj / zainstaluj ponownie. Flaga `isFirstLaunch` jest przechowywana w DataStore; nie ma przycisku resetu w aplikacji, aby uniknąć przypadkowej utraty danych.
 
+## Wyszukiwanie
+
+### Jak działa wyszukiwanie głosowe?
+
+Na ekranie **Szukaj** przesuń fokus na przycisk **mikrofonu** obok pola wyszukiwania i naciśnij SELECT. Aplikacja uruchamia systemowy rozpoznawanie mowy skonfigurowane dla języka polskiego (`pl-PL`). Po wypowiedzeniu frazy rozpoznany tekst jest wstawiany do pola wyszukiwania i automatycznie uruchamiane jest wyszukiwanie. Wyszukiwanie głosowe wymaga zainstalowanej aplikacji rozpoznawania mowy Google / systemowej.
+
 ## Źródła i treści
 
 ### Jak dodać źródła?
@@ -53,6 +59,16 @@ Szczegółowe opisy endpointów i przykłady JSON znajdziesz w [ADMIN_PANEL.md](
 - TMDB, AniList, Trakt metadata.
 - Podcasty RSS, radio internetowe M3U/PLS, proxy Deezer.
 - Legalny BitTorrent (`.torrent` / magnet) dla treści, do których masz prawo lub które są wolno rozpowszechnialne.
+
+## TV na żywo i EPG
+
+### Kiedy aktualizowany jest EPG?
+
+`IptvUpdateWorker` odświeża skonfigurowane playlisty M3U oraz pliki XMLTV EPG co 12 godzin i przy zimnym starcie aplikacji. Aktualizacja wykonuje się tylko w połączeniu bez limitu danych (Wi-Fi / Ethernet), gdy urządzenie jest bezczynne i bateria nie jest na niskim poziomie. Kanały i programy są zapisywane w Room, dzięki czemu ekran **Program TV** otwiera się natychmiast z lokalnej pamięci.
+
+### Gdzie sprawdzić status ostatniej synchronizacji EPG?
+
+Status jest wyświetlany u dołu ekranu **Program TV**, w ekranie **Ustawień** oraz w bezprzewodowym panelu **Admin** (`lastEpgSyncAt`, `lastEpgSyncStatus`, `lastEpgSyncError`).
 
 ### Czy mogę użyć NAS / domowego serwera?
 

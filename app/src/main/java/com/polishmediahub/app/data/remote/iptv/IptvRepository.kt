@@ -1,5 +1,6 @@
 package com.polishmediahub.app.data.remote.iptv
 
+import android.util.Log
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.MediaRepository
 import com.polishmediahub.app.model.Category
@@ -9,7 +10,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.IOException
 import javax.inject.Inject
+
+private const val TAG = "IptvRepository"
 
 class IptvRepository @Inject constructor(
     private val client: OkHttpClient,
@@ -17,32 +21,36 @@ class IptvRepository @Inject constructor(
 ) : MediaRepository {
 
     override suspend fun featured(): List<MediaItem> = try {
-        fetchChannels().take(10)
-    } catch (_: Exception) {
+        loadChannels().take(10)
+    } catch (e: Exception) {
+        Log.w(TAG, "featured() failed: ${e.message}", e)
         emptyList()
     }
 
     override suspend fun categories(): List<Category> = try {
-        val channels = fetchChannels()
+        val channels = loadChannels()
         channels.groupBy { it.genres.firstOrNull() ?: "Uncategorized" }
             .map { (group, items) -> Category(id = "iptv_$group", name = group, items = items) }
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        Log.w(TAG, "categories() failed: ${e.message}", e)
         emptyList()
     }
 
     override suspend fun search(query: String): List<MediaItem> = try {
-        fetchChannels().filter { it.title.contains(query, ignoreCase = true) }
-    } catch (_: Exception) {
+        loadChannels().filter { it.title.contains(query, ignoreCase = true) }
+    } catch (e: Exception) {
+        Log.w(TAG, "search($query) failed: ${e.message}", e)
         emptyList()
     }
 
     override suspend fun byId(id: String): MediaItem? = try {
-        fetchChannels().find { it.id == id }
-    } catch (_: Exception) {
+        loadChannels().find { it.id == id }
+    } catch (e: Exception) {
+        Log.w(TAG, "byId($id) failed: ${e.message}", e)
         null
     }
 
-    private suspend fun fetchChannels(): List<MediaItem> = withContext(Dispatchers.IO) {
+    internal suspend fun loadChannels(): List<MediaItem> = withContext(Dispatchers.IO) {
         val urls = apiConfigRepository.iptvSourceUrls.first()
         if (urls.isBlank()) return@withContext emptyList()
 
@@ -55,8 +63,12 @@ class IptvRepository @Inject constructor(
 
     private fun fetchPlaylist(url: String): List<MediaItem> {
         val request = Request.Builder().url(url).build()
-        val response = client.newCall(request).execute()
-        val body = response.body?.string() ?: return emptyList()
-        return M3UParser.parse(body)
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw IOException("Playlist fetch failed for $url: HTTP ${response.code}")
+            }
+            val body = response.body?.string() ?: throw IOException("Empty response body for $url")
+            return M3UParser.parse(body)
+        }
     }
 }

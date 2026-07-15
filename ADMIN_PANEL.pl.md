@@ -54,6 +54,9 @@ Wyślij pola formularza odpowiadające kluczom obsługiwanym przez `ApiConfigRep
 | `aniListToken` | Token dostępu AniList |
 | `traktClientId` | Client ID Trakt |
 | `debridApiKey` / `debridProvider` | Token Debrid i provider (`real_debrid`, `torbox`) |
+| `lastEpgSyncAt` | Tylko do odczytu — znacznik czasu ostatniej synchronizacji EPG/IPTV (ms od epoki) |
+| `lastEpgSyncStatus` | Tylko do odczytu — status ostatniej synchronizacji: `success` lub `error` |
+| `lastEpgSyncError` | Tylko do odczytu — komunikat błędu z ostatniej nieudanej synchronizacji |
 
 Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignorowane.
 

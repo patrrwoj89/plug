@@ -16,9 +16,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         DownloadEntity::class,
         EpgEntity::class,
         ProfileEntity::class,
-        AudioHistoryEntity::class
+        AudioHistoryEntity::class,
+        ChannelEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class MediaDatabase : RoomDatabase() {
@@ -29,6 +30,7 @@ abstract class MediaDatabase : RoomDatabase() {
     abstract fun epgDao(): EpgDao
     abstract fun profileDao(): ProfileDao
     abstract fun audioHistoryDao(): AudioHistoryDao
+    abstract fun channelDao(): ChannelDao
 
     companion object {
 
@@ -48,7 +50,8 @@ abstract class MediaDatabase : RoomDatabase() {
             migrationFromV6toV7(),
             migrationFromV7toV8(),
             migrationFromV8toV9(),
-            migrationFromV9toV10()
+            migrationFromV9toV10(),
+            migrationFromV10toV11()
         ).toTypedArray()
 
         private fun migrationWithEpgRebuild(startVersion: Int, endVersion: Int): Migration =
@@ -233,6 +236,13 @@ abstract class MediaDatabase : RoomDatabase() {
                 }
             }
 
+        private fun migrationFromV10toV11(): Migration =
+            object : Migration(10, 11) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    createIptvChannelsTable(db)
+                }
+            }
+
         private fun createAudioHistoryTable(db: SupportSQLiteDatabase) {
             db.execSQL(
                 """
@@ -262,6 +272,7 @@ abstract class MediaDatabase : RoomDatabase() {
             createPluginsTable(db)
             createDownloadsTable(db)
             createEpgTable(db)
+            createIptvChannelsTable(db)
         }
 
         private fun createSavedMediaTable(db: SupportSQLiteDatabase) {
@@ -373,6 +384,24 @@ abstract class MediaDatabase : RoomDatabase() {
                 """.trimIndent()
             )
             createEpgIndexIfMissing(db)
+        }
+
+        private fun createIptvChannelsTable(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS iptv_channels (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    name TEXT NOT NULL,
+                    logoUrl TEXT,
+                    groupTitle TEXT,
+                    streamUrl TEXT NOT NULL,
+                    channelNumber TEXT,
+                    tvgId TEXT,
+                    tvgName TEXT,
+                    updatedAt INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
         }
 
         private fun createEpgIndexIfMissing(db: SupportSQLiteDatabase) {

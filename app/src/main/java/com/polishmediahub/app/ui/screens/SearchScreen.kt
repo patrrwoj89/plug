@@ -9,13 +9,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +46,7 @@ import com.polishmediahub.app.ui.components.EmptyState
 import com.polishmediahub.app.ui.components.ErrorState
 import com.polishmediahub.app.ui.components.FocusableSurface
 import com.polishmediahub.app.ui.components.MediaCard
+import com.polishmediahub.app.ui.components.TvIconButton
 import com.polishmediahub.app.ui.components.TvOutlinedTextField
 import com.polishmediahub.app.ui.components.TvTextButton
 import com.polishmediahub.app.ui.theme.AppColor
@@ -57,6 +64,34 @@ fun SearchScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val history by viewModel.history.collectAsStateWithLifecycle()
     val searchFieldFocus = remember { FocusRequester() }
+    val context = LocalContext.current
+    val voicePrompt = stringResource(id = R.string.voice_search_prompt)
+    val voiceNoResults = stringResource(id = R.string.voice_search_no_results)
+
+    val voiceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val query = matches?.firstOrNull { it.isNotBlank() }
+            if (!query.isNullOrBlank()) {
+                viewModel.submitSearch(query)
+            } else {
+                android.widget.Toast.makeText(context, voiceNoResults, android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun launchVoiceSearch() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pl-PL")
+            putExtra(RecognizerIntent.EXTRA_PROMPT, voicePrompt)
+        }
+        if (intent.resolveActivity(context.packageManager) != null) {
+            voiceLauncher.launch(intent)
+        } else {
+            android.widget.Toast.makeText(context, voiceNoResults, android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
 
     LaunchedEffect(Unit) {
         searchFieldFocus.requestFocus()
@@ -73,24 +108,35 @@ fun SearchScreen(
             modifier = Modifier.padding(bottom = Spacing.md)
         )
 
-        TvOutlinedTextField(
-            value = uiState.query,
-            onValueChange = viewModel::onQueryChange,
-            modifier = Modifier.fillMaxWidth(0.5f),
-            focusRequester = searchFieldFocus,
-            onPreviewKeyEvent = { event ->
-                if (event.key == Key.Enter) {
-                    viewModel.submitSearch(uiState.query)
-                    true
-                } else {
-                    false
-                }
-            },
-            placeholder = { Text(stringResource(id = R.string.search_placeholder)) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(id = R.string.search)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search)
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(0.5f)
+        ) {
+            TvOutlinedTextField(
+                value = uiState.query,
+                onValueChange = viewModel::onQueryChange,
+                modifier = Modifier.weight(1f),
+                focusRequester = searchFieldFocus,
+                onPreviewKeyEvent = { event ->
+                    if (event.key == Key.Enter) {
+                        viewModel.submitSearch(uiState.query)
+                        true
+                    } else {
+                        false
+                    }
+                },
+                placeholder = { Text(stringResource(id = R.string.search_placeholder)) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(id = R.string.search)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search)
+            )
+            TvIconButton(
+                imageVector = Icons.Default.Mic,
+                contentDescription = stringResource(id = R.string.voice_search),
+                onClick = ::launchVoiceSearch
+            )
+        }
 
         Spacer(modifier = Modifier.height(Spacing.lg))
 

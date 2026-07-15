@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -147,7 +148,10 @@ class AdminHttpServer @Inject constructor(
                     "subsonicUser" to subsonicUser,
                     "subsonicPassword" to subsonicPassword,
                     "podcastFeeds" to podcastFeeds,
-                    "deezerProxyUrl" to deezerProxyUrl
+                    "deezerProxyUrl" to deezerProxyUrl,
+                    "lastEpgSyncAt" to lastEpgSyncAt,
+                    "lastEpgSyncStatus" to lastEpgSyncStatus,
+                    "lastEpgSyncError" to lastEpgSyncError.map { it ?: "" }
                 )
             }.mapValues { (_, flow) -> flow.first().toString() }
             val jsonObj = JsonObject(values.mapValues { (_, v) -> JsonPrimitive(v) })
@@ -272,6 +276,7 @@ button:hover { background: #29b6f6; }
 <body>
 <h1>Polish Media Hub - Admin</h1>
 <p>Configure sources and plugins from your phone or computer.</p>
+<p id="epgStatus" class="status"></p>
 <form id="configForm">
   <label>Kodi URL</label>
   <input type="text" name="kodiUrl" placeholder="http://192.168.1.10:8080">
@@ -359,7 +364,21 @@ document.getElementById('pluginForm').addEventListener('submit', async function(
     alert('Plugin added');
   } catch (err) { alert(err.message); }
 });
+async function loadEpgStatus() {
+  try {
+    const res = await fetch('/api/config');
+    const cfg = await res.json();
+    const at = cfg.lastEpgSyncAt ? new Date(Number(cfg.lastEpgSyncAt)).toLocaleString() : 'Never';
+    const status = cfg.lastEpgSyncStatus || '';
+    const error = cfg.lastEpgSyncError;
+    const el = document.getElementById('epgStatus');
+    el.textContent = 'Last EPG sync: ' + at + ' — ' + status + (error ? ' (' + error + ')' : '');
+    el.className = 'status ' + (status === 'success' ? 'ok' : status ? 'err' : '');
+    el.style.display = status ? 'block' : 'none';
+  } catch (e) { console.error(e); }
+}
 loadConfig();
+loadEpgStatus();
 </script>
 </body>
 </html>

@@ -47,7 +47,7 @@ import com.polishmediahub.app.ui.screens.WatchlistScreen
 import com.polishmediahub.app.ui.viewmodel.ProfileViewModel
 import com.polishmediahub.app.ui.viewmodel.SettingsViewModel
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 
 @Composable
@@ -136,7 +136,7 @@ fun TVApp(
             startDestination = startDestination,
             modifier = Modifier
                 .fillMaxSize()
-                .haze(state = hazeState)
+                .hazeSource(state = hazeState)
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(onNavigate = { navController.navigate(it.route) })

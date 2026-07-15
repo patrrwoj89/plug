@@ -16,7 +16,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
   - **Cloudstream** plugin-style repositories and **Aniyomi** `.apk` extensions loaded dynamically via `DexClassLoader`.
   - **QuickJS plugins** (`.js`) with built-in `httpFetch` network bridge, headers and async evaluation.
   - **Web scraping** configuration via JSON with validation and dynamic fallback to QuickJS.
-  - **IPTV/M3U** with XMLTV EPG support and a professional **EPG Timeline Grid**.
+  - **IPTV/M3U** with XMLTV EPG support, local Room cache, background refresh by `IptvUpdateWorker` and a professional **EPG Timeline Grid**.
   - **Jellyfin, Plex, Emby, Subsonic/Airsonic, Stremio, AniList, TMDB, Trakt, podcasts (RSS)**, internet radio and Deezer proxy.
 - **BitTorrent streaming** via `jlibtorrent` with sequential download, local HTTP proxy and buffering UI.
 - **Music & audio**:
@@ -31,6 +31,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **Essential Addon Setup** onboarding screen for first-launch profiles: one-click loading of legal starter packages (IPTV/EPG, music/podcasts, public web catalogs) via `EssentialSetupScreen` and `EssentialSetupViewModel`.
 - **Library, Watchlist and Custom Lists** screens use a 5-column `LazyVerticalGrid` (`CustomListDetailScreen` for the contents of a single custom list).
 - **D-Pad focus restoration** in horizontal `LazyRow`s (`CategoryRow`) via `Modifier.focusGroup()` + `focusRestorer()`, so focus returns to the last viewed item when moving between rows.
+- **Voice Search** in `SearchScreen`: D-Pad Mic button launches `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` in Polish (`pl-PL`) and inserts the recognized query into the search field.
 - **Auto-Play Next** overlay for series: 15-second countdown with next-episode metadata, "Play now" / "Cancel" D-Pad buttons, BACK behaves like Cancel.
 - **Spoiler Blur**: unwatched episode plot descriptions are blurred on the detail screen and can be revealed with D-Pad Center/SELECT.
 - **Subtitle settings in player**: size, color and vertical offset stored in DataStore and applied live to `SubtitleView`.
@@ -53,7 +54,8 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 
 ### Admin & configuration
 
-- **Wireless admin panel** served by a local HTTP server with QR code (ZXing) for easy source configuration from a phone or computer.
+- **Wireless admin panel** served by a local HTTP server with QR code (ZXing) for easy source configuration from a phone or computer; the panel and Settings show the last EPG sync timestamp and status.
+- **Background EPG/IPTV updater** (`IptvUpdateWorker`) runs every 12 hours (and on cold start) on `Dispatchers.IO` with unmetered/idle/battery-not-low constraints, caches channels and EPG in Room, so the live-TV screen opens instantly.
 - **First-launch onboarding** lets new users pick legal starter source packages.
 
 ### Android TV integration

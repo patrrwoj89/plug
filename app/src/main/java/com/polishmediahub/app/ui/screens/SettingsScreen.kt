@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.polishmediahub.app.R
@@ -31,8 +32,12 @@ import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Radius
 import com.polishmediahub.app.ui.theme.Spacing
+import com.polishmediahub.app.ui.viewmodel.LastEpgSyncState
 import com.polishmediahub.app.ui.viewmodel.PinViewModel
 import com.polishmediahub.app.ui.viewmodel.SettingsViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun SettingsScreen(
@@ -52,8 +57,10 @@ fun SettingsScreen(
     val showLoadingStats by viewModel.showLoadingStats.collectAsStateWithLifecycle()
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
     val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
+    val lastEpgSync by viewModel.lastEpgSync.collectAsStateWithLifecycle()
     var pinVerified by remember { mutableStateOf(false) }
     var pinError by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     if (pinEnabled && pinCode.isNotBlank() && !pinVerified) {
         PinScreen(
@@ -192,6 +199,15 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(Spacing.lg))
 
+        val syncStatusText = remember(lastEpgSync) { formatEpgSyncStatus(context, lastEpgSync) }
+        Text(
+            text = syncStatusText,
+            style = AppTypography.caption,
+            color = AppColor.OnSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(Spacing.sm))
+
         Text(
             text = stringResource(id = R.string.version_info),
             style = AppTypography.caption,
@@ -262,4 +278,18 @@ private fun SettingsSelector(
             }
         }
     }
+}
+
+private fun formatEpgSyncStatus(context: android.content.Context, state: LastEpgSyncState): String {
+    val date = if (state.at > 0L) {
+        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(state.at))
+    } else {
+        context.getString(R.string.epg_status_never)
+    }
+    val status = when (state.status) {
+        "success" -> context.getString(R.string.epg_status_success)
+        "error" -> context.getString(R.string.epg_status_error) + (state.error?.let { " ($it)" } ?: "")
+        else -> if (state.at > 0L) state.status else ""
+    }
+    return context.getString(R.string.epg_last_sync, date, status)
 }

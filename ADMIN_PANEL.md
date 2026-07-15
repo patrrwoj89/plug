@@ -54,6 +54,9 @@ Send form fields matching the keys supported by `ApiConfigRepository`. The admin
 | `aniListToken` | AniList access token |
 | `traktClientId` | Trakt client ID |
 | `debridApiKey` / `debridProvider` | Debrid token and provider (`real_debrid`, `torbox`) |
+| `lastEpgSyncAt` | Read-only timestamp of the last IPTV/EPG background sync (milliseconds since epoch) |
+| `lastEpgSyncStatus` | Read-only status of the last sync: `success` or `error` |
+| `lastEpgSyncError` | Read-only error message from the last failed sync, if any |
 
 Only the fields you actually use need to be present. Empty strings are ignored.
 
