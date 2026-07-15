@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.AdminPanelSettings
@@ -29,26 +30,35 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.WatchLater
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.polishmediahub.app.R
+import com.polishmediahub.app.data.local.ProfileEntity
 import com.polishmediahub.app.navigation.Screen
+import com.polishmediahub.app.ui.screens.PinScreen
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Motion
 import com.polishmediahub.app.ui.theme.Spacing
+import com.polishmediahub.app.ui.viewmodel.ProfileViewModel
 
 data class SidebarItem(
     val screen: Screen,
@@ -76,7 +86,8 @@ fun Sidebar(
     current: Screen,
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier,
-    focusRequester: FocusRequester = remember { FocusRequester() }
+    focusRequester: FocusRequester = remember { FocusRequester() },
+    showProfileHeader: Boolean = true
 ) {
     val expanded by remember { mutableStateOf(true) }
     val width by animateDpAsState(
@@ -84,6 +95,15 @@ fun Sidebar(
         animationSpec = tween(Motion.transition),
         label = "sidebar-width"
     )
+
+    val profileViewModel = if (showProfileHeader) hiltViewModel<ProfileViewModel>() else null
+    val currentProfile by profileViewModel?.currentProfile?.collectAsStateWithLifecycle()
+        ?: remember { mutableStateOf<ProfileEntity?>(null) }
+    val profiles by profileViewModel?.profiles?.collectAsStateWithLifecycle()
+        ?: remember { mutableStateOf(emptyList<ProfileEntity>()) }
+
+    var showProfileDialog by remember { mutableStateOf(false) }
+    var pinLockedProfile by remember { mutableStateOf<ProfileEntity?>(null) }
 
     LazyColumn(
         modifier = modifier
@@ -94,6 +114,15 @@ fun Sidebar(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.xs)
     ) {
+        item {
+            ProfileHeader(
+                profile = currentProfile,
+                expanded = expanded,
+                onClick = { showProfileDialog = true },
+                modifier = Modifier.padding(horizontal = Spacing.md)
+            )
+        }
+
         item {
             // Logo area
             Box(
@@ -137,6 +166,166 @@ fun Sidebar(
             )
         }
     }
+
+    if (showProfileDialog) {
+        ProfileSelectionDialog(
+            profiles = profiles,
+            currentProfile = currentProfile,
+            onSelect = { profile ->
+                showProfileDialog = false
+                if (profile.isPinLocked && profile.pinCode != null) {
+                    pinLockedProfile = profile
+                } else {
+                    profileViewModel?.selectProfile(profile)
+                }
+            },
+            onDismiss = { showProfileDialog = false }
+        )
+    }
+
+    pinLockedProfile?.let { profile ->
+        AlertDialog(
+            onDismissRequest = { pinLockedProfile = null },
+            title = { Text(stringResource(id = R.string.enter_pin)) },
+            text = {
+                PinScreen(
+                    onPinEntered = { pin ->
+                        if (profileViewModel?.verifyPin(profile, pin) == true) {
+                            pinLockedProfile = null
+                            profileViewModel.selectProfile(profile)
+                        }
+                    },
+                    onCancel = { pinLockedProfile = null }
+                )
+            },
+            confirmButton = {},
+            dismissButton = {}
+        )
+    }
+}
+
+@Composable
+private fun ProfileHeader(
+    profile: ProfileEntity?,
+    expanded: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val name = profile?.name ?: stringResource(id = R.string.profile_default)
+
+    FocusableSurface(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+        backgroundColor = AppColor.Surface,
+        focusedBackgroundColor = AppColor.SurfaceHover
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.md)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(AppColor.Accent.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (profile != null && !profile.avatarUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = profile.avatarUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxHeight()
+                    )
+                } else {
+                    Text(
+                        text = name.take(1).uppercase(),
+                        style = AppTypography.titleLarge,
+                        color = AppColor.Accent
+                    )
+                }
+            }
+            if (expanded) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = name,
+                        style = AppTypography.title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = stringResource(id = R.string.profile_switch),
+                        style = AppTypography.caption,
+                        color = AppColor.OnSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileSelectionDialog(
+    profiles: List<ProfileEntity>,
+    currentProfile: ProfileEntity?,
+    onSelect: (ProfileEntity) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(id = R.string.profile_select)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                profiles.forEach { profile ->
+                    val selected = profile.id == currentProfile?.id
+                    FocusableSurface(
+                        onClick = { onSelect(profile) },
+                        modifier = Modifier.fillMaxWidth(),
+                        backgroundColor = if (selected) AppColor.Accent.copy(alpha = 0.2f) else AppColor.Surface,
+                        focusedBackgroundColor = AppColor.SurfaceHover
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(Spacing.md)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(AppColor.Accent.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = profile.name.take(1).uppercase(),
+                                    style = AppTypography.title,
+                                    color = AppColor.Accent
+                                )
+                            }
+                            Text(
+                                text = profile.name + if (profile.isPinLocked) " 🔒" else "",
+                                style = AppTypography.body,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            FocusableSurface(onClick = onDismiss) {
+                Text(stringResource(id = R.string.cancel), modifier = Modifier.padding(Spacing.md))
+            }
+        }
+    )
 }
 
 @Composable

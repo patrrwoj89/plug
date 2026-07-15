@@ -13,9 +13,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CustomListItemEntity::class,
         PluginEntity::class,
         DownloadEntity::class,
-        EpgEntity::class
+        EpgEntity::class,
+        ProfileEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class MediaDatabase : RoomDatabase() {
@@ -24,13 +25,14 @@ abstract class MediaDatabase : RoomDatabase() {
     abstract fun pluginDao(): PluginDao
     abstract fun downloadDao(): DownloadDao
     abstract fun epgDao(): EpgDao
+    abstract fun profileDao(): ProfileDao
 
     companion object {
 
         /**
-         * Stable migrations from every previous schema version to the current one (7).
+         * Stable migrations from every previous schema version to the current one (8).
          * These migrations preserve user data (watch history, library, watchlist, downloads,
-         * custom lists, plugins) and only rebuild the EPG cache table when needed.
+         * custom lists, plugins, profiles) and only rebuild the EPG cache table when needed.
          */
         val MIGRATIONS: Array<Migration> = listOf(
             migrationWithEpgRebuild(1, 7),
@@ -38,7 +40,8 @@ abstract class MediaDatabase : RoomDatabase() {
             migrationWithEpgRebuild(3, 7),
             migrationWithEpgRebuild(4, 7),
             migrationWithEpgRebuild(5, 7),
-            migrationFromV6toV7()
+            migrationFromV6toV7(),
+            migrationFromV7toV8()
         ).toTypedArray()
 
         private fun migrationWithEpgRebuild(startVersion: Int, endVersion: Int): Migration =
@@ -59,6 +62,151 @@ abstract class MediaDatabase : RoomDatabase() {
                     createEpgIndexIfMissing(db)
                 }
             }
+
+        private fun migrationFromV7toV8(): Migration =
+            object : Migration(7, 8) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    migrateToMultiProfile(db)
+                }
+            }
+
+        private fun migrateToMultiProfile(db: SupportSQLiteDatabase) {
+            val defaultProfileId = "default_profile"
+
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS profiles (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    name TEXT NOT NULL,
+                    avatarUrl TEXT,
+                    isPinLocked INTEGER NOT NULL,
+                    pinCode TEXT
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                "INSERT OR IGNORE INTO profiles (id, name, avatarUrl, isPinLocked, pinCode) VALUES (?, ?, ?, ?, ?)",
+                arrayOf<Any?>(defaultProfileId, "Default", null, 0, null)
+            )
+
+            // watched
+            db.execSQL("DROP TABLE IF EXISTS watched_new")
+            db.execSQL(
+                """
+                CREATE TABLE watched_new (
+                    profileId TEXT NOT NULL,
+                    id TEXT NOT NULL,
+                    positionMs INTEGER NOT NULL,
+                    durationMs INTEGER NOT NULL,
+                    watchedAt INTEGER NOT NULL,
+                    PRIMARY KEY(profileId, id),
+                    FOREIGN KEY(profileId) REFERENCES profiles(id) ON DELETE CASCADE
+                )
+                """.trimIndent()
+            )
+            try {
+                db.execSQL(
+                    """
+                    INSERT INTO watched_new (profileId, id, positionMs, durationMs, watchedAt)
+                    SELECT ?, id, positionMs, durationMs, watchedAt FROM watched
+                    """.trimIndent(),
+                    arrayOf<Any?>(defaultProfileId)
+                )
+            } catch (_: Exception) {
+            }
+            db.execSQL("DROP TABLE IF EXISTS watched")
+            db.execSQL("ALTER TABLE watched_new RENAME TO watched")
+
+            // saved_media
+            db.execSQL("DROP TABLE IF EXISTS saved_media_new")
+            db.execSQL(
+                """
+                CREATE TABLE saved_media_new (
+                    profileId TEXT NOT NULL,
+                    id TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    subtitle TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    posterUrl TEXT NOT NULL,
+                    backdropUrl TEXT NOT NULL,
+                    year TEXT NOT NULL,
+                    duration TEXT NOT NULL,
+                    rating TEXT NOT NULL,
+                    videoUrl TEXT NOT NULL,
+                    listType TEXT NOT NULL,
+                    addedAt INTEGER NOT NULL,
+                    PRIMARY KEY(profileId, id, listType),
+                    FOREIGN KEY(profileId) REFERENCES profiles(id) ON DELETE CASCADE
+                )
+                """.trimIndent()
+            )
+            try {
+                db.execSQL(
+                    """
+                    INSERT INTO saved_media_new (profileId, id, title, subtitle, description, posterUrl, backdropUrl, year, duration, rating, videoUrl, listType, addedAt)
+                    SELECT ?, id, title, subtitle, description, posterUrl, backdropUrl, year, duration, rating, videoUrl, listType, addedAt FROM saved_media
+                    """.trimIndent(),
+                    arrayOf<Any?>(defaultProfileId)
+                )
+            } catch (_: Exception) {
+            }
+            db.execSQL("DROP TABLE IF EXISTS saved_media")
+            db.execSQL("ALTER TABLE saved_media_new RENAME TO saved_media")
+
+            // custom_lists
+            db.execSQL("DROP TABLE IF EXISTS custom_lists_new")
+            db.execSQL(
+                """
+                CREATE TABLE custom_lists_new (
+                    profileId TEXT NOT NULL,
+                    listId TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    createdAt INTEGER NOT NULL,
+                    PRIMARY KEY(profileId, listId),
+                    FOREIGN KEY(profileId) REFERENCES profiles(id) ON DELETE CASCADE
+                )
+                """.trimIndent()
+            )
+            try {
+                db.execSQL(
+                    """
+                    INSERT INTO custom_lists_new (profileId, listId, name, createdAt)
+                    SELECT ?, listId, name, createdAt FROM custom_lists
+                    """.trimIndent(),
+                    arrayOf<Any?>(defaultProfileId)
+                )
+            } catch (_: Exception) {
+            }
+            db.execSQL("DROP TABLE IF EXISTS custom_lists")
+            db.execSQL("ALTER TABLE custom_lists_new RENAME TO custom_lists")
+
+            // custom_list_items
+            db.execSQL("DROP TABLE IF EXISTS custom_list_items_new")
+            db.execSQL(
+                """
+                CREATE TABLE custom_list_items_new (
+                    profileId TEXT NOT NULL,
+                    listId TEXT NOT NULL,
+                    mediaId TEXT NOT NULL,
+                    addedAt INTEGER NOT NULL,
+                    PRIMARY KEY(profileId, listId, mediaId),
+                    FOREIGN KEY(profileId, listId) REFERENCES custom_lists(profileId, listId) ON DELETE CASCADE
+                )
+                """.trimIndent()
+            )
+            try {
+                db.execSQL(
+                    """
+                    INSERT INTO custom_list_items_new (profileId, listId, mediaId, addedAt)
+                    SELECT ?, listId, mediaId, addedAt FROM custom_list_items
+                    """.trimIndent(),
+                    arrayOf<Any?>(defaultProfileId)
+                )
+            } catch (_: Exception) {
+            }
+            db.execSQL("DROP TABLE IF EXISTS custom_list_items")
+            db.execSQL("ALTER TABLE custom_list_items_new RENAME TO custom_list_items")
+        }
 
         private fun createAllTablesIfMissing(db: SupportSQLiteDatabase) {
             createSavedMediaTable(db)

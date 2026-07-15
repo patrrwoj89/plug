@@ -8,6 +8,7 @@ import com.polishmediahub.app.data.local.MediaDatabase
 import com.polishmediahub.app.data.local.DownloadDao
 import com.polishmediahub.app.data.local.EpgDao
 import com.polishmediahub.app.data.local.PluginDao
+import com.polishmediahub.app.data.local.ProfileDao
 import com.polishmediahub.app.data.local.SavedMediaDao
 import dagger.Module
 import dagger.Provides
@@ -53,4 +54,8 @@ object AppModule {
     @Provides
     fun provideEpgDao(database: MediaDatabase): EpgDao =
         database.epgDao()
+
+    @Provides
+    fun provideProfileDao(database: MediaDatabase): ProfileDao =
+        database.profileDao()
 }

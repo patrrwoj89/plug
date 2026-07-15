@@ -114,4 +114,7 @@
     <string name="settings_pin_subtitle">4-digit code to lock Settings and Admin</string>
     <string name="settings_pin_enabled">PIN enabled</string>
     <string name="download_audio">Download audio</string>
+    <string name="profile_default">Default</string>
+    <string name="profile_switch">Switch profile</string>
+    <string name="profile_select">Select profile</string>
 </resources>

@@ -53,7 +53,8 @@ class ComponentScreenshotTest {
             TVHubTheme {
                 Sidebar(
                     current = Screen.Home,
-                    onNavigate = {}
+                    onNavigate = {},
+                    showProfileHeader = false
                 )
             }
         }

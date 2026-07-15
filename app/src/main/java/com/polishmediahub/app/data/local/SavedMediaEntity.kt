@@ -1,11 +1,23 @@
 package com.polishmediahub.app.data.local
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
+import androidx.room.ForeignKey
 
-@Entity(tableName = "saved_media")
+@Entity(
+    tableName = "saved_media",
+    primaryKeys = ["profileId", "id", "listType"],
+    foreignKeys = [
+        ForeignKey(
+            entity = ProfileEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["profileId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ]
+)
 data class SavedMediaEntity(
-    @PrimaryKey val id: String,
+    val profileId: String,
+    val id: String,
     val title: String,
     val subtitle: String,
     val description: String,

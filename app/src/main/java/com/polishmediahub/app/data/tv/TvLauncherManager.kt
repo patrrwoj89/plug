@@ -10,6 +10,7 @@ import androidx.tvprovider.media.tv.PreviewChannelHelper
 import androidx.tvprovider.media.tv.PreviewProgram
 import androidx.tvprovider.media.tv.TvContractCompat
 import com.polishmediahub.app.R
+import com.polishmediahub.app.data.ProfileRepository
 import com.polishmediahub.app.data.WatchHistoryRepository
 import com.polishmediahub.app.data.source.FederatedMediaRepository
 import com.polishmediahub.app.model.MediaItem
@@ -18,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -28,7 +30,8 @@ class TvLauncherManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val watchHistoryRepository: WatchHistoryRepository,
     private val watchNextHelper: WatchNextHelper,
-    private val federatedMediaRepository: FederatedMediaRepository
+    private val federatedMediaRepository: FederatedMediaRepository,
+    private val profileRepository: ProfileRepository
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -44,12 +47,30 @@ class TvLauncherManager @Inject constructor(
 
     init {
         scope.launch { startWatchingHistory() }
+        scope.launch { observeProfileChanges() }
     }
 
     private suspend fun startWatchingHistory() {
         watchHistoryRepository.observeHistory().collectLatest { history ->
             history.forEach { (item, entity) ->
                 syncWatchNext(item, entity.positionMs, entity.durationMs, force = false)
+            }
+        }
+    }
+
+    private suspend fun observeProfileChanges() {
+        profileRepository.currentProfile.collectLatest { profile ->
+            if (profile == null) return@collectLatest
+            withContext(Dispatchers.IO) {
+                watchNextHelper.clearAll()
+                // Re-push current profile history after the launcher row is cleared.
+                try {
+                    val history = watchHistoryRepository.observeHistory().first()
+                    history.forEach { (item, entity) ->
+                        syncWatchNext(item, entity.positionMs, entity.durationMs, force = true)
+                    }
+                } catch (_: Exception) {
+                }
             }
         }
     }

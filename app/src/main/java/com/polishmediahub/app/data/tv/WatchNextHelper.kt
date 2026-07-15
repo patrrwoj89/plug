@@ -70,6 +70,16 @@ class WatchNextHelper @Inject constructor(
         }
     }
 
+    suspend fun clearAll() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        withContext(Dispatchers.IO) {
+            try {
+                context.contentResolver.delete(TvContractCompat.WatchNextPrograms.CONTENT_URI, null, null)
+            } catch (_: Exception) {
+            }
+        }
+    }
+
     private fun buildDeepLink(mediaItem: MediaItem): Uri {
         return Uri.parse("polishmediahub://play/${mediaItem.id}")
     }

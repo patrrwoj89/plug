@@ -3,35 +3,66 @@ package com.polishmediahub.app.data
 import com.polishmediahub.app.data.local.SavedMediaDao
 import com.polishmediahub.app.data.local.SavedMediaEntity
 import com.polishmediahub.app.model.MediaItem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SavedMediaRepository @Inject constructor(
-    private val dao: SavedMediaDao
+    private val dao: SavedMediaDao,
+    private val profileRepository: ProfileRepository
 ) {
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun observeLibrary(): Flow<List<MediaItem>> =
-        dao.observeByType(TYPE_LIBRARY).map { it.map(::toModel) }
+        currentProfileIdFlow().flatMapLatest { dao.observeByType(it, TYPE_LIBRARY) }
+            .map { it.map(::toModel) }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun observeWatchlist(): Flow<List<MediaItem>> =
-        dao.observeByType(TYPE_WATCHLIST).map { it.map(::toModel) }
+        currentProfileIdFlow().flatMapLatest { dao.observeByType(it, TYPE_WATCHLIST) }
+            .map { it.map(::toModel) }
 
-    fun isInLibrary(id: String): Flow<Boolean> = dao.isSaved(id, TYPE_LIBRARY)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun isInLibrary(id: String): Flow<Boolean> =
+        currentProfileIdFlow().flatMapLatest { dao.isSaved(it, id, TYPE_LIBRARY) }
 
-    fun isInWatchlist(id: String): Flow<Boolean> = dao.isSaved(id, TYPE_WATCHLIST)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun isInWatchlist(id: String): Flow<Boolean> =
+        currentProfileIdFlow().flatMapLatest { dao.isSaved(it, id, TYPE_WATCHLIST) }
 
-    suspend fun addToLibrary(item: MediaItem) = dao.insert(item.toEntity(TYPE_LIBRARY))
+    suspend fun addToLibrary(item: MediaItem) = withContext(Dispatchers.IO) {
+        val profileId = currentProfileId() ?: return@withContext
+        dao.insert(item.toEntity(profileId, TYPE_LIBRARY))
+    }
 
-    suspend fun addToWatchlist(item: MediaItem) = dao.insert(item.toEntity(TYPE_WATCHLIST))
+    suspend fun addToWatchlist(item: MediaItem) = withContext(Dispatchers.IO) {
+        val profileId = currentProfileId() ?: return@withContext
+        dao.insert(item.toEntity(profileId, TYPE_WATCHLIST))
+    }
 
-    suspend fun removeFromLibrary(id: String) = dao.deleteByIdAndType(id, TYPE_LIBRARY)
+    suspend fun removeFromLibrary(id: String) = withContext(Dispatchers.IO) {
+        val profileId = currentProfileId() ?: return@withContext
+        dao.deleteByIdAndType(profileId, id, TYPE_LIBRARY)
+    }
 
-    suspend fun removeFromWatchlist(id: String) = dao.deleteByIdAndType(id, TYPE_WATCHLIST)
+    suspend fun removeFromWatchlist(id: String) = withContext(Dispatchers.IO) {
+        val profileId = currentProfileId() ?: return@withContext
+        dao.deleteByIdAndType(profileId, id, TYPE_WATCHLIST)
+    }
 
-    private fun MediaItem.toEntity(listType: String) = SavedMediaEntity(
+    private fun currentProfileIdFlow() = profileRepository.currentProfile.filterNotNull().map { it.id }
+
+    private fun currentProfileId(): String? = profileRepository.currentProfile.value?.id
+
+    private fun MediaItem.toEntity(profileId: String, listType: String) = SavedMediaEntity(
+        profileId = profileId,
         id = id,
         title = title,
         subtitle = subtitle,
