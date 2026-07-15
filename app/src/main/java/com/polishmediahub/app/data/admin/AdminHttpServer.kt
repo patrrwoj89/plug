@@ -6,6 +6,7 @@ import com.polishmediahub.app.data.plugin.PluginRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -30,8 +31,8 @@ class AdminHttpServer @Inject constructor(
     var port: Int = 0
         private set
 
-    fun start(): Int {
-        if (serverSocket != null) return port
+    fun start(): Int = synchronized(this) {
+        serverSocket?.let { return port }
         val socket = ServerSocket(0)
         port = socket.localPort
         serverSocket = socket
@@ -45,12 +46,13 @@ class AdminHttpServer @Inject constructor(
                 }
             }
         }
-        return port
+        port
     }
 
-    fun stop() {
+    fun stop() = synchronized(this) {
         try {
             serverSocket?.close()
+            scope.cancel()
         } catch (_: Exception) {
         }
         serverSocket = null

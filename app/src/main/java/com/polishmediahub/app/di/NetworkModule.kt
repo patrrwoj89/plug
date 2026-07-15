@@ -3,6 +3,7 @@ package com.polishmediahub.app.di
 import android.content.Context
 import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.remote.RetryInterceptor
+import com.polishmediahub.app.data.remote.debrid.DebridAuthenticator
 import com.polishmediahub.app.data.remote.anilist.AniListApi
 import com.polishmediahub.app.data.remote.stremio.StremioApi
 import com.polishmediahub.app.data.remote.tmdb.TmdbApi
@@ -35,10 +36,14 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(@ApplicationContext context: Context): OkHttpClient {
+    fun provideOkHttpClient(
+        @ApplicationContext context: Context,
+        debridAuthenticator: DebridAuthenticator
+    ): OkHttpClient {
         val cacheDir = File(context.cacheDir, "http_cache").apply { mkdirs() }
         return OkHttpClient.Builder()
             .cache(Cache(cacheDir, 50 * 1024 * 1024))
+            .authenticator(debridAuthenticator)
             .addInterceptor(RetryInterceptor(maxRetries = 3))
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE

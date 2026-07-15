@@ -160,7 +160,7 @@ fun PlayerScreen(
         val mediaSession = MediaSession.Builder(context, exoPlayer).build()
 
         onDispose {
-            viewModel.saveProgress(exoPlayer.currentPosition, exoPlayer.duration.coerceAtLeast(0L))
+            viewModel.onPlaybackStopped(exoPlayer.currentPosition, exoPlayer.duration.coerceAtLeast(0L))
             mediaSession.release()
             exoPlayer.release()
         }

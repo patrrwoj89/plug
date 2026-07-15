@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext (HTTP) traffic on the device itself for local proxies
+         such as the TorrentHttpServer and AdminHttpServer. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+    </domain-config>
+
+    <!-- Allow cleartext traffic for LAN media servers that may not have TLS
+         (e.g. self-hosted Kodi, Jellyfin, Plex, Emby).  Private IP ranges
+         cannot be expressed as CIDR in the manifest; set android:usesCleartextTraffic="true"
+         for the application and trust the local network explicitly here. -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>

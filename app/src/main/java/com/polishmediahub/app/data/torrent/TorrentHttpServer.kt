@@ -6,6 +6,7 @@ import com.frostwire.jlibtorrent.TorrentHandle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.File
@@ -31,8 +32,8 @@ class TorrentHttpServer @Inject constructor(
     var port: Int = 0
         private set
 
-    fun start(): Int {
-        if (serverSocket != null) return port
+    fun start(): Int = synchronized(this) {
+        serverSocket?.let { return port }
         val socket = ServerSocket(0)
         port = socket.localPort
         serverSocket = socket
@@ -47,15 +48,17 @@ class TorrentHttpServer @Inject constructor(
                 }
             }
         }
-        return port
+        port
     }
 
-    fun stop() {
+    fun stop() = synchronized(this) {
         try {
             serverSocket?.close()
+            scope.cancel()
         } catch (_: Exception) {
         }
         serverSocket = null
+        port = 0
     }
 
     fun resolveUrl(infoHash: String, fileIndex: Int): String {

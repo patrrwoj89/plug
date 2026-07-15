@@ -31,7 +31,7 @@ object AppModule {
             context,
             MediaDatabase::class.java,
             "media.db"
-        ).fallbackToDestructiveMigration(true)
+        ).addMigrations(*MediaDatabase.MIGRATIONS)
             .build()
 
     @Provides

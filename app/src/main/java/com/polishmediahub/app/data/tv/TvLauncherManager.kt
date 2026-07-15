@@ -36,6 +36,7 @@ class TvLauncherManager @Inject constructor(
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
     private val previewChannelHelper = PreviewChannelHelper(context)
+    private val lastProgressUpdateMs = mutableMapOf<String, Long>()
 
     private var previewChannelId: Long
         get() = prefs.getLong(KEY_PREVIEW_CHANNEL_ID, -1L)
@@ -48,25 +49,51 @@ class TvLauncherManager @Inject constructor(
     private suspend fun startWatchingHistory() {
         watchHistoryRepository.observeHistory().collectLatest { history ->
             history.forEach { (item, entity) ->
-                val finished = entity.durationMs > 0 && entity.positionMs >= entity.durationMs - FINISHED_THRESHOLD_MS
-                if (finished) {
-                    watchNextHelper.removeFromWatchNext(item.id)
-                } else if (entity.positionMs > 0) {
-                    watchNextHelper.addToWatchNext(item, entity.positionMs, entity.durationMs)
-                }
+                syncWatchNext(item, entity.positionMs, entity.durationMs, force = false)
             }
         }
     }
 
+    /**
+     * Throttled progress update suitable for periodic save callbacks while the video is playing.
+     * The system [ContentResolver] is only touched every [MIN_PROGRESS_UPDATE_INTERVAL_MS] to avoid
+     * freezing the Android TV launcher with IPC traffic.
+     */
+    fun updatePlaybackProgress(mediaItem: MediaItem, positionMs: Long, durationMs: Long) {
+        scope.launch { syncWatchNext(mediaItem, positionMs, durationMs, force = false) }
+    }
+
+    /**
+     * Force-synchronizes Watch Next when the user pauses or leaves the player. This must always
+     * be written to the launcher so the resume position is accurate.
+     */
     suspend fun onPlaybackStopped(mediaItem: MediaItem, positionMs: Long, durationMs: Long) {
         withContext(Dispatchers.IO) {
-            watchHistoryRepository.updatePosition(mediaItem.id, positionMs, durationMs)
-            val finished = durationMs > 0 && positionMs >= durationMs - FINISHED_THRESHOLD_MS
-            if (finished) {
-                watchNextHelper.removeFromWatchNext(mediaItem.id)
-            } else {
-                watchNextHelper.addToWatchNext(mediaItem, positionMs, durationMs)
-            }
+            syncWatchNext(mediaItem, positionMs, durationMs, force = true)
+        }
+    }
+
+    private suspend fun syncWatchNext(
+        mediaItem: MediaItem,
+        positionMs: Long,
+        durationMs: Long,
+        force: Boolean
+    ) {
+        if (!force) {
+            val now = System.currentTimeMillis()
+            val last = lastProgressUpdateMs[mediaItem.id] ?: 0L
+            if (now - last < MIN_PROGRESS_UPDATE_INTERVAL_MS) return
+            lastProgressUpdateMs[mediaItem.id] = now
+        } else {
+            lastProgressUpdateMs[mediaItem.id] = System.currentTimeMillis()
+        }
+
+        watchHistoryRepository.updatePosition(mediaItem.id, positionMs, durationMs)
+        val finished = durationMs > 0 && positionMs >= durationMs - FINISHED_THRESHOLD_MS
+        if (finished) {
+            watchNextHelper.removeFromWatchNext(mediaItem.id)
+        } else {
+            watchNextHelper.addToWatchNext(mediaItem, positionMs, durationMs)
         }
     }
 
@@ -182,5 +209,6 @@ class TvLauncherManager @Inject constructor(
         private const val KEY_PREVIEW_CHANNEL_ID = "preview_channel_id"
         private const val FINISHED_THRESHOLD_MS = 10_000L
         private const val MAX_RECOMMENDATIONS = 20
+        private const val MIN_PROGRESS_UPDATE_INTERVAL_MS = 15_000L
     }
 }

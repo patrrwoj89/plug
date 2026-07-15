@@ -2,6 +2,8 @@ package com.polishmediahub.app.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [
@@ -22,4 +24,200 @@ abstract class MediaDatabase : RoomDatabase() {
     abstract fun pluginDao(): PluginDao
     abstract fun downloadDao(): DownloadDao
     abstract fun epgDao(): EpgDao
+
+    companion object {
+
+        /**
+         * Stable migrations from every previous schema version to the current one (7).
+         * These migrations preserve user data (watch history, library, watchlist, downloads,
+         * custom lists, plugins) and only rebuild the EPG cache table when needed.
+         */
+        val MIGRATIONS: Array<Migration> = listOf(
+            migrationWithEpgRebuild(1, 7),
+            migrationWithEpgRebuild(2, 7),
+            migrationWithEpgRebuild(3, 7),
+            migrationWithEpgRebuild(4, 7),
+            migrationWithEpgRebuild(5, 7),
+            migrationFromV6toV7()
+        ).toTypedArray()
+
+        private fun migrationWithEpgRebuild(startVersion: Int, endVersion: Int): Migration =
+            object : Migration(startVersion, endVersion) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    createAllTablesIfMissing(db)
+                    addMissingColumnsExceptEpg(db)
+                    // EPG data is a disposable cache; recreate it so the new schema is guaranteed.
+                    db.execSQL("DROP TABLE IF EXISTS epg_entries")
+                    createEpgTable(db)
+                }
+            }
+
+        private fun migrationFromV6toV7(): Migration =
+            object : Migration(6, 7) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    addEpgColumnsIfMissing(db)
+                    createEpgIndexIfMissing(db)
+                }
+            }
+
+        private fun createAllTablesIfMissing(db: SupportSQLiteDatabase) {
+            createSavedMediaTable(db)
+            createWatchedTable(db)
+            createCustomListsTable(db)
+            createCustomListItemsTable(db)
+            createPluginsTable(db)
+            createDownloadsTable(db)
+            createEpgTable(db)
+        }
+
+        private fun createSavedMediaTable(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS saved_media (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    title TEXT NOT NULL,
+                    subtitle TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    posterUrl TEXT NOT NULL,
+                    backdropUrl TEXT NOT NULL,
+                    year TEXT NOT NULL,
+                    duration TEXT NOT NULL,
+                    rating TEXT NOT NULL,
+                    videoUrl TEXT NOT NULL,
+                    listType TEXT NOT NULL,
+                    addedAt INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+        }
+
+        private fun createWatchedTable(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS watched (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    positionMs INTEGER NOT NULL,
+                    durationMs INTEGER NOT NULL,
+                    watchedAt INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+        }
+
+        private fun createCustomListsTable(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS custom_lists (
+                    listId TEXT PRIMARY KEY NOT NULL,
+                    name TEXT NOT NULL,
+                    createdAt INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+        }
+
+        private fun createCustomListItemsTable(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS custom_list_items (
+                    listId TEXT NOT NULL,
+                    mediaId TEXT NOT NULL,
+                    addedAt INTEGER NOT NULL,
+                    PRIMARY KEY(listId, mediaId)
+                )
+                """.trimIndent()
+            )
+        }
+
+        private fun createPluginsTable(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS plugins (
+                    pluginId TEXT PRIMARY KEY NOT NULL,
+                    name TEXT NOT NULL,
+                    manifestUrl TEXT NOT NULL,
+                    manifestJson TEXT NOT NULL,
+                    enabled INTEGER NOT NULL,
+                    sortOrder INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+        }
+
+        private fun createDownloadsTable(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS downloads (
+                    downloadId TEXT PRIMARY KEY NOT NULL,
+                    mediaId TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    url TEXT NOT NULL,
+                    localPath TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    bytesDownloaded INTEGER NOT NULL,
+                    totalBytes INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+        }
+
+        private fun createEpgTable(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS epg_entries (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    channelId TEXT NOT NULL,
+                    channelName TEXT,
+                    title TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    year TEXT,
+                    category TEXT,
+                    startTime INTEGER NOT NULL,
+                    endTime INTEGER NOT NULL,
+                    iconUrl TEXT
+                )
+                """.trimIndent()
+            )
+            createEpgIndexIfMissing(db)
+        }
+
+        private fun createEpgIndexIfMissing(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS index_epg_entries_channelId_startTime ON epg_entries(channelId, startTime)"
+            )
+        }
+
+        private fun addMissingColumnsExceptEpg(db: SupportSQLiteDatabase) {
+            // These tables have been stable for a long time; if any of them are missing columns
+            // in an old pre-release schema, add them defensively.
+            addColumnIfMissing(db, "saved_media", "addedAt", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing(db, "custom_lists", "createdAt", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing(db, "custom_list_items", "addedAt", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing(db, "plugins", "enabled", "INTEGER NOT NULL DEFAULT 1")
+            addColumnIfMissing(db, "plugins", "sortOrder", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing(db, "downloads", "bytesDownloaded", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing(db, "downloads", "totalBytes", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing(db, "epg_entries", "channelId", "TEXT")
+        }
+
+        private fun addEpgColumnsIfMissing(db: SupportSQLiteDatabase) {
+            addColumnIfMissing(db, "epg_entries", "channelName", "TEXT")
+            addColumnIfMissing(db, "epg_entries", "year", "TEXT")
+            addColumnIfMissing(db, "epg_entries", "category", "TEXT")
+            createEpgIndexIfMissing(db)
+        }
+
+        private fun addColumnIfMissing(
+            db: SupportSQLiteDatabase,
+            table: String,
+            column: String,
+            type: String
+        ) {
+            try {
+                db.execSQL("ALTER TABLE $table ADD COLUMN $column $type")
+            } catch (_: Exception) {
+                // Column likely already exists; ignore.
+            }
+        }
+    }
 }

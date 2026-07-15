@@ -84,9 +84,18 @@ class PlayerViewModel @Inject constructor(
     fun saveProgress(positionMs: Long, durationMs: Long) {
         val current = item.value ?: return
         viewModelScope.launch {
-            tvLauncherManager.onPlaybackStopped(current, positionMs, durationMs)
+            tvLauncherManager.updatePlaybackProgress(current, positionMs, durationMs)
             val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
             traktMediaRepository.scrobblePause(current, progress)
+        }
+    }
+
+    fun onPlaybackStopped(positionMs: Long, durationMs: Long) {
+        val current = item.value ?: return
+        viewModelScope.launch {
+            tvLauncherManager.onPlaybackStopped(current, positionMs, durationMs)
+            val progress = if (durationMs > 0) (positionMs * 100f / durationMs).coerceIn(0f, 100f) else 0f
+            traktMediaRepository.scrobbleStop(current, progress)
         }
     }
 

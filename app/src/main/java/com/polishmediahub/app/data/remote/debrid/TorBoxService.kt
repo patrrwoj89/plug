@@ -32,7 +32,24 @@ class TorBoxService @Inject constructor(
             .build()
         val response = client.newCall(request).execute()
         return if (response.isSuccessful) {
-            DebridUserInfo("", false) // TODO parse
+            response.body?.string()?.let { body ->
+                try {
+                    val userResponse = json.decodeFromString(TorBoxUserResponse.serializer(), body)
+                    val data = userResponse.data
+                    if (data != null && userResponse.success) {
+                        val username = data.customer?.takeIf { it.isNotBlank() }
+                            ?: data.email?.takeIf { it.isNotBlank() }
+                            ?: data.authId?.takeIf { it.isNotBlank() }
+                            ?: ""
+                        val premium = data.isSubscribed == true || (data.plan ?: 0) > 0
+                        DebridUserInfo(username, premium)
+                    } else {
+                        DebridUserInfo("", false)
+                    }
+                } catch (_: Exception) {
+                    DebridUserInfo("", false)
+                }
+            } ?: DebridUserInfo("", false)
         } else {
             DebridUserInfo("", false)
         }
@@ -92,6 +109,25 @@ class TorBoxService @Inject constructor(
         return if (response.isSuccessful) response.body?.string() else null
     }
 }
+
+@Serializable
+data class TorBoxUserResponse(
+    val success: Boolean,
+    val error: String? = null,
+    val detail: String? = null,
+    val data: TorBoxUserData? = null
+)
+
+@Serializable
+data class TorBoxUserData(
+    val id: Long? = null,
+    val authId: String? = null,
+    val email: String? = null,
+    val customer: String? = null,
+    val plan: Int? = null,
+    @SerialName("is_subscribed") val isSubscribed: Boolean? = null,
+    @SerialName("premium_expires_at") val premiumExpiresAt: String? = null
+)
 
 @Serializable
 data class TorBoxTorrentListResponse(
