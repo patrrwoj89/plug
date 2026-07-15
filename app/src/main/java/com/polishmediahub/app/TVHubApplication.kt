@@ -19,8 +19,8 @@ class TVHubApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
-        val torrentDir = File(filesDir, "torrents").apply { mkdirs() }
-        torrentMediaSource.configure(torrentDir)
+        File(filesDir, "torrents").apply { mkdirs() }
+        torrentMediaSource.configure()
     }
 
     override val workManagerConfiguration: Configuration

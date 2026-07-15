@@ -74,6 +74,7 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.session.MediaSession
 import androidx.media3.ui.PlayerView
 import com.polishmediahub.app.R
+import com.polishmediahub.app.data.torrent.TorrentStatus
 import com.polishmediahub.app.navigation.Screen
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
@@ -89,11 +90,15 @@ fun PlayerScreen(
 ) {
     val item by viewModel.item.collectAsStateWithLifecycle()
     val resumePosition by viewModel.resumePosition.collectAsStateWithLifecycle()
+    val resolvedUrl by viewModel.resolvedUrl.collectAsStateWithLifecycle()
+    val torrentStatus by viewModel.torrentStatus.collectAsStateWithLifecycle()
+    val torrentBuffering by viewModel.torrentBuffering.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val headers = item?.headers.orEmpty()
-    val exoPlayer = remember(context, item?.videoUrl) {
+    val videoUrl = resolvedUrl ?: item?.videoUrl
+    val exoPlayer = remember(context, videoUrl) {
         val dataSourceFactory = DefaultHttpDataSource.Factory()
             .apply {
                 setUserAgent("PolishMediaHub/1.0 (Android TV)")
@@ -119,20 +124,21 @@ fun PlayerScreen(
             .apply { playWhenReady = true }
     }
 
-    DisposableEffect(exoPlayer, item) {
+    DisposableEffect(exoPlayer, item, resolvedUrl) {
         val mediaItem = item
-        val videoUrl = mediaItem?.videoUrl
-        if (!videoUrl.isNullOrBlank()) {
+        val url = resolvedUrl ?: mediaItem?.videoUrl
+        if (!url.isNullOrBlank()) {
             val mimeType = when {
-                videoUrl.endsWith(".m3u8", ignoreCase = true) -> MimeTypes.APPLICATION_M3U8
-                videoUrl.endsWith(".mpd", ignoreCase = true) -> MimeTypes.APPLICATION_MPD
-                videoUrl.endsWith(".mp4", ignoreCase = true) -> MimeTypes.VIDEO_MP4
+                url.endsWith(".m3u8", ignoreCase = true) -> MimeTypes.APPLICATION_M3U8
+                url.endsWith(".mpd", ignoreCase = true) -> MimeTypes.APPLICATION_MPD
+                url.endsWith(".mp4", ignoreCase = true) -> MimeTypes.VIDEO_MP4
+                url.contains("/stream?", ignoreCase = true) -> null
                 else -> null
             }
             val mediaItemBuilder = ExoMediaItem.Builder()
-                .setUri(videoUrl)
+                .setUri(url)
                 .setMimeType(mimeType)
-            mediaItem.subtitleUrl?.let { subUrl ->
+            mediaItem?.subtitleUrl?.let { subUrl ->
                 val subMimeType = when {
                     subUrl.endsWith(".vtt", ignoreCase = true) -> MimeTypes.TEXT_VTT
                     subUrl.endsWith(".srt", ignoreCase = true) -> MimeTypes.APPLICATION_SUBRIP
@@ -164,7 +170,7 @@ fun PlayerScreen(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_PAUSE -> exoPlayer.pause()
-                Lifecycle.Event.ON_RESUME -> if (item?.videoUrl != null) exoPlayer.play()
+                Lifecycle.Event.ON_RESUME -> if (videoUrl != null) exoPlayer.play()
                 else -> {}
             }
         }
@@ -186,6 +192,8 @@ fun PlayerScreen(
         onScrobbleStart = { position, duration -> viewModel.scrobbleStart(position, duration) },
         onScrobbleStop = { position, duration -> viewModel.scrobbleStop(position, duration) },
         onEnterPip = { activity?.enterPipMode() },
+        torrentBuffering = torrentBuffering,
+        torrentStatus = torrentStatus,
         modifier = modifier
     )
 }
@@ -199,6 +207,8 @@ private fun PlayerContent(
     onSaveProgress: (Long, Long) -> Unit,
     onScrobbleStart: (Long, Long) -> Unit,
     onScrobbleStop: (Long, Long) -> Unit,
+    torrentBuffering: Int?,
+    torrentStatus: TorrentStatus?,
     modifier: Modifier = Modifier
 ) {
     var controlsVisible by remember { mutableStateOf(true) }
@@ -347,6 +357,25 @@ private fun PlayerContent(
                     subtitleLabel = subtitleOptions.getOrNull(selectedSubtitleIndex)?.label ?: "Off"
                 }
             )
+        }
+
+        if (torrentBuffering != null && torrentBuffering < 100 && torrentStatus != null) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Buforowanie Torrenta... $torrentBuffering%",
+                    style = AppTypography.titleLarge,
+                    color = AppColor.OnSurface
+                )
+                Text(
+                    text = "${torrentStatus.state} | Peers: ${torrentStatus.numPeers} | Seeds: ${torrentStatus.numSeeds}",
+                    style = AppTypography.caption,
+                    color = AppColor.OnSurface
+                )
+            }
         }
     }
 }
