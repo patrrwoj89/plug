@@ -1,15 +1,20 @@
 package com.polishmediahub.app.ui.viewmodel
 
+import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.polishmediahub.app.data.ApiConfigRepository
+import com.polishmediahub.app.data.admin.AdminHttpServer
+import com.polishmediahub.app.data.admin.NetworkAddressHelper
 import com.polishmediahub.app.data.local.PluginEntity
 import com.polishmediahub.app.data.legal.LegalSourcesRepository
 import com.polishmediahub.app.data.plugin.PluginRepository
 import com.polishmediahub.app.data.remote.debrid.DebridOAuthManager
 import com.polishmediahub.app.data.remote.debrid.DebridProvider
 import com.polishmediahub.app.data.remote.debrid.DeviceCodeResponse
+import com.polishmediahub.app.ui.components.QrCodeGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AdminViewModel @Inject constructor(
     private val apiConfigRepository: ApiConfigRepository,
+    private val adminHttpServer: AdminHttpServer,
     private val debridOAuthManager: DebridOAuthManager,
     private val pluginRepository: PluginRepository,
     private val legalSourcesRepository: LegalSourcesRepository
@@ -29,6 +35,7 @@ class AdminViewModel @Inject constructor(
     val uiState: StateFlow<AdminUiState> = _uiState.asStateFlow()
 
     init {
+        startAdminServer()
         viewModelScope.launch {
             combine(
                 apiConfigRepository.tmdbApiKey,
@@ -176,6 +183,31 @@ class AdminViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(error = "Loaded legal sample sources")
         }
     }
+
+    private fun startAdminServer() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val port = adminHttpServer.start()
+                val ip = NetworkAddressHelper.getLocalIpAddress()
+                if (ip != null) {
+                    val url = adminHttpServer.adminUrl(ip)
+                    val bitmap = QrCodeGenerator.generate(url, 512)
+                    _uiState.value = _uiState.value.copy(adminUrl = url, adminQrBitmap = bitmap)
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message)
+            }
+        }
+    }
+
+    fun stopAdminServer() {
+        adminHttpServer.stop()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopAdminServer()
+    }
 }
 
 data class AdminUiState(
@@ -202,6 +234,8 @@ data class AdminUiState(
     val podcastFeeds: String = "",
     val plugins: List<PluginEntity> = emptyList(),
     val debridDeviceCode: DeviceCodeResponse? = null,
+    val adminUrl: String? = null,
+    val adminQrBitmap: Bitmap? = null,
     val isLoading: Boolean = false,
     val error: String? = null
 )

@@ -72,6 +72,21 @@ fun AdminScreen(
     ) {
         Text(stringResource(id = R.string.admin_title), style = AppTypography.headline)
 
+        state.adminQrBitmap?.let { bitmap ->
+            Text(
+                text = "Zeskanuj kod QR telefonem, aby wygodnie zarządzać wtyczkami i źródłami z przeglądarki",
+                style = AppTypography.body
+            )
+            state.adminUrl?.let { url ->
+                Text(text = url, style = AppTypography.caption, color = AppColor.OnSurfaceVariant)
+            }
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = "Admin QR code",
+                modifier = Modifier.size(256.dp)
+            )
+        }
+
         OutlinedTextField(
             value = state.tmdbApiKey,
             onValueChange = viewModel::setTmdbApiKey,
