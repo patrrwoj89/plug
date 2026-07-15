@@ -23,8 +23,18 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
   - **Preview/recommendations channel** updated daily by `WorkManager`.
 - **PIN lock** for Settings and Admin screens.
 - **Download support** for audio and video via `WorkManager`.
+- **Multi-user profiles** with per-profile history, library, watchlist and custom lists; profile switcher in the sidebar and optional PIN lock per profile.
 - **Global Android TV search** with a dedicated `SearchActivity` and `SearchRecentSuggestionsProvider`.
 - **Screenshot / Compose Preview tests** with Paparazzi and instrumented D-Pad tests.
+
+## Documentation
+
+- [`README.md`](README.md) — this overview.
+- [`FAQ.md`](FAQ.md) — frequently asked questions.
+- [`CHANGELOG.md`](CHANGELOG.md) — release history and latest changes.
+- [`PLUGIN_GUIDE.md`](PLUGIN_GUIDE.md) — how to write and adapt QuickJS plugins.
+- [`ADMIN_PANEL.md`](ADMIN_PANEL.md) — wireless configuration via the local web admin panel and QR code.
+- [`LEGAL_SOURCES.md`](LEGAL_SOURCES.md) — curated legal/public/self-hostable sources.
 
 ## Tech stack
 
@@ -63,13 +73,14 @@ APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 ```
 app/src/main/java/com/polishmediahub/app/
 ├── data/                 # Repositories, data sources, persistence
-│   ├── local/            # Room entities/daos (MediaDatabase)
+│   ├── local/            # Room entities/DAOs (MediaDatabase, ProfileEntity, etc.)
 │   ├── remote/           # TMDB, Trakt, AniList, Jellyfin, Plex, Emby, Subsonic, Stremio, IPTV
 │   ├── source/           # Kodi, Web, Cloudstream, FederatedMediaRepository, SourceRegistry
 │   ├── plugin/           # QuickJsEngine, QuickJsMediaSource, PluginManifest, PluginRepository
 │   ├── torrent/          # TorrentEngine, TorrentHttpServer, TorrentMediaSource
 │   ├── iptv/             # EPG parser/repository
-│   └── tv/               # TvLauncherManager, WatchNextHelper, RecommendationsWorker
+│   ├── tv/               # TvLauncherManager, WatchNextHelper, RecommendationsWorker
+│   └── ProfileRepository.kt
 ├── di/                   # Hilt modules
 ├── model/                # MediaItem, Category and shared data classes
 ├── navigation/           # Screen sealed class, TVNavHost, TVApp
@@ -105,6 +116,17 @@ Supported configurable sources:
 - **Debrid**: OAuth link (stub ready for provider-specific implementation).
 
 Sample legal starter sources can be loaded from the Admin panel via **Load legal sample sources**.
+
+## Multi-User Profiles
+
+The app supports multiple household profiles stored in Room:
+
+- Each profile has `id`, `name`, `avatarUrl`, `isPinLocked` and `pinCode`.
+- `WatchedEntity`, `SavedMediaEntity` and `CustomListEntity` carry a `profileId` foreign key.
+- `ProfileRepository` exposes `currentProfile` as a `StateFlow` and persists the selected profile in DataStore.
+- `WatchHistoryRepository`, `SavedMediaRepository` and `CustomListsRepository` automatically filter reads/writes by the active profile using `flatMapLatest`.
+- The top of `Sidebar` shows the active profile (avatar or initial), opens a profile picker, and prompts for the PIN when switching to a locked profile.
+- `TvLauncherManager` clears the Android TV **Watch Next** row on profile switch and re-publishes the new profile's history.
 
 ## EPG Timeline Grid
 
