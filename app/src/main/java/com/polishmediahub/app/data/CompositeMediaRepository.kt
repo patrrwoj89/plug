@@ -2,7 +2,9 @@ package com.polishmediahub.app.data
 
 import android.util.Log
 import com.polishmediahub.app.BuildConfig
-import com.polishmediahub.app.data.remote.anilist.AniListMediaRepository
+import com.polishmediahub.app.data.ContentFilter
+import com.polishmediahub.app.data.ProfileRepository
+import com.polishmediahub.app.data.remote.anime.AnimeRepository
 import com.polishmediahub.app.data.remote.iptv.IptvRepository
 import com.polishmediahub.app.data.remote.stremio.StremioRepository
 import com.polishmediahub.app.data.remote.tmdb.TmdbMediaRepository
@@ -12,12 +14,14 @@ import com.polishmediahub.app.data.source.FederatedMediaRepository
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.model.PlaybackState
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 class CompositeMediaRepository @Inject constructor(
+    private val profileRepository: ProfileRepository,
     private val mockMediaRepository: MockMediaRepository,
     private val tmdbMediaRepository: TmdbMediaRepository,
-    private val aniListMediaRepository: AniListMediaRepository,
+    private val animeRepository: AnimeRepository,
     private val traktMediaRepository: TraktMediaRepository,
     private val iptvRepository: IptvRepository,
     private val stremioRepository: StremioRepository,
@@ -28,7 +32,7 @@ class CompositeMediaRepository @Inject constructor(
     private val repositories: List<MediaRepository> = buildList {
         if (BuildConfig.DEBUG) add(mockMediaRepository)
         add(tmdbMediaRepository)
-        add(aniListMediaRepository)
+        add(animeRepository)
         add(traktMediaRepository)
         add(iptvRepository)
         add(stremioRepository)
@@ -36,17 +40,20 @@ class CompositeMediaRepository @Inject constructor(
         add(federatedMediaRepository)
     }
 
+    private suspend fun profile() = profileRepository.currentProfile.first()
+
     override suspend fun featured(): List<MediaItem> =
-        repositories.flatMap { repo -> repo.safeCall { featured() } ?: emptyList() }
+        ContentFilter.filter(repositories.flatMap { repo -> repo.safeCall { featured() } ?: emptyList() }, profile())
 
     override suspend fun categories(): List<Category> =
-        repositories.flatMap { repo -> repo.safeCall { categories() } ?: emptyList() }
+        ContentFilter.filterCategories(repositories.flatMap { repo -> repo.safeCall { categories() } ?: emptyList() }, profile())
 
     override suspend fun search(query: String): List<MediaItem> =
-        repositories.flatMap { repo -> repo.safeCall { search(query) } ?: emptyList() }
+        ContentFilter.filter(repositories.flatMap { repo -> repo.safeCall { search(query) } ?: emptyList() }, profile())
 
     override suspend fun byId(id: String): MediaItem? =
         repositories.firstNotNullOfOrNull { repo -> repo.safeCall { byId(id) } }
+            ?.takeIf { ContentFilter.isAllowed(it, profile()) }
 
     override suspend fun resolve(mediaItem: MediaItem): String? = when {
         mediaItem.id.startsWith("magnet:") || mediaItem.id.startsWith("torrent:") ->
@@ -63,7 +70,7 @@ class CompositeMediaRepository @Inject constructor(
         for (repo in repositories) {
             try {
                 val resolved = repo.resolveItem(mediaItem)
-                if (resolved != mediaItem) return resolved
+                if (resolved != mediaItem && ContentFilter.isAllowed(resolved, profile())) return resolved
             } catch (e: Exception) {
                 Log.w("CompositeRepo", "resolveItem failed for ${repo::class.java.simpleName}: ${e.message}")
             }

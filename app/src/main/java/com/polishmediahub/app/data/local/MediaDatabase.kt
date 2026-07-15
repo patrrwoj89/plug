@@ -19,7 +19,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         AudioHistoryEntity::class,
         ChannelEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 abstract class MediaDatabase : RoomDatabase() {
@@ -51,7 +51,8 @@ abstract class MediaDatabase : RoomDatabase() {
             migrationFromV7toV8(),
             migrationFromV8toV9(),
             migrationFromV9toV10(),
-            migrationFromV10toV11()
+            migrationFromV10toV11(),
+            migrationFromV11toV12()
         ).toTypedArray()
 
         private fun migrationWithEpgRebuild(startVersion: Int, endVersion: Int): Migration =
@@ -243,6 +244,18 @@ abstract class MediaDatabase : RoomDatabase() {
                 }
             }
 
+        private fun migrationFromV11toV12(): Migration =
+            object : Migration(11, 12) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    addProfileParentalControlColumns(db)
+                }
+            }
+
+        private fun addProfileParentalControlColumns(db: SupportSQLiteDatabase) {
+            addColumnIfMissing(db, "profiles", "maxAgeRating", "TEXT")
+            addColumnIfMissing(db, "profiles", "allowNsfw", "INTEGER NOT NULL DEFAULT 0")
+        }
+
         private fun createAudioHistoryTable(db: SupportSQLiteDatabase) {
             db.execSQL(
                 """
@@ -420,6 +433,8 @@ abstract class MediaDatabase : RoomDatabase() {
             addColumnIfMissing(db, "plugins", "sortOrder", "INTEGER NOT NULL DEFAULT 0")
             addColumnIfMissing(db, "downloads", "bytesDownloaded", "INTEGER NOT NULL DEFAULT 0")
             addColumnIfMissing(db, "downloads", "totalBytes", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing(db, "profiles", "maxAgeRating", "TEXT")
+            addColumnIfMissing(db, "profiles", "allowNsfw", "INTEGER NOT NULL DEFAULT 0")
             addColumnIfMissing(db, "epg_entries", "channelId", "TEXT")
         }
 

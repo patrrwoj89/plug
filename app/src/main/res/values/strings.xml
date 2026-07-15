@@ -61,6 +61,14 @@
     <string name="settings_show_loading_stats_subtitle">Display player nerd stats overlay</string>
     <string name="version_info">PolishMediaHub Skeleton v0.2.0</string>
 
+    <string name="parental_control">Parental Control</string>
+    <string name="parental_control_max_age_rating">Maximum age rating</string>
+    <string name="parental_control_allow_nsfw">Allow NSFW content</string>
+    <string name="parental_control_allow_nsfw_subtitle">Show adult content for this profile</string>
+    <string name="parental_control_current">(current)</string>
+    <string name="age_rating_no_limit">No limit</string>
+    <string name="no_profiles">No profiles found</string>
+
     <string name="admin_title">Admin / Sources</string>
     <string name="admin_tmdb_key">TMDB API key</string>
     <string name="admin_anilist_token">AniList access token (optional)</string>

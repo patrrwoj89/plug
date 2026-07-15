@@ -19,6 +19,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
   - **IPTV/M3U** with XMLTV EPG support, local Room cache, background refresh by `IptvUpdateWorker` and a professional **EPG Timeline Grid**.
   - **Jellyfin, Plex, Emby, Subsonic/Airsonic, Stremio, AniList, TMDB, Trakt, MDBList, podcasts (RSS)**, internet radio and Deezer proxy.
   - **MDBList integration** (`MdbListMediaSource`): public top lists, user lists, media search and cross-ID lookup by imdb/tmdb/trakt/tvdb; every item carries `tmdbId`, `imdbId` and `traktId` for matching with other sources.
+  - **Kitsu anime fallback** (`KitsuMediaSource`, `AnimeRepository`): when AniList GraphQL fails (network, timeout, 429), the app silently falls back to Kitsu JSON:API. Cross-linked `malId` and `aniListId` are parsed from `include=mappings` to keep stream resolver compatibility.
 - **BitTorrent streaming** via `jlibtorrent` with sequential download, local HTTP proxy and buffering UI.
 - **Music & audio**:
   - Native podcast RSS parser (`PodcastRssParser`) with iTunes tags and enclosure audio URLs.
@@ -68,6 +69,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 ### Security, stability & profiles
 
 - **Multi-user profiles** with per-profile history, library, watchlist, custom lists and audio history; profile switcher in the sidebar and optional PIN lock per profile.
+- **Parental Control** per profile: `maxAgeRating` and `allowNsfw` flags stored in `ProfileEntity` (Room v12). `ContentFilter` removes items whose age rating exceeds the profile cap or that are flagged as adult/NSFW before they reach `search()`, `categories()` and `featured()` results in `CompositeMediaRepository`, `FederatedMediaRepository` and `PluginMediaSource`. Managed in the PIN-protected **Parental Control** section of `SettingsScreen`.
 - **PIN lock** for Settings and Admin screens.
 - **Download support** for audio and video via `WorkManager`.
 - **Encrypted sensitive settings** (`EncryptedSettingsManager`): API keys, OAuth tokens and passwords (TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens, Subsonic password, MDBList key) are encrypted with AES-256-GCM using a hardware-backed key from the Android Keystore before being stored in DataStore. Plain preferences (dark theme, quality, EPG status, etc.) remain unencrypted.

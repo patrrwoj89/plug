@@ -35,6 +35,7 @@ import com.polishmediahub.app.ui.theme.Radius
 import com.polishmediahub.app.ui.theme.Spacing
 import com.polishmediahub.app.ui.viewmodel.LastEpgSyncState
 import com.polishmediahub.app.ui.viewmodel.PinViewModel
+import com.polishmediahub.app.ui.viewmodel.ProfileViewModel
 import com.polishmediahub.app.ui.viewmodel.SettingsViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -45,7 +46,8 @@ fun SettingsScreen(
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
-    pinViewModel: PinViewModel = hiltViewModel()
+    pinViewModel: PinViewModel = hiltViewModel(),
+    profileViewModel: ProfileViewModel = hiltViewModel()
 ) {
     val darkTheme by viewModel.darkTheme.collectAsStateWithLifecycle()
     val autoplayTrailers by viewModel.autoplayTrailers.collectAsStateWithLifecycle()
@@ -60,6 +62,8 @@ fun SettingsScreen(
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
     val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
     val lastEpgSync by viewModel.lastEpgSync.collectAsStateWithLifecycle()
+    val profiles by profileViewModel.profiles.collectAsStateWithLifecycle()
+    val currentProfile by profileViewModel.currentProfile.collectAsStateWithLifecycle()
     var pinVerified by remember { mutableStateOf(false) }
     var pinError by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -201,6 +205,20 @@ fun SettingsScreen(
             }
         )
 
+        Text(
+            text = stringResource(id = R.string.parental_control),
+            style = AppTypography.headline,
+            modifier = Modifier.padding(top = Spacing.md)
+        )
+
+        ParentalControlSection(
+            profiles = profiles,
+            currentProfileId = currentProfile?.id,
+            onUpdate = { profileId, maxAgeRating, allowNsfw ->
+                profileViewModel.updateParentalControls(profileId, maxAgeRating, allowNsfw)
+            }
+        )
+
         TvOutlinedTextField(
             value = pinCode,
             onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) pinViewModel.setPin(it, pinEnabled) },
@@ -287,6 +305,68 @@ private fun SettingsSelector(
                         modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm)
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ParentalControlSection(
+    profiles: List<com.polishmediahub.app.data.local.ProfileEntity>,
+    currentProfileId: String?,
+    onUpdate: (String, String?, Boolean) -> Unit
+) {
+    val ageOptions = listOf(
+        stringResource(id = R.string.age_rating_no_limit) to null,
+        "G" to "G",
+        "PG" to "PG",
+        "PG-13" to "PG-13",
+        "R" to "R",
+        "NC-17" to "NC-17",
+        "7+" to "7",
+        "12+" to "12",
+        "16+" to "16",
+        "18+" to "18"
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        if (profiles.isEmpty()) {
+            Text(
+                text = stringResource(id = R.string.no_profiles),
+                style = AppTypography.caption,
+                color = AppColor.OnSurfaceVariant
+            )
+            return
+        }
+        profiles.forEach { profile ->
+            val isCurrent = profile.id == currentProfileId
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                Text(
+                    text = profile.name + if (isCurrent) " ${stringResource(id = R.string.parental_control_current)}" else "",
+                    style = AppTypography.title
+                )
+
+                val currentValue = ageOptions.find { it.second == profile.maxAgeRating }?.first
+                    ?: stringResource(id = R.string.age_rating_no_limit)
+
+                SettingsSelector(
+                    title = stringResource(id = R.string.parental_control_max_age_rating),
+                    value = currentValue,
+                    options = ageOptions.map { it.first },
+                    onSelect = { selected ->
+                        val rating = ageOptions.find { it.first == selected }?.second
+                        onUpdate(profile.id, rating, profile.allowNsfw)
+                    }
+                )
+
+                SettingsToggle(
+                    title = stringResource(id = R.string.parental_control_allow_nsfw),
+                    subtitle = stringResource(id = R.string.parental_control_allow_nsfw_subtitle),
+                    checked = profile.allowNsfw,
+                    onCheckedChange = { allowed ->
+                        onUpdate(profile.id, profile.maxAgeRating, allowed)
+                    }
+                )
             }
         }
     }

@@ -67,6 +67,15 @@ MDBList (https://mdblist.com) is a metadata aggregation service that lets users 
 | MDBList | https://mdblist.com | User-generated public lists; API key required |
 | MDBList public list example | `https://api.mdblist.com/lists/top?apikey=<your_key>` | Top public lists |
 
+## Kitsu anime metadata
+
+Kitsu (https://kitsu.io) is a free, public JSON:API for anime and manga metadata. The app uses `https://kitsu.io/api/edge` as a reactive fallback when AniList is unavailable, with `include=mappings` to preserve cross-links to MyAnimeList and AniList IDs. No API key is required.
+
+| Source | URL | Notes |
+|--------|-----|-------|
+| Kitsu API | https://kitsu.io/api/edge | Public anime/manga metadata; free, no key |
+| Kitsu mappings endpoint | `https://kitsu.io/api/edge/anime/{id}/mappings` | External ID mapping records |
+
 ## Music / Audio / Podcasts
 
 | Source | URL | Notes |

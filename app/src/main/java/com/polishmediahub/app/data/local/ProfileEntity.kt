@@ -14,5 +14,7 @@ data class ProfileEntity(
     val name: String,
     val avatarUrl: String? = null,
     val isPinLocked: Boolean = false,
-    val pinCode: String? = null
+    val pinCode: String? = null,
+    val maxAgeRating: String? = null,
+    val allowNsfw: Boolean = false
 )

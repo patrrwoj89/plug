@@ -30,7 +30,11 @@ data class MediaItem(
     val type: Type = Type.MOVIE,
     val tmdbId: Int? = null,
     val imdbId: String? = null,
-    val traktId: Int? = null
+    val traktId: Int? = null,
+    val malId: Int? = null,
+    val aniListId: Int? = null,
+    val ageRating: String? = null,
+    val isAdult: Boolean = false
 ) {
     enum class Type { MOVIE, SERIES, EPISODE, CHANNEL, AUDIO }
 }

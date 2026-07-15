@@ -57,6 +57,7 @@ See [ADMIN_PANEL.md](ADMIN_PANEL.md) for detailed endpoint descriptions and JSON
 - Jellyfin, Plex, Emby, Subsonic/Airsonic.
 - Stremio add-ons (legal/official only).
 - TMDB, AniList, Trakt metadata.
+- Kitsu anime fallback (public API, no key needed).
 - Podcasts RSS, internet radio M3U/PLS, Deezer proxy.
 - Legal BitTorrent (`.torrent` / magnet) for content you own or that is freely distributable.
 
@@ -69,6 +70,20 @@ MDBList is a metadata list provider. Go to **Settings** or the wireless **Admin*
 ### Where are my API keys stored?
 
 Sensitive values such as MDBList, TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens and the Subsonic password are encrypted with AES-256-GCM using a hardware-backed key from the Android Keystore before being written to DataStore. They are never included in system backups as plain text. Ordinary preferences (dark theme, video quality, EPG sync status, etc.) remain unencrypted for quick access.
+
+## Kitsu anime fallback
+
+### What is Kitsu fallback?
+
+The anime module primarily uses `AniListMediaRepository` (AniList GraphQL). If AniList fails due to a network error, timeout or HTTP 429, `AnimeRepository` automatically switches to `KitsuMediaSource`, which calls the public Kitsu JSON:API (`https://kitsu.io/api/edge`). The switch is silent and does not require any user configuration.
+
+### Does Kitsu need an API key?
+
+No. Kitsu is a free, public API and is listed as a starter source in `legal_sources.json`. No API key, account or manual setup is required.
+
+### How does Kitsu link to other anime IDs?
+
+Kitsu responses are requested with `include=mappings`. Kitsu mappings with `externalSite` containing `myanimelist` are stored on the resulting `MediaItem` as `malId`; mappings containing `anilist` are stored as `aniListId`. These IDs help other plugins and resolvers find matching streams.
 
 ## Live TV & EPG
 
@@ -114,6 +129,14 @@ When you first install the app, a default profile called "Default" is created au
 ### Are profiles protected by a PIN?
 
 Each profile can have `isPinLocked = true` and a 4-digit `pinCode`. When a locked profile is selected, `PinScreen` is shown. PIN verification is handled by `ProfileRepository.verifyPin()` and is currently per-profile (the global Settings/Admin PIN still exists in `PinRepository`).
+
+### How does Parental Control work?
+
+Each `ProfileEntity` stores `maxAgeRating` (e.g. G, PG, PG-13, R, NC-17, 7/12/16/18) and `allowNsfw` (Boolean). Before any `search()`, `categories()` or `featured()` results are returned to the UI, `ContentFilter` removes items whose age rating is higher than the profile's limit or that are flagged as adult/NSFW. Filtering is applied in `CompositeMediaRepository`, `FederatedMediaRepository` and `PluginMediaSource`.
+
+### How do I change Parental Control settings?
+
+Open **Settings** (which is PIN-protected), scroll to the **Parental Control** section and select a maximum age rating and the NSFW toggle for each profile. Changes take effect immediately and are stored in the Room `profiles` table (v12).
 
 ### Is watch history shared between profiles?
 

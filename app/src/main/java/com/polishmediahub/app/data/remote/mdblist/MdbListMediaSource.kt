@@ -196,7 +196,8 @@ class MdbListMediaSource @Inject constructor(
             type = type,
             imdbId = imdbId,
             tmdbId = null,
-            traktId = null
+            traktId = null,
+            isAdult = adult == 1
         )
     }
 

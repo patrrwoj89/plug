@@ -59,7 +59,9 @@ class ProfileRepository @Inject constructor(
             name = "Default",
             avatarUrl = null,
             isPinLocked = false,
-            pinCode = null
+            pinCode = null,
+            maxAgeRating = null,
+            allowNsfw = false
         )
         profileDao.upsert(default)
         return default
@@ -78,7 +80,9 @@ class ProfileRepository @Inject constructor(
                 name = name,
                 avatarUrl = avatarUrl,
                 isPinLocked = !pinCode.isNullOrBlank(),
-                pinCode = pinCode
+                pinCode = pinCode,
+                maxAgeRating = null,
+                allowNsfw = false
             )
             profileDao.upsert(profile)
             if (_currentProfile.value == null) {
@@ -91,6 +95,20 @@ class ProfileRepository @Inject constructor(
         profileDao.upsert(profile)
         if (_currentProfile.value?.id == profile.id) {
             _currentProfile.value = profile
+        }
+    }
+
+    suspend fun updateParentalControls(
+        profileId: String,
+        maxAgeRating: String?,
+        allowNsfw: Boolean
+    ) = withContext(Dispatchers.IO) {
+        val profile = profileDao.getById(profileId)
+            ?: return@withContext
+        val updated = profile.copy(maxAgeRating = maxAgeRating, allowNsfw = allowNsfw)
+        profileDao.upsert(updated)
+        if (_currentProfile.value?.id == profileId) {
+            _currentProfile.value = updated
         }
     }
 

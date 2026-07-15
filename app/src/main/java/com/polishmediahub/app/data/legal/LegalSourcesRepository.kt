@@ -40,6 +40,7 @@ data class LegalSources(
     @SerialName("deezerProxy") val deezerProxy: SourceEntry? = null,
     val webSources: List<WebSourceConfig> = emptyList(),
     @SerialName("mdbList") val mdbList: MdbListStarter? = null,
+    @SerialName("kitsu") val kitsu: SourceEntry? = null,
     val polish: PolishSources? = null
 )
 

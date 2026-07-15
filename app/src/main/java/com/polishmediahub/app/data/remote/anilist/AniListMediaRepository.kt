@@ -16,8 +16,8 @@ class AniListMediaRepository @Inject constructor(
             AniListGraphQlRequest(
                 query = """
                     query { Page(page: 1, perPage: 10) { media(type: ANIME, sort: TRENDING_DESC) {
-                        id title { english romaji native } description coverImage { large extraLarge }
-                        bannerImage episodes format seasonYear averageScore genres
+                        id idMal title { english romaji native } description coverImage { large extraLarge }
+                        bannerImage episodes format seasonYear averageScore genres isAdult
                     } } }
                 """.trimIndent()
             )
@@ -49,8 +49,8 @@ class AniListMediaRepository @Inject constructor(
             AniListGraphQlRequest(
                 query = """
                     query(${'$'}search: String) { Page(page: $page, perPage: $perPage) { media(search: ${'$'}search, type: ANIME$formatFilter, sort: $sort) {
-                        id title { english romaji native } description coverImage { large extraLarge }
-                        bannerImage episodes format seasonYear averageScore genres
+                        id idMal title { english romaji native } description coverImage { large extraLarge }
+                        bannerImage episodes format seasonYear averageScore genres isAdult
                     } } }
                 """.trimIndent(),
                 variables = mapOf("search" to query)
@@ -67,8 +67,8 @@ class AniListMediaRepository @Inject constructor(
             AniListGraphQlRequest(
                 query = """
                     query { Media(id: $numericId) {
-                        id title { english romaji native } description coverImage { large extraLarge }
-                        bannerImage episodes format seasonYear averageScore genres
+                        id idMal title { english romaji native } description coverImage { large extraLarge }
+                        bannerImage episodes format seasonYear averageScore genres isAdult
                     } }
                 """.trimIndent()
             )
@@ -89,6 +89,9 @@ class AniListMediaRepository @Inject constructor(
         duration = "",
         rating = averageScore?.let { "${it / 10.0}" } ?: "",
         genres = genres,
-        type = MediaItem.Type.SERIES
+        type = MediaItem.Type.SERIES,
+        aniListId = id,
+        malId = idMal,
+        isAdult = isAdult ?: false
     )
 }

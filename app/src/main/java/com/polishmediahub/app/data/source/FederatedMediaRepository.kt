@@ -2,7 +2,9 @@ package com.polishmediahub.app.data.source
 
 import android.util.Log
 import com.polishmediahub.app.data.ApiConfigRepository
+import com.polishmediahub.app.data.ContentFilter
 import com.polishmediahub.app.data.MediaRepository
+import com.polishmediahub.app.data.ProfileRepository
 import com.polishmediahub.app.data.remote.mdblist.MdbListMediaSource
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
@@ -24,12 +26,15 @@ class FederatedMediaRepository @Inject constructor(
     private val webMediaSource: WebMediaSource,
     private val cloudstreamSource: CloudstreamSource,
     private val mdbListMediaSource: MdbListMediaSource,
-    private val apiConfigRepository: ApiConfigRepository
+    private val apiConfigRepository: ApiConfigRepository,
+    private val profileRepository: ProfileRepository
 ) : MediaRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val mutex = Mutex()
     private var configured = false
+
+    private suspend fun profile() = profileRepository.currentProfile.first()
 
     init {
         scope.launch {
@@ -67,24 +72,26 @@ class FederatedMediaRepository @Inject constructor(
 
     override suspend fun featured(): List<MediaItem> {
         ensureConfigured()
-        return registry.featuredAll()
+        return ContentFilter.filter(registry.featuredAll(), profile())
     }
 
     override suspend fun categories(): List<Category> {
         ensureConfigured()
-        return registry.categoriesAll()
+        return ContentFilter.filterCategories(registry.categoriesAll(), profile())
     }
 
     override suspend fun search(query: String): List<MediaItem> {
         ensureConfigured()
-        return registry.searchAll(query).values.flatten()
+        return ContentFilter.filter(registry.searchAll(query).values.flatten(), profile())
     }
 
     override suspend fun byId(id: String): MediaItem? {
         ensureConfigured()
         for (source in registry.all.filter { it.isAvailable() }) {
             try {
-                source.byId(id)?.let { return it }
+                source.byId(id)
+                    ?.takeIf { ContentFilter.isAllowed(it, profile()) }
+                    ?.let { return it }
             } catch (e: Exception) {
                 android.util.Log.w("FederatedMediaRepository", "byId failed for ${source.id}: ${e.message}")
             }
@@ -111,7 +118,8 @@ class FederatedMediaRepository @Inject constructor(
         val source = registry.source(prefix) ?: registry.all.find { mediaItem.id.startsWith("${it.id}:") }
             ?: return mediaItem
         return try {
-            source.resolveItem(mediaItem)
+            val resolved = source.resolveItem(mediaItem)
+            if (ContentFilter.isAllowed(resolved, profile())) resolved else mediaItem
         } catch (e: Exception) {
             android.util.Log.w("FederatedMediaRepository", "resolveItem failed for ${source.id}: ${e.message}")
             mediaItem

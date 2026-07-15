@@ -57,6 +57,7 @@ Szczegółowe opisy endpointów i przykłady JSON znajdziesz w [ADMIN_PANEL.md](
 - Jellyfin, Plex, Emby, Subsonic/Airsonic.
 - Dodatki Stremio (tylko legalne/oficjalne).
 - TMDB, AniList, Trakt metadata.
+- Reaktywny fallback Kitsu dla anime (publiczne API, brak klucza).
 - Podcasty RSS, radio internetowe M3U/PLS, proxy Deezer.
 - Legalny BitTorrent (`.torrent` / magnet) dla treści, do których masz prawo lub które są wolno rozpowszechnialne.
 
@@ -69,6 +70,20 @@ MDBList to dostawca list metadanych. Wejdź w **Ustawienia** lub bezprzewodowy p
 ### Gdzie przechowywane są moje klucze API?
 
 Wrażliwe wartości, takie jak MDBList, TMDB, AniList, Trakt, Debrid, tokeny Jellyfin/Plex/Emby czy hasło Subsonic, są szyfrowane algorytmem AES-256-GCM z użyciem sprzętowo chronionego klucza z Android Keystore przed zapisem do DataStore. Nigdy nie są zapisywane jako jawny tekst w kopiach zapasowych. Zwykłe preferencje (motyw, jakość wideo, status EPG itp.) pozostają niezaszyfrowane dla szybkiego dostępu.
+
+## Reaktywny fallback Kitsu dla anime
+
+### Czym jest fallback Kitsu?
+
+Moduł anime korzysta głównie z `AniListMediaRepository` (GraphQL AniList). Gdy AniList zawiedzie z powodu błędu sieci, timeoutu lub HTTP 429, `AnimeRepository` automatycznie przełącza się na `KitsuMediaSource`, które wywołuje publiczne API Kitsu JSON:API (`https://kitsu.io/api/edge`). Przełączenie jest ciche i nie wymaga konfiguracji użytkownika.
+
+### Czy Kitsu wymaga klucza API?
+
+Nie. Kitsu to darmowe, publiczne API i jest wymienione jako źródło startowe w `legal_sources.json`. Nie jest potrzebny klucz API, konto ani ręczna konfiguracja.
+
+### W jaki sposób Kitsu linkuje inne identyfikatory anime?
+
+Zapytania do Kitsu używają `include=mappings`. Mapowania Kitsu z `externalSite` zawierającym `myanimelist` są zapisywane w wynikowym `MediaItem` jako `malId`; mapowania zawierające `anilist` jako `aniListId`. Identyfikatory te pomagają innym wtyczkom i resolverom dopasować strumienie.
 
 ## TV na żywo i EPG
 
@@ -114,6 +129,14 @@ Po pierwszej instalacji automatycznie tworzy się profil domyślny o nazwie „D
 ### Czy profile są chronione PIN-em?
 
 Każdy profil może mieć `isPinLocked = true` i 4-cyfrowy `pinCode`. Po wybraniu zablokowanego profilu wyświetlany jest `PinScreen`. Weryfikacja PIN-u odbywa się przez `ProfileRepository.verifyPin()` i jest obecnie per-profil (globalny PIN dla Settings/Admin nadal istnieje w `PinRepository`).
+
+### Jak działa Kontrola Rodzicielska?
+
+Każda encja `ProfileEntity` przechowuje `maxAgeRating` (np. G, PG, PG-13, R, NC-17, 7/12/16/18) oraz `allowNsfw` (Boolean). Zanim wyniki `search()`, `categories()` lub `featured()` trafią do UI, `ContentFilter` usuwa pozycje, których kategoria wiekowa przekracza limit profilu lub które są oznaczone jako treści dla dorosłych/NSFW. Filtr jest stosowany w `CompositeMediaRepository`, `FederatedMediaRepository` i `PluginMediaSource`.
+
+### Jak zmienić ustawienia Kontroli Rodzicielskiej?
+
+Otwórz **Ustawienia** (chronione PIN-em), przewiń do sekcji **Kontrola Rodzicielska** i wybierz maksymalną kategorię wiekową oraz przełącznik NSFW dla każdego profilu. Zmiany wchodzą w życie natychmiast i są zapisywane w tabeli `profiles` w Room (v12).
 
 ### Czy historia oglądania jest współdzielona między profilami?
 

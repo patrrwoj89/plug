@@ -34,6 +34,10 @@ class ProfileViewModel @Inject constructor(
         profileRepository.createProfile(name, avatarUrl, pinCode)
     }
 
+    fun updateParentalControls(profileId: String, maxAgeRating: String?, allowNsfw: Boolean) = viewModelScope.launch {
+        profileRepository.updateParentalControls(profileId, maxAgeRating, allowNsfw)
+    }
+
     fun deleteProfile(id: String) = viewModelScope.launch {
         profileRepository.deleteProfile(id)
     }

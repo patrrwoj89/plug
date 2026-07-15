@@ -2,7 +2,7 @@ package com.polishmediahub.app.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.polishmediahub.app.data.remote.anilist.AniListMediaRepository
+import com.polishmediahub.app.data.remote.anime.AnimeRepository
 import com.polishmediahub.app.model.Category
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AnimeViewModel @Inject constructor(
-    private val repository: AniListMediaRepository
+    private val repository: AnimeRepository
 ) : ViewModel() {
 
     private val _categories = MutableStateFlow<List<Category>>(emptyList())

@@ -60,6 +60,14 @@
     <string name="settings_show_loading_stats_subtitle">Wyświetlaj nakładkę diagnostyczną w odtwarzaczu</string>
     <string name="version_info">PolishMediaHub Skeleton v0.2.0</string>
 
+    <string name="parental_control">Kontrola Rodzicielska</string>
+    <string name="parental_control_max_age_rating">Maksymalna kategoria wiekowa</string>
+    <string name="parental_control_allow_nsfw">Zezwól na treści NSFW</string>
+    <string name="parental_control_allow_nsfw_subtitle">Pokazuj treści dla dorosłych dla tego profilu</string>
+    <string name="parental_control_current">(aktualny)</string>
+    <string name="age_rating_no_limit">Bez ograniczeń</string>
+    <string name="no_profiles">Nie znaleziono profili</string>
+
     <string name="admin_title">Admin / Źródła</string>
     <string name="admin_tmdb_key">Klucz API TMDB</string>
     <string name="admin_anilist_token">Token AniList (opcjonalny)</string>

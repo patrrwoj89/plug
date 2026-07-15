@@ -19,6 +19,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
   - **IPTV/M3U** z obsługą XMLTV EPG, lokalnym cache Room, tłem odświeżaniem przez `IptvUpdateWorker` oraz profesjonalną **siatką EPG Timeline Grid**.
   - **Jellyfin, Plex, Emby, Subsonic/Airsonic, Stremio, AniList, TMDB, Trakt, MDBList, podcasty (RSS)**, radio internetowe i proxy Deezer.
   - **Integracja MDBList** (`MdbListMediaSource`): publiczne listy top, listy użytkownika, wyszukiwanie mediów i lookup po identyfikatorach imdb/tmdb/trakt/tvdb; każdy element zawiera `tmdbId`, `imdbId` i `traktId`, co ułatwia dopasowanie do innych źródeł.
+  - **Reaktywny fallback Kitsu dla anime** (`KitsuMediaSource`, `AnimeRepository`): gdy AniList GraphQL zawiedzie (błąd sieci, timeout, 429), aplikacja automatycznie i cicho przełącza się na Kitsu JSON:API. Z `include=mappings` parsowane są powiązane `malId` oraz `aniListId`, aby zachować zgodność z resolverami strumieni.
 - **Strumieniowanie BitTorrent** przez `jlibtorrent` z pobieraniem sekwencyjnym, lokalnym serwerem HTTP i UI buforowania.
 - **Muzyka i audio**:
   - Natywny parser RSS podcastów (`PodcastRssParser`) z tagami iTunes i URL-ami audio z `<enclosure>`.
@@ -68,6 +69,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 ### Bezpieczeństwo, stabilność i profile
 
 - **Wielu użytkowników / profile** z per-profilową historią, biblioteką, listami obserwowanych, listami własnymi i historią audio; przełącznik profili w panelu bocznym i opcjonalny PIN na profil.
+- **Kontrola Rodzicielska** dla każdego profilu: pola `maxAgeRating` i `allowNsfw` w encji `ProfileEntity` (baza Room v12). `ContentFilter` usuwa pozycje, których kategoria wiekowa przekracza ustawiony limit lub które są oznaczone jako treści dla dorosłych/NSFW, zanim trafią do wyników `search()`, `categories()` i `featured()` w `CompositeMediaRepository`, `FederatedMediaRepository` i `PluginMediaSource`. Zarządzana w chronionej PIN-em sekcji **Kontrola Rodzicielska** w `SettingsScreen`.
 - **Blokada PIN** dla Ustawień i ekranu Admin.
 - **Pobieranie** audio i wideo przez `WorkManager`.
 - **Szyfrowanie wrażliwych ustawień** (`EncryptedSettingsManager`): klucze API, tokeny OAuth i hasła (TMDB, AniList, Trakt, Debrid, tokeny Jellyfin/Plex/Emby, hasło Subsonic, klucz MDBList) są szyfrowane algorytmem AES-256-GCM z wykorzystaniem sprzętowo chronionego klucza z Android Keystore przed zapisem do DataStore. Zwykłe preferencje (motyw, jakość, status EPG itp.) pozostają w jawnej postaci.

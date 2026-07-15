@@ -86,6 +86,11 @@
       }
     ]
   },
+  "kitsu": {
+    "name": "Kitsu Anime Metadata API",
+    "url": "https://kitsu.io/api/edge",
+    "license": "free public API, CC-BY-NC-SA community data"
+  },
   "webSources": [],
   "polish": {
     "note": "Polish audio tracks and subtitles are selected automatically when available. Polish legal sources include TVP Info, Ninateka and Player.pl (subscription). Web crawlers should be configured in legal_sources.json or in the Admin panel."

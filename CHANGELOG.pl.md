@@ -58,12 +58,22 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
   - Używa globalnego `OkHttpClient` i modeli `@Serializable` z Kotlinx Serialization.
 - **Pakiet startowy MDBList** w `legal_sources.json` i `LegalSourcesRepository` (`MdbListStarter`, `MdbListStarterEntry`).
 - **Klucz API MDBList** w `ApiConfigRepository`, `SettingsScreen` (pole maskowane) oraz panelu QR `AdminHttpServer`.
+- **Reaktywny fallback Kitsu dla anime** (`KitsuMediaSource`, `AnimeRepository`)
+  - Nowe źródło `MediaSource` korzystające z `https://kitsu.io/api/edge` i modeli `@Serializable` z Kotlinx Serialization; globalny `OkHttpClient` wstrzykiwany przez Hilt.
+  - `AnimeRepository` opakowuje `AniListMediaRepository` i `KitsuMediaSource`; gdy AniList zwróci pusty wynik (błąd sieci, timeout, 429), aplikacja automatycznie przełącza się na Kitsu.
+  - Mapowanie anime Kitsu na `MediaItem` z polami `malId` i `aniListId` sparsowanymi z relacji `include=mappings`.
+  - Dodano wpis `kitsu` do `legal_sources.json`.
 
 #### Bezpieczeństwo
 - **Szyfrowanie wrażliwych ustawień** (`EncryptedSettingsManager`, `ApiConfigRepository`)
   - Szyfrowanie AES-256-GCM przy użyciu sprzętowo chronionego klucza generowanego w Android Keystore (`AndroidKeyStore`).
   - Dla każdego szyfrowania generowany jest losowy 12-bajtowy IV, dołączany do szyfrogramu i kodowany Base64.
   - Wrażliwe wartości (TMDB, AniList, Trakt, Debrid, tokeny Jellyfin/Plex/Emby, hasło Subsonic, klucz MDBList) są szyfrowane przed zapisem do DataStore i odszyfrowywane przy odczycie. Zwykłe preferencje (motyw, jakość, status synchronizacji EPG itp.) pozostaję w jawnej postaci.
+- **System Kontroli Rodzicielskiej**
+  - Encja `ProfileEntity` rozszerzona o pola `maxAgeRating` (np. G, PG, PG-13, R, NC-17, 7/12/16/18) i `allowNsfw` typu Boolean.
+  - Migracja bazy Room do v12 (`migrationFromV11toV12`) bezpiecznie dodaje kolumny `maxAgeRating` i `allowNsfw` do tabeli `profiles` z domyślnymi wartościami.
+  - Nowa klasa pomocnicza `ContentFilter` filtruje listy `MediaItem` i kategorie według aktywnego profilu; zastosowana w `CompositeMediaRepository`, `FederatedMediaRepository` oraz `PluginMediaSource` w metodach `search()`, `categories()` i `featured()`.
+  - Sekcja **Kontrola Rodzicielska** w `SettingsScreen` (chroniona PIN-em) umożliwia ustawienie maksymalnej kategorii wiekowej i zezwolenia na NSFW dla każdego profilu domownika.
 
 #### Audio
 - **Natywny parser RSS podcastów** (`PodcastRssParser`)

@@ -1,5 +1,7 @@
 package com.polishmediahub.app.data.plugin
 
+import com.polishmediahub.app.data.ContentFilter
+import com.polishmediahub.app.data.ProfileRepository
 import com.polishmediahub.app.data.source.MediaSource
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
@@ -8,12 +10,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class PluginMediaSource @Inject constructor(
-    private val repository: PluginRepository
+    private val repository: PluginRepository,
+    private val profileRepository: ProfileRepository
 ) : MediaSource {
 
     override val id: String = "plugin"
@@ -22,19 +26,23 @@ class PluginMediaSource @Inject constructor(
 
     override suspend fun isAvailable(): Boolean = repository.loadAll().isNotEmpty()
 
+    private suspend fun profile() = profileRepository.currentProfile.first()
+
     override suspend fun featured(): List<MediaItem> =
-        parallelMap { it.featured() }
+        ContentFilter.filter(parallelMap { it.featured() }, profile())
 
     override suspend fun categories(): List<Category> =
-        parallelMap { it.categories() }
+        ContentFilter.filterCategories(parallelMap { it.categories() }, profile())
 
     override suspend fun search(query: String): List<MediaItem> =
-        parallelMap { it.search(query) }
+        ContentFilter.filter(parallelMap { it.search(query) }, profile())
 
     override suspend fun byId(id: String): MediaItem? {
         for (source in repository.loadAll().filter { it.isAvailable() }) {
             try {
-                source.byId(id)?.let { return it }
+                source.byId(id)
+                    ?.takeIf { ContentFilter.isAllowed(it, profile()) }
+                    ?.let { return it }
             } catch (e: Exception) {
                 android.util.Log.w("PluginMediaSource", "byId failed for ${source.id}: ${e.message}")
             }

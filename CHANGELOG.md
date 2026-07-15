@@ -58,12 +58,22 @@ All notable changes to Polish Media Hub are documented in this file.
   - Uses the global `OkHttpClient` and Kotlinx Serialization `@Serializable` models.
 - **MDBList starter package** in `legal_sources.json` and `LegalSourcesRepository` (`MdbListStarter`, `MdbListStarterEntry`).
 - **MDBList API key** configuration in `ApiConfigRepository`, `SettingsScreen` (masked input) and `AdminHttpServer` QR admin panel.
+- **Kitsu anime fallback** (`KitsuMediaSource`, `AnimeRepository`)
+  - New `MediaSource` using `https://kitsu.io/api/edge` and Kotlinx Serialization `@Serializable` models; Hilt-injected global `OkHttpClient`.
+  - `AnimeRepository` wraps `AniListMediaRepository` and `KitsuMediaSource`; if AniList returns empty (network error, timeout, 429), it silently falls back to Kitsu.
+  - Maps Kitsu anime to `MediaItem` with `malId` and `aniListId` parsed from `include=mappings` relationships.
+  - Added a `kitsu` entry to `legal_sources.json`.
 
 #### Security
 - **Encrypted sensitive settings** (`EncryptedSettingsManager`, `ApiConfigRepository`)
   - AES-256-GCM encryption using a hardware-backed key generated in the Android Keystore (`AndroidKeyStore`).
   - A random 12-byte IV is generated per encryption, prepended to the ciphertext and Base64-encoded.
   - Sensitive values (TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens, Subsonic password, MDBList API key) are encrypted before being written to DataStore and decrypted on read. Plain preferences (dark theme, quality, EPG sync status, etc.) remain unencrypted.
+- **Parental Control System**
+  - `ProfileEntity` extended with `maxAgeRating` (e.g. G, PG, PG-13, R, NC-17, 7/12/16/18) and `allowNsfw` boolean.
+  - Room v12 migration (`migrationFromV11toV12`) adds `maxAgeRating` and `allowNsfw` columns to the `profiles` table with a safe fallback default.
+  - New `ContentFilter` utility filters `MediaItem` lists and categories by active profile; applied in `CompositeMediaRepository`, `FederatedMediaRepository` and `PluginMediaSource` for `search()`, `categories()` and `featured()`.
+  - PIN-protected **Parental Control** section in `SettingsScreen` lets the admin set the maximum age rating and NSFW allowance per household profile.
 
 #### Audio
 - **Native podcast RSS parser** (`PodcastRssParser`)
