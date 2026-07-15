@@ -108,7 +108,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - Kotlinx Serialization 1.8.0
 - Coil 2.7.0
 - jlibtorrent 2.0.12.9 (FrostWire Maven)
-- LibVLC 4.0.0-eap23 (`org.videolan.android:libvlc-all`) as an alternative in-process player engine
+- LibVLC 4.0.0-eap24 (`org.videolan.android:libvlc-all`) as an alternative in-process player engine
 - QuickJS wrapper 3.2.3 (`wang.harlon.quickjs:wrapper-android`)
 - ZXing 3.5.4 for QR codes
 - `androidx.tvprovider:tvprovider:1.1.0` for Android TV channels

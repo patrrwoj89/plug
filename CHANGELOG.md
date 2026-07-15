@@ -223,7 +223,7 @@ All notable changes to Polish Media Hub are documented in this file.
 - `QuickJsMediaSource` maps the `subtitleHeaders` field from JS plugins to `MediaItem`.
 - `NextEpisodeOverlay` visibility changed from `private` to `internal` so it can be reused by `UniversalVlcPlayer`.
 - **Dependency audit (2026-07-15)**
-  - `libvlc` updated to `4.0.0-eap23` (latest LibVLC Android EAP as of 2026-07-15, https://central.sonatype.com/artifact/org.videolan.android/libvlc-all).
+  - `libvlc` updated to `4.0.0-eap24` (latest LibVLC Android EAP on Maven Central as of 2026-07-15, https://central.sonatype.com/artifact/org.videolan.android/libvlc-all/4.0.0-eap24).
   - `haze` updated to `1.7.2` (latest stable, https://github.com/chrisbanes/haze/releases/tag/1.7.2).
   - `zxing` updated to `3.5.4` (latest stable, https://github.com/zxing/zxing/releases).
   - `retrofit` updated to `2.12.0` (latest stable, https://github.com/square/retrofit/releases/tag/2.12.0).
