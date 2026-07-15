@@ -34,6 +34,7 @@ import com.polishmediahub.app.ui.screens.CustomListsScreen
 import com.polishmediahub.app.ui.screens.DetailScreen
 import com.polishmediahub.app.ui.screens.DownloadsScreen
 import com.polishmediahub.app.ui.screens.EpgScreen
+import com.polishmediahub.app.ui.screens.EssentialSetupScreen
 import com.polishmediahub.app.ui.screens.HomeScreen
 import com.polishmediahub.app.ui.screens.LibraryScreen
 import com.polishmediahub.app.ui.screens.MusicScreen
@@ -43,6 +44,7 @@ import com.polishmediahub.app.ui.screens.SettingsScreen
 import com.polishmediahub.app.ui.screens.TorrentsScreen
 import com.polishmediahub.app.ui.screens.WatchlistScreen
 import com.polishmediahub.app.ui.viewmodel.ProfileViewModel
+import com.polishmediahub.app.ui.viewmodel.SettingsViewModel
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.rememberHazeState
@@ -73,6 +75,7 @@ fun TVApp(
             route.startsWith(Screen.CustomLists.route) -> Screen.CustomLists
             route.startsWith(Screen.Settings.route) -> Screen.Settings
             route.startsWith(Screen.Admin.route) -> Screen.Admin
+            route.startsWith(Screen.EssentialSetup.route) -> Screen.EssentialSetup
             route.startsWith("detail/") -> Screen.Detail(
                 navBackStackEntry?.arguments?.getString("id") ?: ""
             )
@@ -86,6 +89,10 @@ fun TVApp(
     val profileViewModel = hiltViewModel<ProfileViewModel>()
     val currentProfile by profileViewModel.currentProfile.collectAsStateWithLifecycle()
     val profiles by profileViewModel.profiles.collectAsStateWithLifecycle()
+
+    val settingsViewModel = hiltViewModel<SettingsViewModel>()
+    val isFirstLaunch by settingsViewModel.isFirstLaunch.collectAsStateWithLifecycle()
+    val startDestination = if (isFirstLaunch) Screen.EssentialSetup.route else Screen.Home.route
 
     val hazeState: HazeState = rememberHazeState()
     var sidebarExpanded by remember { mutableStateOf(false) }
@@ -106,7 +113,8 @@ fun TVApp(
                 if (event.type == KeyEventType.KeyDown &&
                     event.key == Key.DirectionLeft &&
                     !sidebarExpanded &&
-                    currentScreen !is Screen.Player
+                    currentScreen !is Screen.Player &&
+                    currentScreen != Screen.EssentialSetup
                 ) {
                     sidebarExpanded = true
                     true
@@ -117,13 +125,23 @@ fun TVApp(
     ) {
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination = startDestination,
             modifier = Modifier
                 .fillMaxSize()
                 .haze(state = hazeState)
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(onNavigate = { navController.navigate(it.route) })
+            }
+            composable(Screen.EssentialSetup.route) {
+                EssentialSetupScreen(
+                    onComplete = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.EssentialSetup.route) { inclusive = true }
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
             composable(Screen.Search.route) {
                 SearchScreen(onNavigate = { navController.navigate(it.route) })
@@ -202,23 +220,25 @@ fun TVApp(
             }
         }
 
-        Sidebar(
-            current = currentScreen,
-            expanded = sidebarExpanded,
-            onExpandedChange = { sidebarExpanded = it },
-            hazeState = hazeState,
-            onNavigate = { screen ->
-                navController.navigate(screen.route) {
-                    popUpTo(Screen.Home.route) { saveState = true }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            },
-            profile = currentProfile,
-            profiles = profiles,
-            onSelectProfile = { profileViewModel.selectProfile(it) },
-            onVerifyPin = { profile, code -> profileViewModel.verifyPin(profile, code) },
-            modifier = Modifier.fillMaxHeight()
-        )
+        if (currentScreen != Screen.EssentialSetup) {
+            Sidebar(
+                current = currentScreen,
+                expanded = sidebarExpanded,
+                onExpandedChange = { sidebarExpanded = it },
+                hazeState = hazeState,
+                onNavigate = { screen ->
+                    navController.navigate(screen.route) {
+                        popUpTo(Screen.Home.route) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                profile = currentProfile,
+                profiles = profiles,
+                onSelectProfile = { profileViewModel.selectProfile(it) },
+                onVerifyPin = { profile, code -> profileViewModel.verifyPin(profile, code) },
+                modifier = Modifier.fillMaxHeight()
+            )
+        }
     }
 }

@@ -59,7 +59,25 @@
       "license": "free internet radio"
     }
   ],
+  "podcastFeeds": [
+    {
+      "name": "NASACast",
+      "url": "https://www.nasa.gov/rss/dyn/NASAcast_Podcast.rss",
+      "license": "public domain / NASA"
+    },
+    {
+      "name": "TWiT",
+      "url": "https://feeds.twit.tv/twit.xml",
+      "license": "CC BY-NC-SA / free"
+    }
+  ],
+  "deezerProxy": {
+    "name": "Deezer Proxy (configure your workers.dev endpoint)",
+    "url": "",
+    "license": "user provided"
+  },
+  "webSources": [],
   "polish": {
-    "note": "Polish audio tracks and subtitles are selected automatically when available. Polish legal sources include TVP Info, Ninateka and Player.pl (subscription)."
+    "note": "Polish audio tracks and subtitles are selected automatically when available. Polish legal sources include TVP Info, Ninateka and Player.pl (subscription). Web crawlers should be configured in legal_sources.json or in the Admin panel."
   }
 }

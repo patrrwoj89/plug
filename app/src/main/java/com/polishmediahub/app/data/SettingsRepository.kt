@@ -48,6 +48,9 @@ class SettingsRepository @Inject constructor(
     val showLoadingStats: Flow<Boolean> = context.dataStore.data
         .map { it[KEY_SHOW_LOADING_STATS] ?: false }
 
+    val isFirstLaunch: Flow<Boolean> = context.dataStore.data
+        .map { it[KEY_FIRST_LAUNCH] ?: true }
+
     suspend fun setDarkTheme(value: Boolean) = context.dataStore.edit { it[KEY_DARK_THEME] = value }
     suspend fun setAutoplayTrailers(value: Boolean) = context.dataStore.edit { it[KEY_AUTOPLAY_TRAILERS] = value }
     suspend fun setSaveSearchHistory(value: Boolean) = context.dataStore.edit { it[KEY_SAVE_SEARCH_HISTORY] = value }
@@ -57,6 +60,7 @@ class SettingsRepository @Inject constructor(
     suspend fun setSubtitleColor(value: String) = context.dataStore.edit { it[KEY_SUBTITLE_COLOR] = value }
     suspend fun setSubtitleVerticalOffset(value: Float) = context.dataStore.edit { it[KEY_SUBTITLE_VERTICAL_OFFSET] = value }
     suspend fun setShowLoadingStats(value: Boolean) = context.dataStore.edit { it[KEY_SHOW_LOADING_STATS] = value }
+    suspend fun setFirstLaunchCompleted() = context.dataStore.edit { it[KEY_FIRST_LAUNCH] = false }
 
     companion object {
         private val KEY_DARK_THEME = booleanPreferencesKey("dark_theme")
@@ -68,5 +72,6 @@ class SettingsRepository @Inject constructor(
         private val KEY_SUBTITLE_COLOR = stringPreferencesKey("subtitle_color")
         private val KEY_SUBTITLE_VERTICAL_OFFSET = floatPreferencesKey("subtitle_vertical_offset")
         private val KEY_SHOW_LOADING_STATS = booleanPreferencesKey("show_loading_stats")
+        private val KEY_FIRST_LAUNCH = booleanPreferencesKey("first_launch")
     }
 }

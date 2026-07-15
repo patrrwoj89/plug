@@ -134,4 +134,13 @@
     <string name="next_episode_cancel">Anuluj</string>
     <string name="next_episode_season_episode">Sezon %1$d • Odcinek %2$d</string>
     <string name="spoiler_reveal_hint">Naciśnij SELECT, aby odsłonić</string>
+    <string name="essential_setup_title">Witaj w Polish Media Hub. Skonfigurujmy Twoje legalne źródła startowe.</string>
+    <string name="essential_setup_subtitle">Wybierz darmowe, legalne pakiety źródeł do załadowania.</string>
+    <string name="essential_setup_iptv_title">Darmowa Telewizja internetowa</string>
+    <string name="essential_setup_iptv_subtitle">Publiczne IPTV M3U + XMLTV EPG</string>
+    <string name="essential_setup_music_title">Muzyka i podcasty</string>
+    <string name="essential_setup_music_subtitle">Proxy Deezer oraz popularne kanały RSS</string>
+    <string name="essential_setup_web_title">Katalogi Publiczne Web</string>
+    <string name="essential_setup_web_subtitle">Skonfigurowane legalne crawlery stron wideo</string>
+    <string name="essential_setup_confirm">Zatwierdź i Uruchom</string>
 </resources>

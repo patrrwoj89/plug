@@ -1,6 +1,7 @@
 package com.polishmediahub.app.data.legal
 
 import android.content.Context
+import com.polishmediahub.app.data.source.WebSourceConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -33,6 +34,9 @@ data class LegalSources(
     @SerialName("torrentExamples") val torrentExamples: List<SourceEntry> = emptyList(),
     @SerialName("stremioAddons") val stremioAddons: List<SourceEntry> = emptyList(),
     val music: List<SourceEntry> = emptyList(),
+    val podcastFeeds: List<SourceEntry> = emptyList(),
+    @SerialName("deezerProxy") val deezerProxy: SourceEntry? = null,
+    val webSources: List<WebSourceConfig> = emptyList(),
     val polish: PolishSources? = null
 )
 
