@@ -49,6 +49,22 @@ All notable changes to Polish Media Hub are documented in this file.
   - `MediaItem` carries `drmLicenseUrl`, `drmScheme` and `drmHeaders`.
   - ExoPlayer configured with `MediaItem.DrmConfiguration` for Widevine, PlayReady and ClearKey.
 
+#### Sources
+- **MDBList integration** (`MdbListMediaSource`, `MdbListApi` models)
+  - New federated `MediaSource` bound into `SourceRegistry`.
+  - Loads public top lists (`/lists/top`), authenticated user lists (`/lists/user`) and list items (`/lists/{id}/items`).
+  - Media search via `/search/any` and cross-ID lookup via `/{provider}/{type}/{id}` (imdb/tmdb/trakt/tvdb).
+  - Every `MediaItem` carries `tmdbId`, `imdbId` and `traktId` for matching with Stremio, Plex, Jellyfin, Trakt, etc.
+  - Uses the global `OkHttpClient` and Kotlinx Serialization `@Serializable` models.
+- **MDBList starter package** in `legal_sources.json` and `LegalSourcesRepository` (`MdbListStarter`, `MdbListStarterEntry`).
+- **MDBList API key** configuration in `ApiConfigRepository`, `SettingsScreen` (masked input) and `AdminHttpServer` QR admin panel.
+
+#### Security
+- **Encrypted sensitive settings** (`EncryptedSettingsManager`, `ApiConfigRepository`)
+  - AES-256-GCM encryption using a hardware-backed key generated in the Android Keystore (`AndroidKeyStore`).
+  - A random 12-byte IV is generated per encryption, prepended to the ciphertext and Base64-encoded.
+  - Sensitive values (TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens, Subsonic password, MDBList API key) are encrypted before being written to DataStore and decrypted on read. Plain preferences (dark theme, quality, EPG sync status, etc.) remain unencrypted.
+
 #### Audio
 - **Native podcast RSS parser** (`PodcastRssParser`)
   - Uses Android `XmlPullParser`; extracts `<title>`, `<description>`, `<pubDate>`, `<itunes:image>`, `<itunes:duration>` and `<enclosure>` audio URLs.

@@ -27,7 +27,10 @@ data class MediaItem(
     val drmScheme: String? = null,
     val drmHeaders: Map<String, String> = emptyMap(),
     val isLive: Boolean = false,
-    val type: Type = Type.MOVIE
+    val type: Type = Type.MOVIE,
+    val tmdbId: Int? = null,
+    val imdbId: String? = null,
+    val traktId: Int? = null
 ) {
     enum class Type { MOVIE, SERIES, EPISODE, CHANNEL, AUDIO }
 }

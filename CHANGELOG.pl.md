@@ -49,6 +49,22 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
   - `MediaItem` przenosi `drmLicenseUrl`, `drmScheme` i `drmHeaders`.
   - ExoPlayer konfiguruje `MediaItem.DrmConfiguration` dla Widevine, PlayReady i ClearKey.
 
+#### Źródła
+- **Integracja MDBList** (`MdbListMediaSource`, modele `MdbListApi`)
+  - Nowe federowane źródło `MediaSource` podpięte do `SourceRegistry`.
+  - Ładuje publiczne listy top (`/lists/top`), listy użytkownika (`/lists/user`) i elementy list (`/lists/{id}/items`).
+  - Wyszukiwanie mediów przez `/search/any` oraz lookup po identyfikatorach przez `/{provider}/{type}/{id}` (imdb/tmdb/trakt/tvdb).
+  - Każdy `MediaItem` zawiera `tmdbId`, `imdbId` i `traktId` dla dopasowania do Stremio, Plex, Jellyfin, Trakt itp.
+  - Używa globalnego `OkHttpClient` i modeli `@Serializable` z Kotlinx Serialization.
+- **Pakiet startowy MDBList** w `legal_sources.json` i `LegalSourcesRepository` (`MdbListStarter`, `MdbListStarterEntry`).
+- **Klucz API MDBList** w `ApiConfigRepository`, `SettingsScreen` (pole maskowane) oraz panelu QR `AdminHttpServer`.
+
+#### Bezpieczeństwo
+- **Szyfrowanie wrażliwych ustawień** (`EncryptedSettingsManager`, `ApiConfigRepository`)
+  - Szyfrowanie AES-256-GCM przy użyciu sprzętowo chronionego klucza generowanego w Android Keystore (`AndroidKeyStore`).
+  - Dla każdego szyfrowania generowany jest losowy 12-bajtowy IV, dołączany do szyfrogramu i kodowany Base64.
+  - Wrażliwe wartości (TMDB, AniList, Trakt, Debrid, tokeny Jellyfin/Plex/Emby, hasło Subsonic, klucz MDBList) są szyfrowane przed zapisem do DataStore i odszyfrowywane przy odczycie. Zwykłe preferencje (motyw, jakość, status synchronizacji EPG itp.) pozostaję w jawnej postaci.
+
 #### Audio
 - **Natywny parser RSS podcastów** (`PodcastRssParser`)
   - Bazuje na `XmlPullParser`; wyciąga `<title>`, `<description>`, `<pubDate>`, `<itunes:image>`, `<itunes:duration>` i `<enclosure>`.

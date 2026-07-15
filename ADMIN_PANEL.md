@@ -50,6 +50,7 @@ Send form fields matching the keys supported by `ApiConfigRepository`. The admin
 | `subsonicUrl` / `subsonicUser` / `subsonicPassword` | Subsonic / Airsonic credentials |
 | `podcastFeeds` | Podcast RSS feed URLs, one per line |
 | `deezerProxyUrl` | Deezer proxy URL (e.g. `https://your-worker.workers.dev`) |
+| `mdbListApiKey` | MDBList API key (get it at https://mdblist.com/preferences/#api) |
 | `tmdbApiKey` | TMDB API key |
 | `aniListToken` | AniList access token |
 | `traktClientId` | Trakt client ID |
@@ -84,11 +85,12 @@ Only the fields you actually use need to be present. Empty strings are ignored.
   "subsonicUser": "admin",
   "subsonicPassword": "secret",
   "podcastFeeds": "https://example.com/feed.xml\nhttps://nasa.gov/rss/dyn/NASAcast_Podcast.rss",
-  "deezerProxyUrl": "https://your-worker.workers.dev"
+  "deezerProxyUrl": "https://your-worker.workers.dev",
+  "mdbListApiKey": "your-mdblist-api-key"
 }
 ```
 
-Note: the actual HTTP endpoint expects `application/x-www-form-urlencoded` form fields, not raw JSON. The JSON example above is shown for clarity.
+Note: the actual HTTP endpoint expects `application/x-www-form-urlencoded` form fields, not raw JSON. The JSON example above is shown for clarity. Sensitive fields (MDBList, TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens and Subsonic password) are encrypted with AES-256-GCM in Android Keystore before being written to DataStore; values sent to the panel are already decrypted on read.
 
 ## Kodi remote settings sync
 

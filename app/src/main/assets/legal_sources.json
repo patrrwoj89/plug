@@ -76,6 +76,16 @@
     "url": "",
     "license": "user provided"
   },
+  "mdbList": {
+    "apiKeyUrl": "https://mdblist.com/preferences/#api",
+    "starterLists": [
+      {
+        "id": 2194,
+        "name": "Latest TV Shows",
+        "description": "Example public MDBList community list (enter your own API key in Admin / Settings)"
+      }
+    ]
+  },
   "webSources": [],
   "polish": {
     "note": "Polish audio tracks and subtitles are selected automatically when available. Polish legal sources include TVP Info, Ninateka and Player.pl (subscription). Web crawlers should be configured in legal_sources.json or in the Admin panel."

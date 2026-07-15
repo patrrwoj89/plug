@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +56,7 @@ fun SettingsScreen(
     val subtitleColor by viewModel.subtitleColor.collectAsStateWithLifecycle()
     val subtitleVerticalOffset by viewModel.subtitleVerticalOffset.collectAsStateWithLifecycle()
     val showLoadingStats by viewModel.showLoadingStats.collectAsStateWithLifecycle()
+    val mdbListApiKey by viewModel.mdbListApiKey.collectAsStateWithLifecycle()
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
     val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
     val lastEpgSync by viewModel.lastEpgSync.collectAsStateWithLifecycle()
@@ -178,6 +180,16 @@ fun SettingsScreen(
             value = preferredQuality,
             options = listOf("Auto", "1080p", "720p", "480p"),
             onSelect = viewModel::setPreferredQuality
+        )
+
+        TvOutlinedTextField(
+            value = mdbListApiKey,
+            onValueChange = viewModel::setMdbListApiKey,
+            label = { Text(stringResource(id = R.string.settings_mdblist_api_key)) },
+            placeholder = { Text(stringResource(id = R.string.settings_mdblist_api_key_hint)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions.Default
         )
 
         SettingsToggle(

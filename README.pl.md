@@ -17,7 +17,8 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
   - **Wtyczki QuickJS** (`.js`) z globalnym mostkiem sieciowym `httpFetch`, nagłówkami i asynchroniczną ewaluacją.
   - **Web scraping** przez konfigurację JSON z walidacją i dynamicznym fallbackiem do QuickJS.
   - **IPTV/M3U** z obsługą XMLTV EPG, lokalnym cache Room, tłem odświeżaniem przez `IptvUpdateWorker` oraz profesjonalną **siatką EPG Timeline Grid**.
-  - **Jellyfin, Plex, Emby, Subsonic/Airsonic, Stremio, AniList, TMDB, Trakt, podcasty (RSS)**, radio internetowe i proxy Deezer.
+  - **Jellyfin, Plex, Emby, Subsonic/Airsonic, Stremio, AniList, TMDB, Trakt, MDBList, podcasty (RSS)**, radio internetowe i proxy Deezer.
+  - **Integracja MDBList** (`MdbListMediaSource`): publiczne listy top, listy użytkownika, wyszukiwanie mediów i lookup po identyfikatorach imdb/tmdb/trakt/tvdb; każdy element zawiera `tmdbId`, `imdbId` i `traktId`, co ułatwia dopasowanie do innych źródeł.
 - **Strumieniowanie BitTorrent** przez `jlibtorrent` z pobieraniem sekwencyjnym, lokalnym serwerem HTTP i UI buforowania.
 - **Muzyka i audio**:
   - Natywny parser RSS podcastów (`PodcastRssParser`) z tagami iTunes i URL-ami audio z `<enclosure>`.
@@ -28,7 +29,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 ### Interfejs TV / UX
 
 - **Nowoczesny panel boczny** — pływająca pigułka, overlay z efektem rozmycia Haze, brak drgania layoutu, automatyczne zwijanie po 1500 ms, otwieranie D-Pad LEFT; pozycje menu pogrupowane w sekcje Odkrywaj, Biblioteka, Multimedia, Pobrane i System, a zablokowane profile wyświetlają ikonę `Icons.Default.Lock` z lokalizowanym opisem.
-- **Ekran pierwszej konfiguracji** (Essential Addon Setup) dla nowych profili: jednym kliknięciem ładuje legalne pakiety startowe (IPTV/EPG, muzyka/podcasty, katalogi web) przez `EssentialSetupScreen` i `EssentialSetupViewModel`.
+- **Ekran pierwszej konfiguracji** (Essential Addon Setup) dla nowych profili: jednym kliknięciem ładuje legalne pakiety startowe (IPTV/EPG, muzyka/podcasty, katalogi web, MDBList) przez `EssentialSetupScreen` i `EssentialSetupViewModel`.
 - **Biblioteka, Do obejrzenia i Listy własne** wyświetlają siatkę 5 kolumn (`CustomListDetailScreen` dla zawartości pojedynczej listy własnej).
 - **Przywracanie fokusu D-Pada** w poziomych `LazyRow` (`CategoryRow`) przez `Modifier.focusGroup()` + `focusRestorer()` — fokus wraca do ostatnio oglądanego kafelka przy przechodzeniu między rzędami.
 - **Wyszukiwanie głosowe** w `SearchScreen`: przycisk D-Pad z mikrofonem uruchamia `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` w języku polskim (`pl-PL`) i wstawia rozpoznaną frazę do pola wyszukiwania.
@@ -69,6 +70,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - **Wielu użytkowników / profile** z per-profilową historią, biblioteką, listami obserwowanych, listami własnymi i historią audio; przełącznik profili w panelu bocznym i opcjonalny PIN na profil.
 - **Blokada PIN** dla Ustawień i ekranu Admin.
 - **Pobieranie** audio i wideo przez `WorkManager`.
+- **Szyfrowanie wrażliwych ustawień** (`EncryptedSettingsManager`): klucze API, tokeny OAuth i hasła (TMDB, AniList, Trakt, Debrid, tokeny Jellyfin/Plex/Emby, hasło Subsonic, klucz MDBList) są szyfrowane algorytmem AES-256-GCM z wykorzystaniem sprzętowo chronionego klucza z Android Keystore przed zapisem do DataStore. Zwykłe preferencje (motyw, jakość, status EPG itp.) pozostają w jawnej postaci.
 - **Globalny ekran awarii**: nieobsługiwane wyjątki są łapane przez `GlobalExceptionHandler`, zapisywane do pliku i uruchamiana jest `CrashReportActivity` w osobnym procesie `:crashreport`, która pozwala na restart lub wyczyszczenie pamięci podręcznej i restart — bez nagłego powrotu do launchera Android TV.
 - **Testy zrzutów ekranu** z Paparazzi i testy instrumentacyjne D-Pad.
 
@@ -120,7 +122,7 @@ APK powstaje w `app/build/outputs/apk/debug/app-debug.apk`.
 app/src/main/java/com/polishmediahub/app/
 ├── data/                 # Repozytoria, źródła danych, persistencja
 │   ├── local/            # Encje/DAO Room (MediaDatabase, ProfileEntity itd.)
-│   ├── remote/           # TMDB, Trakt, AniList, Jellyfin, Plex, Emby, Subsonic, Stremio, IPTV, Deezer, podcasty, radio
+│   ├── remote/           # TMDB, Trakt, AniList, Jellyfin, Plex, Emby, Subsonic, Stremio, IPTV, Deezer, podcasty, radio, MDBList
 │   ├── source/           # Kodi, Web, Cloudstream, FederatedMediaRepository, SourceRegistry, GlobalExceptionHandler
 │   ├── plugin/           # QuickJsEngine, PluginManifest, PluginRepository, DynamicPluginLoader, ReflectiveMediaSource
 │   ├── audio/            # AudioSource, DeezerAudioSource, PodcastSource, RadioRepository, AudioHistoryRepository

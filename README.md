@@ -17,7 +17,8 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
   - **QuickJS plugins** (`.js`) with built-in `httpFetch` network bridge, headers and async evaluation.
   - **Web scraping** configuration via JSON with validation and dynamic fallback to QuickJS.
   - **IPTV/M3U** with XMLTV EPG support, local Room cache, background refresh by `IptvUpdateWorker` and a professional **EPG Timeline Grid**.
-  - **Jellyfin, Plex, Emby, Subsonic/Airsonic, Stremio, AniList, TMDB, Trakt, podcasts (RSS)**, internet radio and Deezer proxy.
+  - **Jellyfin, Plex, Emby, Subsonic/Airsonic, Stremio, AniList, TMDB, Trakt, MDBList, podcasts (RSS)**, internet radio and Deezer proxy.
+  - **MDBList integration** (`MdbListMediaSource`): public top lists, user lists, media search and cross-ID lookup by imdb/tmdb/trakt/tvdb; every item carries `tmdbId`, `imdbId` and `traktId` for matching with other sources.
 - **BitTorrent streaming** via `jlibtorrent` with sequential download, local HTTP proxy and buffering UI.
 - **Music & audio**:
   - Native podcast RSS parser (`PodcastRssParser`) with iTunes tags and enclosure audio URLs.
@@ -56,7 +57,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 
 - **Wireless admin panel** served by a local HTTP server with QR code (ZXing) for easy source configuration from a phone or computer; the panel and Settings show the last EPG sync timestamp and status.
 - **Background EPG/IPTV updater** (`IptvUpdateWorker`) runs every 12 hours (and on cold start) on `Dispatchers.IO` with unmetered/idle/battery-not-low constraints, caches channels and EPG in Room, so the live-TV screen opens instantly.
-- **First-launch onboarding** lets new users pick legal starter source packages.
+- **First-launch onboarding** lets new users pick legal starter source packages, including an MDBList starter package in `legal_sources.json`.
 
 ### Android TV integration
 
@@ -69,6 +70,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **Multi-user profiles** with per-profile history, library, watchlist, custom lists and audio history; profile switcher in the sidebar and optional PIN lock per profile.
 - **PIN lock** for Settings and Admin screens.
 - **Download support** for audio and video via `WorkManager`.
+- **Encrypted sensitive settings** (`EncryptedSettingsManager`): API keys, OAuth tokens and passwords (TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens, Subsonic password, MDBList key) are encrypted with AES-256-GCM using a hardware-backed key from the Android Keystore before being stored in DataStore. Plain preferences (dark theme, quality, EPG status, etc.) remain unencrypted.
 - **Global Crash Report Center**: uncaught exceptions are caught by `GlobalExceptionHandler`, a stack trace is saved and `CrashReportActivity` (in a separate `:crashreport` process) offers restart or "clear cache & restart" without returning to the Android launcher.
 - **Screenshot / Compose Preview tests** with Paparazzi and instrumented D-Pad tests.
 

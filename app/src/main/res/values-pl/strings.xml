@@ -139,6 +139,8 @@
     <string name="cancel">Anuluj</string>
     <string name="settings_pin">Kontrola rodzicielska PIN</string>
     <string name="settings_pin_enabled">PIN włączony</string>
+    <string name="settings_mdblist_api_key">Klucz API MDBList</string>
+    <string name="settings_mdblist_api_key_hint">Pobierz go na mdblist.com/preferences</string>
     <string name="download_audio">Pobierz audio</string>
     <string name="profile_default">Domyślny</string>
     <string name="profile_switch">Przełącz profil</string>

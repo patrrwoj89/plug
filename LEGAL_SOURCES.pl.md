@@ -58,6 +58,15 @@ Dla polskich kanałów sprawdź, czy nadawca udostępnia publiczny feed EPG, lub
 | Pluto TV | oficjalne repo Kodi | Darmowa TV z reklamami |
 | Archive.org | dodatki społeczności | Treści w domenie publicznej |
 
+## MDBList
+
+MDBList (https://mdblist.com) to serwis agregujący metadane, który pozwala użytkownikom tworzyć, przeglądać i wyszukiwać publiczne listy multimediów z wykorzystaniem cross-linkowanych identyfikatorów (IMDb, TMDB, Trakt, TVDB, MyAnimeList). Aplikacja ładuje publiczne listy top oraz listy uwierzytelnionego użytkownika. Musisz uzyskać własny darmowy klucz API na https://mdblist.com/preferences/#api; aplikacja nie dostarcza kluczy ani treści.
+
+| Źródło | URL | Uwagi |
+|--------|-----|-------|
+| MDBList | https://mdblist.com | Publiczne listy użytkowników; wymagany klucz API |
+| Przykład publicznej listy MDBList | `https://api.mdblist.com/lists/top?apikey=<twój_klucz>` | Publiczne listy top |
+
 ## Muzyka / Audio / Podcasty
 
 | Źródło | URL | Uwagi |
@@ -120,6 +129,7 @@ Aplikacja zawiera `app/src/main/assets/legal_sources.json` z wyselekcjonowanymi 
 - **Darmowa Telewizja Internetowa** — publiczne playlisty IPTV M3U i URL XMLTV EPG.
 - **Muzyka i Podcasty** — przykładowe kanały RSS podcastów i placeholder `deezerProxyUrl`.
 - **Katalogi Publiczne Web** — oficjalne dodatki Stremio (YouTube, TED) i pusta lista `webSources` do własnych crawlerów.
+- **MDBList** — przykładowy wpis publicznej listy oraz oficjalny URL do wygenerowania własnego klucza API.
 
 Te przykładowe źródła mają charakter wyłącznie punktu wyjścia; Ty jesteś odpowiedzialny za zweryfikowanie legalności każdego źródła w Twoim regionie.
 

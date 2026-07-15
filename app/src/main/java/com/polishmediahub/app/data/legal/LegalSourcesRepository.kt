@@ -1,6 +1,7 @@
 package com.polishmediahub.app.data.legal
 
 import android.content.Context
+import android.util.Log
 import com.polishmediahub.app.data.source.WebSourceConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.serialization.SerialName
@@ -21,7 +22,8 @@ class LegalSourcesRepository @Inject constructor(
             context.assets.open("legal_sources.json").bufferedReader().use {
                 json.decodeFromString(LegalSources.serializer(), it.readText())
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w("LegalSourcesRepository", "Failed to load legal_sources.json: ${e.message}", e)
             null
         }
     }
@@ -37,6 +39,7 @@ data class LegalSources(
     val podcastFeeds: List<SourceEntry> = emptyList(),
     @SerialName("deezerProxy") val deezerProxy: SourceEntry? = null,
     val webSources: List<WebSourceConfig> = emptyList(),
+    @SerialName("mdbList") val mdbList: MdbListStarter? = null,
     val polish: PolishSources? = null
 )
 
@@ -46,6 +49,19 @@ data class SourceEntry(
     val url: String = "",
     val magnet: String = "",
     val license: String = ""
+)
+
+@Serializable
+data class MdbListStarter(
+    @SerialName("apiKeyUrl") val apiKeyUrl: String = "",
+    @SerialName("starterLists") val starterLists: List<MdbListStarterEntry> = emptyList()
+)
+
+@Serializable
+data class MdbListStarterEntry(
+    val id: Int,
+    val name: String = "",
+    val description: String = ""
 )
 
 @Serializable

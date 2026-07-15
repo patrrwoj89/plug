@@ -149,6 +149,7 @@ class AdminHttpServer @Inject constructor(
                     "subsonicPassword" to subsonicPassword,
                     "podcastFeeds" to podcastFeeds,
                     "deezerProxyUrl" to deezerProxyUrl,
+                    "mdbListApiKey" to mdbListApiKey,
                     "lastEpgSyncAt" to lastEpgSyncAt,
                     "lastEpgSyncStatus" to lastEpgSyncStatus,
                     "lastEpgSyncError" to lastEpgSyncError.map { it ?: "" }
@@ -188,6 +189,7 @@ class AdminHttpServer @Inject constructor(
             params["subsonicPassword"]?.let { apiConfigRepository.setSubsonicPassword(it) }
             params["podcastFeeds"]?.let { apiConfigRepository.setPodcastFeeds(it) }
             params["deezerProxyUrl"]?.let { apiConfigRepository.setDeezerProxyUrl(it) }
+            params["mdbListApiKey"]?.let { apiConfigRepository.setMdbListApiKey(it) }
             pushAddonSettingsIfKodiConfigured()
         }
         writeResponse(out, 200, "OK", "text/plain", "OK")
@@ -314,6 +316,8 @@ button:hover { background: #29b6f6; }
   <textarea name="podcastFeeds"></textarea>
   <label>Deezer Proxy URL</label>
   <input type="text" name="deezerProxyUrl" placeholder="https://your-worker.workers.dev">
+  <label>MDBList API Key</label>
+  <input type="password" name="mdbListApiKey" placeholder="Get it at mdblist.com/preferences/#api">
   <label>TMDB API Key</label>
   <input type="text" name="tmdbApiKey">
   <label>AniList Token</label>

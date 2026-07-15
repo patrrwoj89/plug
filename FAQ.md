@@ -60,6 +60,16 @@ See [ADMIN_PANEL.md](ADMIN_PANEL.md) for detailed endpoint descriptions and JSON
 - Podcasts RSS, internet radio M3U/PLS, Deezer proxy.
 - Legal BitTorrent (`.torrent` / magnet) for content you own or that is freely distributable.
 
+## MDBList
+
+### How do I add MDBList?
+
+MDBList is a metadata list provider. Go to **Settings** or the wireless **Admin** panel, enter your MDBList API key (get it at https://mdblist.com/preferences/#api) and save. The app then loads public top lists, your personal lists and supports search. MDBList items carry `tmdbId`, `imdbId` and `traktId` so other sources can match them.
+
+### Where are my API keys stored?
+
+Sensitive values such as MDBList, TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens and the Subsonic password are encrypted with AES-256-GCM using a hardware-backed key from the Android Keystore before being written to DataStore. They are never included in system backups as plain text. Ordinary preferences (dark theme, video quality, EPG sync status, etc.) remain unencrypted for quick access.
+
 ## Live TV & EPG
 
 ### When does the EPG update?

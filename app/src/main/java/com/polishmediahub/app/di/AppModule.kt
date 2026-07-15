@@ -12,6 +12,7 @@ import com.polishmediahub.app.data.local.PluginDao
 import com.polishmediahub.app.data.local.ProfileDao
 import com.polishmediahub.app.data.local.ChannelDao
 import com.polishmediahub.app.data.local.SavedMediaDao
+import com.polishmediahub.app.data.EncryptedSettingsManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,6 +23,11 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    @Provides
+    @Singleton
+    fun provideEncryptedSettingsManager(@ApplicationContext context: Context): EncryptedSettingsManager =
+        EncryptedSettingsManager(context)
 
     @Provides
     @Singleton

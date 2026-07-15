@@ -50,6 +50,7 @@ Wyślij pola formularza odpowiadające kluczom obsługiwanym przez `ApiConfigRep
 | `subsonicUrl` / `subsonicUser` / `subsonicPassword` | Dane Subsonic / Airsonic |
 | `podcastFeeds` | URL-e kanałów RSS podcastów, po jednym na linię |
 | `deezerProxyUrl` | URL proxy Deezer (np. `https://your-worker.workers.dev`) |
+| `mdbListApiKey` | Klucz API MDBList (pobierz na https://mdblist.com/preferences/#api) |
 | `tmdbApiKey` | Klucz API TMDB |
 | `aniListToken` | Token dostępu AniList |
 | `traktClientId` | Client ID Trakt |
@@ -84,11 +85,12 @@ Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignoro
   "subsonicUser": "admin",
   "subsonicPassword": "secret",
   "podcastFeeds": "https://example.com/feed.xml\nhttps://nasa.gov/rss/dyn/NASAcast_Podcast.rss",
-  "deezerProxyUrl": "https://your-worker.workers.dev"
+  "deezerProxyUrl": "https://your-worker.workers.dev",
+  "mdbListApiKey": "your-mdblist-api-key"
 }
 ```
 
-Uwaga: rzeczywisty endpoint HTTP oczekuje danych `application/x-www-form-urlencoded`, a nie surowego JSON. Powyższy JSON pokazany jest dla przejrzystości.
+Uwaga: rzeczywisty endpoint HTTP oczekuje danych `application/x-www-form-urlencoded`, a nie surowego JSON. Powyższy JSON pokazany jest dla przejrzystości. Wrażliwe pola (MDBList, TMDB, AniList, Trakt, Debrid, tokeny Jellyfin/Plex/Emby oraz hasło Subsonic) są szyfrowane algorytmem AES-256-GCM w Android Keystore przed zapisem do DataStore; wartości widoczne w panelu są odszyfrowane przy odczycie.
 
 ## Zdalna synchronizacja ustawień Kodi
 

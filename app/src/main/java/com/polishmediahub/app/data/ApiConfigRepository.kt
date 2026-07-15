@@ -3,8 +3,8 @@ package com.polishmediahub.app.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -18,38 +18,40 @@ private val Context.apiConfigDataStore: DataStore<Preferences> by preferencesDat
 
 @Singleton
 class ApiConfigRepository @Inject constructor(
-    @param:ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
+    private val encryptedSettingsManager: EncryptedSettingsManager
 ) {
 
-    val tmdbApiKey: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_TMDB].orEmpty() }
-    val aniListToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_ANILIST].orEmpty() }
-    val traktClientId: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_TRAKT_ID].orEmpty() }
-    val traktAccessToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_TRAKT_ACCESS].orEmpty() }
-    val debridApiKey: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_DEBRID].orEmpty() }
-    val debridAccessToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_DEBRID_ACCESS].orEmpty() }
-    val debridRefreshToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_DEBRID_REFRESH].orEmpty() }
-    val debridProvider: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_DEBRID_PROVIDER].orEmpty() }
-    val iptvSourceUrls: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_IPTV].orEmpty() }
-    val epgUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_EPG].orEmpty() }
-    val stremioAddons: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_STREMIO].orEmpty() }
-    val kodiUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_KODI_URL].orEmpty() }
-    val webSourceConfig: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_WEB_SOURCE_CONFIG].orEmpty() }
-    val cloudstreamRepoUrls: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_CLOUDSTREAM_REPOS].orEmpty() }
-    val jellyfinUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_JELLYFIN_URL].orEmpty() }
-    val jellyfinToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_JELLYFIN_TOKEN].orEmpty() }
-    val plexUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_PLEX_URL].orEmpty() }
-    val plexToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_PLEX_TOKEN].orEmpty() }
-    val embyUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_EMBY_URL].orEmpty() }
-    val embyToken: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_EMBY_TOKEN].orEmpty() }
+    val tmdbApiKey: Flow<String> = stringFlow(KEY_TMDB)
+    val aniListToken: Flow<String> = stringFlow(KEY_ANILIST)
+    val traktClientId: Flow<String> = stringFlow(KEY_TRAKT_ID)
+    val traktAccessToken: Flow<String> = stringFlow(KEY_TRAKT_ACCESS)
+    val debridApiKey: Flow<String> = stringFlow(KEY_DEBRID)
+    val debridAccessToken: Flow<String> = stringFlow(KEY_DEBRID_ACCESS)
+    val debridRefreshToken: Flow<String> = stringFlow(KEY_DEBRID_REFRESH)
+    val debridProvider: Flow<String> = plainStringFlow(KEY_DEBRID_PROVIDER)
+    val iptvSourceUrls: Flow<String> = plainStringFlow(KEY_IPTV)
+    val epgUrl: Flow<String> = plainStringFlow(KEY_EPG)
+    val stremioAddons: Flow<String> = plainStringFlow(KEY_STREMIO)
+    val kodiUrl: Flow<String> = plainStringFlow(KEY_KODI_URL)
+    val webSourceConfig: Flow<String> = plainStringFlow(KEY_WEB_SOURCE_CONFIG)
+    val cloudstreamRepoUrls: Flow<String> = plainStringFlow(KEY_CLOUDSTREAM_REPOS)
+    val jellyfinUrl: Flow<String> = plainStringFlow(KEY_JELLYFIN_URL)
+    val jellyfinToken: Flow<String> = stringFlow(KEY_JELLYFIN_TOKEN)
+    val plexUrl: Flow<String> = plainStringFlow(KEY_PLEX_URL)
+    val plexToken: Flow<String> = stringFlow(KEY_PLEX_TOKEN)
+    val embyUrl: Flow<String> = plainStringFlow(KEY_EMBY_URL)
+    val embyToken: Flow<String> = stringFlow(KEY_EMBY_TOKEN)
     val forceTranscode: Flow<Boolean> = context.apiConfigDataStore.data.map { it[KEY_FORCE_TRANSCODE] ?: false }
-    val maxDirectPlayBitrate: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_MAX_DIRECT_PLAY_BITRATE].orEmpty() }
-    val subsonicUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_SUBSONIC_URL].orEmpty() }
-    val subsonicUser: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_SUBSONIC_USER].orEmpty() }
-    val subsonicPassword: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_SUBSONIC_PASSWORD].orEmpty() }
-    val podcastFeeds: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_PODCAST_FEEDS].orEmpty() }
-    val deezerProxyUrl: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_DEEZER_PROXY_URL].orEmpty() }
+    val maxDirectPlayBitrate: Flow<String> = plainStringFlow(KEY_MAX_DIRECT_PLAY_BITRATE)
+    val subsonicUrl: Flow<String> = plainStringFlow(KEY_SUBSONIC_URL)
+    val subsonicUser: Flow<String> = plainStringFlow(KEY_SUBSONIC_USER)
+    val subsonicPassword: Flow<String> = stringFlow(KEY_SUBSONIC_PASSWORD)
+    val podcastFeeds: Flow<String> = plainStringFlow(KEY_PODCAST_FEEDS)
+    val deezerProxyUrl: Flow<String> = plainStringFlow(KEY_DEEZER_PROXY_URL)
+    val mdbListApiKey: Flow<String> = stringFlow(KEY_MDBLIST)
     val lastEpgSyncAt: Flow<Long> = context.apiConfigDataStore.data.map { it[KEY_LAST_EPG_SYNC_AT] ?: 0L }
-    val lastEpgSyncStatus: Flow<String> = context.apiConfigDataStore.data.map { it[KEY_LAST_EPG_SYNC_STATUS].orEmpty() }
+    val lastEpgSyncStatus: Flow<String> = plainStringFlow(KEY_LAST_EPG_SYNC_STATUS)
     val lastEpgSyncError: Flow<String?> = context.apiConfigDataStore.data.map { it[KEY_LAST_EPG_SYNC_ERROR] }
 
     suspend fun setTmdbApiKey(value: String) = edit(KEY_TMDB, value)
@@ -79,6 +81,7 @@ class ApiConfigRepository @Inject constructor(
     suspend fun setSubsonicPassword(value: String) = edit(KEY_SUBSONIC_PASSWORD, value)
     suspend fun setPodcastFeeds(value: String) = edit(KEY_PODCAST_FEEDS, value)
     suspend fun setDeezerProxyUrl(value: String) = edit(KEY_DEEZER_PROXY_URL, value)
+    suspend fun setMdbListApiKey(value: String) = edit(KEY_MDBLIST, value)
 
     suspend fun setLastEpgSync(timestamp: Long, status: String, error: String? = null) {
         context.apiConfigDataStore.edit {
@@ -92,8 +95,25 @@ class ApiConfigRepository @Inject constructor(
         }
     }
 
+    private fun plainStringFlow(key: Preferences.Key<String>): Flow<String> =
+        context.apiConfigDataStore.data.map { it[key].orEmpty() }
+
+    private fun stringFlow(key: Preferences.Key<String>): Flow<String> =
+        context.apiConfigDataStore.data.map { decrypt(it[key]).orEmpty() }
+
+    private fun decrypt(value: String?): String? = if (value.isNullOrBlank()) {
+        value
+    } else {
+        encryptedSettingsManager.decrypt(value) ?: value
+    }
+
     private suspend fun edit(key: Preferences.Key<String>, value: String) {
-        context.apiConfigDataStore.edit { it[key] = value }
+        val stored = if (key in SENSITIVE_STRING_KEYS && value.isNotBlank()) {
+            encryptedSettingsManager.encrypt(value) ?: value
+        } else {
+            value
+        }
+        context.apiConfigDataStore.edit { it[key] = stored }
     }
 
     private suspend fun edit(key: Preferences.Key<Boolean>, value: Boolean) {
@@ -128,8 +148,24 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_SUBSONIC_PASSWORD = stringPreferencesKey("subsonic_password")
         private val KEY_PODCAST_FEEDS = stringPreferencesKey("podcast_feeds")
         private val KEY_DEEZER_PROXY_URL = stringPreferencesKey("deezer_proxy_url")
+        private val KEY_MDBLIST = stringPreferencesKey("mdblist_api_key")
         private val KEY_LAST_EPG_SYNC_AT = longPreferencesKey("last_epg_sync_at")
         private val KEY_LAST_EPG_SYNC_STATUS = stringPreferencesKey("last_epg_sync_status")
         private val KEY_LAST_EPG_SYNC_ERROR = stringPreferencesKey("last_epg_sync_error")
+
+        private val SENSITIVE_STRING_KEYS = setOf(
+            KEY_TMDB,
+            KEY_ANILIST,
+            KEY_TRAKT_ID,
+            KEY_TRAKT_ACCESS,
+            KEY_DEBRID,
+            KEY_DEBRID_ACCESS,
+            KEY_DEBRID_REFRESH,
+            KEY_JELLYFIN_TOKEN,
+            KEY_PLEX_TOKEN,
+            KEY_EMBY_TOKEN,
+            KEY_SUBSONIC_PASSWORD,
+            KEY_MDBLIST
+        )
     }
 }

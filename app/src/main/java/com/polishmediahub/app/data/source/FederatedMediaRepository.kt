@@ -3,6 +3,7 @@ package com.polishmediahub.app.data.source
 import android.util.Log
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.MediaRepository
+import com.polishmediahub.app.data.remote.mdblist.MdbListMediaSource
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.model.PlaybackState
@@ -22,6 +23,7 @@ class FederatedMediaRepository @Inject constructor(
     private val kodiMediaSource: KodiMediaSource,
     private val webMediaSource: WebMediaSource,
     private val cloudstreamSource: CloudstreamSource,
+    private val mdbListMediaSource: MdbListMediaSource,
     private val apiConfigRepository: ApiConfigRepository
 ) : MediaRepository {
 
@@ -45,6 +47,9 @@ class FederatedMediaRepository @Inject constructor(
 
             val cloudstreamRepos = apiConfigRepository.cloudstreamRepoUrls.first()
             if (cloudstreamRepos.isNotBlank()) cloudstreamSource.configure(cloudstreamRepos)
+
+            val mdbListKey = apiConfigRepository.mdbListApiKey.first()
+            if (mdbListKey.isNotBlank()) mdbListMediaSource.configure(mdbListKey)
 
             mutex.withLock { configured = true }
         } catch (e: Exception) {

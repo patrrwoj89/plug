@@ -15,7 +15,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    apiConfigRepository: ApiConfigRepository
+    private val apiConfigRepository: ApiConfigRepository
 ) : ViewModel() {
 
     val darkTheme: StateFlow<Boolean> = settingsRepository.darkTheme
@@ -55,6 +55,9 @@ class SettingsViewModel @Inject constructor(
     ) { at, status, error -> LastEpgSyncState(at, status, error) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = LastEpgSyncState())
 
+    val mdbListApiKey: StateFlow<String> = apiConfigRepository.mdbListApiKey
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = "")
+
     fun setDarkTheme(value: Boolean) = viewModelScope.launch { settingsRepository.setDarkTheme(value) }
     fun setAutoplayTrailers(value: Boolean) = viewModelScope.launch { settingsRepository.setAutoplayTrailers(value) }
     fun setSaveSearchHistory(value: Boolean) = viewModelScope.launch { settingsRepository.setSaveSearchHistory(value) }
@@ -64,4 +67,6 @@ class SettingsViewModel @Inject constructor(
     fun setSubtitleColor(value: String) = viewModelScope.launch { settingsRepository.setSubtitleColor(value) }
     fun setSubtitleVerticalOffset(value: Float) = viewModelScope.launch { settingsRepository.setSubtitleVerticalOffset(value) }
     fun setShowLoadingStats(value: Boolean) = viewModelScope.launch { settingsRepository.setShowLoadingStats(value) }
+
+    fun setMdbListApiKey(value: String) = viewModelScope.launch { apiConfigRepository.setMdbListApiKey(value) }
 }

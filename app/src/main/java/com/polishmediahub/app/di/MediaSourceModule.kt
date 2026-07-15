@@ -3,6 +3,7 @@ package com.polishmediahub.app.di
 import com.polishmediahub.app.data.plugin.PluginMediaSource
 import com.polishmediahub.app.data.remote.emby.EmbyMediaSource
 import com.polishmediahub.app.data.remote.jellyfin.JellyfinMediaSource
+import com.polishmediahub.app.data.remote.mdblist.MdbListMediaSource
 import com.polishmediahub.app.data.remote.plex.PlexMediaSource
 import com.polishmediahub.app.data.source.CloudstreamSource
 import com.polishmediahub.app.data.source.KodiMediaSource
@@ -45,4 +46,8 @@ abstract class MediaSourceModule {
     @Binds
     @IntoSet
     abstract fun bindEmbyMediaSource(source: EmbyMediaSource): MediaSource
+
+    @Binds
+    @IntoSet
+    abstract fun bindMdbListMediaSource(source: MdbListMediaSource): MediaSource
 }
