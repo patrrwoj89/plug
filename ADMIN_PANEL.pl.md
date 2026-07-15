@@ -18,6 +18,7 @@ Wbudowany **Panel administracyjny** pozwala konfigurować wszystkie źródła z 
 - `AdminHttpServer` to lekki serwer oparty na `ServerSocket` działający w korutynie `Dispatchers.IO`.
 - Jest uruchamiany po otwarciu ekranu **Admin** i zatrzymywany po jego zamknięciu.
 - Port przydzielany jest dynamicznie (`ServerSocket(0)`), aby uniknąć konfliktów z innymi aplikacjami lub usługami systemowymi.
+- Błędy serwera są logowane przez `Log.w(...)` zamiast być cicho połykane, co ułatwia debugowanie interakcji z panelem.
 - Serwer binduje się do lokalnego IP sieciowego wykrytego przez `NetworkAddressHelper` (zazwyczaj Wi-Fi lub ethernet).
 - Czysty HTTP do IP TV jest dozwolony przez konfigurację bezpieczeństwa sieci, ponieważ ruch pozostaje w LAN.
 

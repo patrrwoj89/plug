@@ -107,6 +107,10 @@ Tak. `TvLauncherManager` nasłuchuje `ProfileRepository.currentProfile`, czyści
 
 Na ekranie głównym możesz nacisnąć **BACK**, gdy panel jest zwinięty. D-Pad LEFT na dowolnym zaznaczonym elemencie w lewej kolumnie również działa.
 
+### Czy fokus w poziomym rzędzie pamięta moją pozycję?
+
+Tak. Poziome `LazyRow` (np. w `CategoryRow` na ekranie głównym) używają `Modifier.focusGroup()` i `focusRestorer()`. Jeśli przewiniesz do 5. kafelka, zjedziesz w dół, a następnie wrócisz w górę, fokus wraca na 5. pozycję zamiast resetować się do pierwszego kafelka.
+
 ## BitTorrent
 
 ### Czy mogę streamować torrenty?
@@ -144,6 +148,16 @@ Dodaj playlistę M3U i URL XMLTV EPG w **Admin** lub podczas **Essential Setup**
 ### Czy mogę oglądać TV na żywo bez EPG?
 
 Tak, kanały IPTV są również wyświetlane na ekranie **IPTV**. EPG jest opcjonalne i zapewnia widok siatki oś czasu.
+
+## Listy własne
+
+### Czym są listy własne?
+
+Listy własne pozwalają grupować pozycje (filmy, seriale, odcinki) niezależnie od globalnej Biblioteki lub listy Do obejrzenia. Każda lista ma `listId` i nazwę oraz jest przechowywana w `CustomListEntity` z kluczem obcym `profileId`.
+
+### Jak wyświetlić zawartość listy własnej?
+
+Otwórz **Listy własne** w panelu bocznym, zaznacz wybraną listę i naciśnij **SELECT**. Aplikacja przechodzi do `CustomListDetailScreen`, który pokazuje zawartość listy w 5-kolumnowej siatce `LazyVerticalGrid` z kafelkami `MediaCard`.
 
 ## Launcher Android TV
 

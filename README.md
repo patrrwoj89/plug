@@ -29,6 +29,8 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 
 - **Modern Sidebar Scaffold**: floating collapsed pill, Haze blur overlay drawer, no layout jitter, auto-collapse after 1500 ms of inactivity, D-Pad LEFT opens the menu from the leftmost item.
 - **Essential Addon Setup** onboarding screen for first-launch profiles: one-click loading of legal starter packages (IPTV/EPG, music/podcasts, public web catalogs) via `EssentialSetupScreen` and `EssentialSetupViewModel`.
+- **Library, Watchlist and Custom Lists** screens use a 5-column `LazyVerticalGrid` (`CustomListDetailScreen` for the contents of a single custom list).
+- **D-Pad focus restoration** in horizontal `LazyRow`s (`CategoryRow`) via `Modifier.focusGroup()` + `focusRestorer()`, so focus returns to the last viewed item when moving between rows.
 - **Auto-Play Next** overlay for series: 15-second countdown with next-episode metadata, "Play now" / "Cancel" D-Pad buttons, BACK behaves like Cancel.
 - **Spoiler Blur**: unwatched episode plot descriptions are blurred on the detail screen and can be revealed with D-Pad Center/SELECT.
 - **Subtitle settings in player**: size, color and vertical offset stored in DataStore and applied live to `SubtitleView`.
@@ -131,7 +133,7 @@ app/src/main/java/com/polishmediahub/app/
 ├── search/               # Android TV search provider / activity
 ├── ui/
 │   ├── components/       # TVCard, FocusableSurface, ModernSidebarBlurPanel, Sidebar, etc.
-│   ├── screens/          # Home, Search, Detail, Player, Settings, Library, Watchlist, Admin, EPG, Torrents, Music, Downloads, Custom Lists, EssentialSetup, CrashReportActivity
+│   ├── screens/          # Home, Search, Detail, Player, Settings, Library, Watchlist, Admin, EPG, Torrents, Music, Downloads, Custom Lists, CustomListDetail, EssentialSetup, CrashReportActivity
 │   ├── theme/            # AppColor, AppTypography, Spacing, Radius, TVHubTheme
 │   └── viewmodel/        # Hilt ViewModels
 ├── MainActivity.kt
@@ -250,6 +252,15 @@ Unhandled exceptions are caught by `GlobalExceptionHandler`:
 - `CrashReportActivity` is started in a separate `:crashreport` process so the failing process can be killed without losing the report.
 - The user can choose **Restart app** or **Clear cache and restart** (which removes `cacheDir` contents and the optimized `plugins_dex` directory).
 - The crash reporter does not install the exception handler in its own process, preventing crash loops.
+
+## Quality & lint
+
+The project maintains a zero-lint-warning baseline:
+
+- `./gradlew :app:lintDebug` reports `No issues found.`
+- `app/lint.xml` suppresses only pre-existing, informational dependency-version and icon-asset warnings.
+- All code warnings introduced by the audit were fixed (`ModifierParameter`, `PrivateResource`, `UseKtx`, `PluralsCandidate`, `FrequentlyChangingValue`, `SetJavaScriptEnabled`, `RedundantLabel`, `IntentFilterUniqueDataAttributes`, `DefaultUncaughtExceptionDelegation`, etc.).
+- Silent empty `catch` blocks in critical paths now log warnings via `Log.w(...)`.
 
 ## Testing
 

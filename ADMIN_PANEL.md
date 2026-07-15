@@ -18,6 +18,7 @@ The built-in **Admin Panel** lets you configure all sources from a phone, tablet
 - `AdminHttpServer` is a lightweight `ServerSocket` based server running in a `Dispatchers.IO` coroutine.
 - It is started when the **Admin** screen is opened and stopped when the screen is destroyed.
 - The port is allocated dynamically (`ServerSocket(0)`) to avoid conflicts with other apps or system services.
+- Server errors are logged with `Log.w(...)` instead of being silently swallowed, so admin interactions can be debugged.
 - The server binds to the local network IP discovered by `NetworkAddressHelper` (usually Wi-Fi or ethernet).
 - Cleartext HTTP to the TV IP is permitted by the network security config because the traffic stays on the LAN.
 

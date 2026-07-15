@@ -29,6 +29,8 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 
 - **Nowoczesny panel boczny** — pływająca pigułka, overlay z efektem rozmycia Haze, brak drgania layoutu, automatyczne zwijanie po 1500 ms, otwieranie D-Pad LEFT.
 - **Ekran pierwszej konfiguracji** (Essential Addon Setup) dla nowych profili: jednym kliknięciem ładuje legalne pakiety startowe (IPTV/EPG, muzyka/podcasty, katalogi web) przez `EssentialSetupScreen` i `EssentialSetupViewModel`.
+- **Biblioteka, Do obejrzenia i Listy własne** wyświetlają siatkę 5 kolumn (`CustomListDetailScreen` dla zawartości pojedynczej listy własnej).
+- **Przywracanie fokusu D-Pada** w poziomych `LazyRow` (`CategoryRow`) przez `Modifier.focusGroup()` + `focusRestorer()` — fokus wraca do ostatnio oglądanego kafelka przy przechodzeniu między rzędami.
 - **Nakładka Auto-Play Next** dla seriali: 15-sekundowe odliczanie, metadata następnego odcinka, przyciski „Odtwórz teraz” i „Anuluj”, BACK działa jak Anuluj.
 - **Spoiler Blur** — opisy nieobejrzanych odcinków rozmyte `Modifier.blur(16.dp)`, odkrywane D-Pad Center/SELECT.
 - **Ustawienia napisów w locie**: rozmiar, kolor i przesunięcie pionowe zapisywane w DataStore i aplikane na żywo w `SubtitleView`.
@@ -130,7 +132,7 @@ app/src/main/java/com/polishmediahub/app/
 ├── search/               # Dostawca wyszukiwania / SearchActivity
 ├── ui/
 │   ├── components/       # TVCard, FocusableSurface, ModernSidebarBlurPanel, Sidebar itd.
-│   ├── screens/          # Home, Search, Detail, Player, Settings, Library, Watchlist, Admin, EPG, Torrents, Music, Downloads, Custom Lists, EssentialSetup, CrashReportActivity
+│   ├── screens/          # Home, Search, Detail, Player, Settings, Library, Watchlist, Admin, EPG, Torrents, Music, Downloads, Custom Lists, CustomListDetail, EssentialSetup, CrashReportActivity
 │   ├── theme/            # AppColor, AppTypography, Spacing, Radius, TVHubTheme
 │   └── viewmodel/        # ViewModele Hilt
 ├── MainActivity.kt
@@ -252,6 +254,15 @@ Nieobsługiwane wyjątki są łapane przez `GlobalExceptionHandler`:
   - **Uruchom ponownie aplikację**
   - **Wyczyść pamięć podręczną i zrestartuj** (usuwa `cacheDir` i `codeCacheDir/plugins_dex`)
 - Handler nie jest instalowany wewnątrz procesu `:crashreport`, co zapobiega zapętleniu awarii.
+
+## Jakość i lint
+
+Projekt utrzymuje zerową liczbę ostrzeżeń lintera:
+
+- `./gradlew :app:lintDebug` zwraca `No issues found.`
+- `app/lint.xml` wycisza wyłącznie pre-existing, informacyjne ostrzeżenia o wersjach zależności i zasobach ikon.
+- Wszystkie ostrzeżenia kodu wprowadzone przez audyt zostały naprawione (`ModifierParameter`, `PrivateResource`, `UseKtx`, `PluralsCandidate`, `FrequentlyChangingValue`, `SetJavaScriptEnabled`, `RedundantLabel`, `IntentFilterUniqueDataAttributes`, `DefaultUncaughtExceptionDelegation` i inne).
+- Puste bloki `catch` w krytycznych ścieżkach zostały zastąpione logowaniem przez `Log.w(...)`.
 
 ## Testowanie
 

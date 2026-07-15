@@ -120,6 +120,15 @@ All notable changes to Polish Media Hub are documented in this file.
 - `PlayerScreen` now drives subtitle styling and Nerd Stats overlay reactively from dedicated `StateFlow`s.
 
 ### Fixed
+- **Claude Sonnet 5 audit quality fixes**
+  - `LibraryScreen` and `WatchlistScreen` replaced the broken `LazyColumn` + `Modifier.fillParentMaxWidth(0.25f)` layout with a 5-column `LazyVerticalGrid` using `Spacing.md` spacing.
+  - `CustomListsScreen` list tiles now navigate to a new `CustomListDetailScreen` (5-column grid + `CustomListDetailViewModel`).
+  - All 22 silent empty `catch` blocks in critical files (`PlayerViewModel`, `AdminHttpServer`, `TorrentHttpServer`, `MediaDatabase`, `DynamicPluginLoader`, `PluginRepository`, `TvLauncherManager`, `WatchNextHelper`) now log warnings with `Log.w(...)`.
+  - Removed dead `androidx.tv.material` and `androidx.tv.foundation` dependencies from `app/build.gradle.kts` and `libs.versions.toml`; corrected README claims about Jetpack Compose TV material3.
+  - Added `Modifier.focusGroup()` and `focusRestorer()` to `CategoryRow` horizontal `LazyRow`s so D-Pad focus returns to the last viewed item when moving up/down between rows.
+  - Localized hard-coded strings in `AdminScreen`, `EpgScreen` and `DownloadsScreen`; added missing `contentDescription` for plugin reorder arrows and Sidebar selection state.
+  - Fixed `IntentFilterUniqueDataAttributes`, `DefaultUncaughtExceptionDelegation`, `UseKtx`, `ModifierParameter`, `PluralsCandidate`, `FrequentlyChangingValue`, `SetJavaScriptEnabled`, `RedundantLabel` and other lint warnings.
+  - Added `app/lint.xml` baseline for pre-existing dependency-version and icon-asset warnings; `lintDebug` now reports `No issues found.`
 - `WebMediaSource.byId()` now fetches a single page directly instead of scraping the whole catalog.
 - `CloudstreamSource.categories()` now loads remote indexes instead of returning an empty list.
 - `QuickJsEngine` no longer uses `runBlocking` in `httpFetch`.

@@ -120,6 +120,15 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 - `PlayerScreen` reaktywnie pobiera styl napisów i nakładkę Nerd Stats z dedykowanych `StateFlow`.
 
 ### Naprawiono
+- **Poprawki jakościowe z audytu Claude Sonnet 5**
+  - `LibraryScreen` i `WatchlistScreen`: uszkodzony układ `LazyColumn` + `Modifier.fillParentMaxWidth(0.25f)` zastąpiono 5-kolumnową `LazyVerticalGrid` z odstępami `Spacing.md`.
+  - Kafelki list własnych w `CustomListsScreen` przekierowują do nowego ekranu `CustomListDetailScreen` (siatka 5 kolumn + `CustomListDetailViewModel`).
+  - Wszystkie 22 puste bloki `catch` w kluczowych plikach (`PlayerViewModel`, `AdminHttpServer`, `TorrentHttpServer`, `MediaDatabase`, `DynamicPluginLoader`, `PluginRepository`, `TvLauncherManager`, `WatchNextHelper`) zastąpiono logowaniem `Log.w(...)`.
+  - Usunięto martwe zależności `androidx.tv.material` i `androidx.tv.foundation` z `app/build.gradle.kts` i `libs.versions.toml`; poprawiono README.
+  - Do poziomych `LazyRow` w `CategoryRow` dodano `Modifier.focusGroup()` i `focusRestorer()`, więc fokus D-Pada wraca do ostatnio oglądanego kafelka przy przejściu między rzędami.
+  - Zlokalizowano teksty w `AdminScreen`, `EpgScreen` i `DownloadsScreen`; dodano brakujące `contentDescription` dla strzałek reorder wtyczek i stanu zaznaczenia w `Sidebar`.
+  - Naprawiono ostrzeżenia lint: `IntentFilterUniqueDataAttributes`, `DefaultUncaughtExceptionDelegation`, `UseKtx`, `ModifierParameter`, `PluralsCandidate`, `FrequentlyChangingValue`, `SetJavaScriptEnabled`, `RedundantLabel` i inne.
+  - Dodano bazę `app/lint.xml` dla pre-existing ostrzeżeń o wersjach zależności i zasobów ikon; `lintDebug` zwraca teraz `No issues found.`
 - `WebMediaSource.byId()` pobiera teraz pojedynczą stronę bezparsując całego katalogu.
 - `CloudstreamSource.categories()` ładuje zdalne indeksy zamiast zwracać pustą listę.
 - `QuickJsEngine` nie używa już `runBlocking` w `httpFetch`.

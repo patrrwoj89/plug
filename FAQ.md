@@ -107,6 +107,10 @@ The **Modern Sidebar** intentionally collapses to a small floating pill when you
 
 On the Home screen you can press **BACK** while the sidebar is collapsed. D-Pad LEFT on any focused item in the leftmost column also works.
 
+### Does the horizontal row focus remember my position?
+
+Yes. Horizontal `LazyRow`s (e.g. in `CategoryRow` on the Home screen) use `Modifier.focusGroup()` and `focusRestorer()`. If you scroll to the 5th item, move down, and then move back up, focus returns to the 5th item instead of resetting to the first tile.
+
 ## BitTorrent
 
 ### Can I stream torrents?
@@ -144,6 +148,16 @@ Add an M3U playlist and an XMLTV EPG URL in **Admin** or during **Essential Setu
 ### Can I watch live TV without EPG?
 
 Yes, IPTV channels are also listed in the **IPTV** screen. EPG is optional and provides the timeline grid view.
+
+## Custom Lists
+
+### What are custom lists?
+
+Custom lists let you group media items (movies, series, episodes) independently from the global Library or Watchlist. Each list has a `listId` and a name and is stored in `CustomListEntity` with a `profileId` foreign key.
+
+### How do I view the contents of a custom list?
+
+Open **Custom Lists** in the sidebar, highlight the list you want and press **SELECT**. The app navigates to `CustomListDetailScreen`, which shows the list's contents as a 5-column `LazyVerticalGrid` of `MediaCard` tiles.
 
 ## Android TV Launcher
 
