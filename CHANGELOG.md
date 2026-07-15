@@ -120,6 +120,14 @@ All notable changes to Polish Media Hub are documented in this file.
 - `PlayerScreen` now drives subtitle styling and Nerd Stats overlay reactively from dedicated `StateFlow`s.
 
 ### Fixed
+
+- **Visual polish and sidebar UX**
+  - `MediaCard` and `WideCard` (`TVCard`) now clip `AsyncImage` with `RoundedCornerShape(Radius.md)` to eliminate sharp poster/hero corners.
+  - Profile avatars in `Sidebar` and `CollapsedSidebarPill` use `ContentScale.Crop` and `fillMaxSize()` inside circular containers to avoid distortion or empty space.
+  - Sidebar menu reorganized into grouped sections: Discover, Library, Multimedia, Downloads and System.
+  - PIN-locked profiles display `Icons.Default.Lock` with a localized `contentDescription` instead of the `"🔒"` emoji.
+  - Migrated deprecated Haze `hazeChild` calls to `hazeEffect` in `ModernSidebarBlurPanel`.
+
 - **Claude Sonnet 5 audit quality fixes**
   - `LibraryScreen` and `WatchlistScreen` replaced the broken `LazyColumn` + `Modifier.fillParentMaxWidth(0.25f)` layout with a 5-column `LazyVerticalGrid` using `Spacing.md` spacing.
   - `CustomListsScreen` list tiles now navigate to a new `CustomListDetailScreen` (5-column grid + `CustomListDetailViewModel`).

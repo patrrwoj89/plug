@@ -30,8 +30,8 @@ import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.WatchLater
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -49,6 +49,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -70,20 +71,37 @@ internal data class SidebarItem(
     val icon: ImageVector
 )
 
-internal val sidebarItems = listOf(
-    SidebarItem(Screen.Home, R.string.home, Icons.Default.Home),
-    SidebarItem(Screen.Search, R.string.search, Icons.Default.Search),
-    SidebarItem(Screen.Library, R.string.library, Icons.AutoMirrored.Filled.LibraryBooks),
-    SidebarItem(Screen.Watchlist, R.string.watchlist, Icons.Default.WatchLater),
-    SidebarItem(Screen.Anime, R.string.anime, Icons.Default.Animation),
-    SidebarItem(Screen.Music, R.string.music_title, Icons.Default.MusicNote),
-    SidebarItem(Screen.Epg, R.string.epg_title, Icons.Default.LiveTv),
-    SidebarItem(Screen.Torrents, R.string.torrents_title, Icons.Default.Download),
-    SidebarItem(Screen.Downloads, R.string.downloads, Icons.Default.Download),
-    SidebarItem(Screen.CustomLists, R.string.custom_lists_title, Icons.AutoMirrored.Filled.PlaylistPlay),
-    SidebarItem(Screen.Settings, R.string.settings, Icons.Default.Settings),
-    SidebarItem(Screen.Admin, R.string.sources, Icons.Default.AdminPanelSettings)
+internal data class SidebarGroup(
+    val labelRes: Int,
+    val items: List<SidebarItem>
 )
+
+internal val sidebarGroups = listOf(
+    SidebarGroup(R.string.sidebar_section_discover, listOf(
+        SidebarItem(Screen.Home, R.string.home, Icons.Default.Home),
+        SidebarItem(Screen.Search, R.string.search, Icons.Default.Search)
+    )),
+    SidebarGroup(R.string.sidebar_section_library, listOf(
+        SidebarItem(Screen.Library, R.string.library, Icons.AutoMirrored.Filled.LibraryBooks),
+        SidebarItem(Screen.Watchlist, R.string.watchlist, Icons.Default.WatchLater),
+        SidebarItem(Screen.CustomLists, R.string.custom_lists_title, Icons.AutoMirrored.Filled.PlaylistPlay)
+    )),
+    SidebarGroup(R.string.sidebar_section_multimedia, listOf(
+        SidebarItem(Screen.Epg, R.string.epg_title, Icons.Default.LiveTv),
+        SidebarItem(Screen.Anime, R.string.anime, Icons.Default.Animation),
+        SidebarItem(Screen.Music, R.string.music_title, Icons.Default.MusicNote)
+    )),
+    SidebarGroup(R.string.sidebar_section_downloads, listOf(
+        SidebarItem(Screen.Torrents, R.string.torrents_title, Icons.Default.Download),
+        SidebarItem(Screen.Downloads, R.string.downloads, Icons.Default.Download)
+    )),
+    SidebarGroup(R.string.sidebar_section_system, listOf(
+        SidebarItem(Screen.Settings, R.string.settings, Icons.Default.Settings),
+        SidebarItem(Screen.Admin, R.string.sources, Icons.Default.AdminPanelSettings)
+    ))
+)
+
+internal val sidebarItems = sidebarGroups.flatMap { it.items }
 
 @Composable
 fun Sidebar(
@@ -233,7 +251,8 @@ internal fun ProfileHeader(
                     AsyncImage(
                         model = profile.avatarUrl,
                         contentDescription = name,
-                        modifier = Modifier.fillMaxHeight()
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
                 } else {
                     Text(
@@ -307,11 +326,25 @@ internal fun ProfileSelectionDialog(
                                     color = AppColor.Accent
                                 )
                             }
-                            Text(
-                                text = profile.name + if (profile.isPinLocked) " 🔒" else "",
-                                style = AppTypography.body,
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.weight(1f)
-                            )
+                            ) {
+                                Text(
+                                    text = profile.name,
+                                    style = AppTypography.body,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
+                                if (profile.isPinLocked) {
+                                    Icon(
+                                        imageVector = Icons.Default.Lock,
+                                        contentDescription = stringResource(id = R.string.profile_locked),
+                                        tint = AppColor.OnSurfaceVariant,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -323,6 +356,21 @@ internal fun ProfileSelectionDialog(
                 Text(stringResource(id = R.string.cancel), modifier = Modifier.padding(Spacing.md))
             }
         }
+    )
+}
+
+@Composable
+internal fun SidebarSectionHeader(
+    labelRes: Int,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = stringResource(id = labelRes),
+        style = AppTypography.caption,
+        color = AppColor.OnSurfaceVariant,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm)
     )
 }
 

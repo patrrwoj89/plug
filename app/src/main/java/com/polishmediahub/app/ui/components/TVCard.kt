@@ -43,7 +43,9 @@ fun MediaCard(
                 model = item.posterUrl,
                 contentDescription = item.title,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(Radius.md))
             )
 
             // Gradient overlay + title
@@ -96,7 +98,9 @@ fun WideCard(
                 model = item.backdropUrl,
                 contentDescription = item.title,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(Radius.md))
             )
             Box(
                 modifier = Modifier

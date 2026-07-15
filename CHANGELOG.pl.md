@@ -120,6 +120,14 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 - `PlayerScreen` reaktywnie pobiera styl napisów i nakładkę Nerd Stats z dedykowanych `StateFlow`.
 
 ### Naprawiono
+
+- **Dopracowanie wizualne i struktura menu bocznego**
+  - `MediaCard` i `WideCard` (`TVCard`) przycinają teraz `AsyncImage` za pomocą `RoundedCornerShape(Radius.md)`, eliminując ostre rogi plakatów.
+  - Awatary profili w `Sidebar` i `CollapsedSidebarPill` używają `ContentScale.Crop` i `fillMaxSize()` w okrągłych kontenerach, zapobiegając zniekształceniom i pustym przestrzeniom.
+  - Menu boczne zostało pogrupowane w sekcje: Odkrywaj, Biblioteka, Multimedia, Pobrane i System.
+  - Zablokowane profile wyświetlają `Icons.Default.Lock` z lokalizowanym `contentDescription` zamiast emotki `"🔒"`.
+  - Zdeprecjonowane wywołania `hazeChild` zostały zamienione na `hazeEffect` w `ModernSidebarBlurPanel`.
+
 - **Poprawki jakościowe z audytu Claude Sonnet 5**
   - `LibraryScreen` i `WatchlistScreen`: uszkodzony układ `LazyColumn` + `Modifier.fillParentMaxWidth(0.25f)` zastąpiono 5-kolumnową `LazyVerticalGrid` z odstępami `Spacing.md`.
   - Kafelki list własnych w `CustomListsScreen` przekierowują do nowego ekranu `CustomListDetailScreen` (siatka 5 kolumn + `CustomListDetailViewModel`).

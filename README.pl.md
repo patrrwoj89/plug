@@ -27,7 +27,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 
 ### Interfejs TV / UX
 
-- **Nowoczesny panel boczny** — pływająca pigułka, overlay z efektem rozmycia Haze, brak drgania layoutu, automatyczne zwijanie po 1500 ms, otwieranie D-Pad LEFT.
+- **Nowoczesny panel boczny** — pływająca pigułka, overlay z efektem rozmycia Haze, brak drgania layoutu, automatyczne zwijanie po 1500 ms, otwieranie D-Pad LEFT; pozycje menu pogrupowane w sekcje Odkrywaj, Biblioteka, Multimedia, Pobrane i System, a zablokowane profile wyświetlają ikonę `Icons.Default.Lock` z lokalizowanym opisem.
 - **Ekran pierwszej konfiguracji** (Essential Addon Setup) dla nowych profili: jednym kliknięciem ładuje legalne pakiety startowe (IPTV/EPG, muzyka/podcasty, katalogi web) przez `EssentialSetupScreen` i `EssentialSetupViewModel`.
 - **Biblioteka, Do obejrzenia i Listy własne** wyświetlają siatkę 5 kolumn (`CustomListDetailScreen` dla zawartości pojedynczej listy własnej).
 - **Przywracanie fokusu D-Pada** w poziomych `LazyRow` (`CategoryRow`) przez `Modifier.focusGroup()` + `focusRestorer()` — fokus wraca do ostatnio oglądanego kafelka przy przechodzeniu między rzędami.
@@ -35,6 +35,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - **Spoiler Blur** — opisy nieobejrzanych odcinków rozmyte `Modifier.blur(16.dp)`, odkrywane D-Pad Center/SELECT.
 - **Ustawienia napisów w locie**: rozmiar, kolor i przesunięcie pionowe zapisywane w DataStore i aplikane na żywo w `SubtitleView`.
 - **Nakładka Nerd Stats**: panel diagnostyczny w prawym górnym rogu (rozdzielczość, fps, kodeki, bitrate, pominięte klatki).
+- **Zaokrąglenie okładek i awatarów**: `MediaCard` i `WideCard` przycinają `AsyncImage` za pomocą `RoundedCornerShape(Radius.md)`; awatary profili w `Sidebar` i `CollapsedSidebarPill` używają `ContentScale.Crop` i `fillMaxSize()` w okrągłych kontenerach.
 
 ### Odtwarzacz i media
 
@@ -262,6 +263,7 @@ Projekt utrzymuje zerową liczbę ostrzeżeń lintera:
 - `./gradlew :app:lintDebug` zwraca `No issues found.`
 - `app/lint.xml` wycisza wyłącznie pre-existing, informacyjne ostrzeżenia o wersjach zależności i zasobach ikon.
 - Wszystkie ostrzeżenia kodu wprowadzone przez audyt zostały naprawione (`ModifierParameter`, `PrivateResource`, `UseKtx`, `PluralsCandidate`, `FrequentlyChangingValue`, `SetJavaScriptEnabled`, `RedundantLabel`, `IntentFilterUniqueDataAttributes`, `DefaultUncaughtExceptionDelegation` i inne).
+- Zdeprecjonowane wywołania `hazeChild` zostały zamienione na `hazeEffect`, aby build pozostał bez ostrzeżeń.
 - Puste bloki `catch` w krytycznych ścieżkach zostały zastąpione logowaniem przez `Log.w(...)`.
 
 ## Testowanie

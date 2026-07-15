@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.focusable
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -39,7 +41,7 @@ import coil.compose.AsyncImage
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeChild
+import dev.chrisbanes.haze.hazeEffect
 import com.polishmediahub.app.R
 import com.polishmediahub.app.data.local.ProfileEntity
 import com.polishmediahub.app.navigation.Screen
@@ -66,7 +68,7 @@ internal fun CollapsedSidebarPill(
             .height(SIDEBAR_PILL_HEIGHT)
             .wrapContentWidth()
             .clip(RoundedCornerShape(Radius.round))
-            .hazeChild(
+            .hazeEffect(
                 state = hazeState,
                 style = HazeStyle(
                     backgroundColor = AppColor.Surface.copy(alpha = 0.6f),
@@ -95,7 +97,8 @@ internal fun CollapsedSidebarPill(
                     AsyncImage(
                         model = avatar,
                         contentDescription = avatarDescription,
-                        modifier = Modifier.fillMaxWidth()
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
                 } else {
                     Text(
@@ -147,7 +150,7 @@ internal fun ModernSidebarBlurPanel(
             .width(SIDEBAR_OPEN_WIDTH)
             .fillMaxHeight()
             .clip(RoundedCornerShape(topEnd = Radius.xl, bottomEnd = Radius.xl))
-            .hazeChild(
+            .hazeEffect(
                 state = hazeState,
                 style = HazeStyle(
                     backgroundColor = AppColor.Surface.copy(alpha = 0.75f),
@@ -200,17 +203,26 @@ internal fun ModernSidebarBlurPanel(
 
             item { Spacer(modifier = Modifier.height(Spacing.md)) }
 
-            itemsIndexed(sidebarItems) { index, item ->
-                SidebarRow(
-                    item = item,
-                    selected = current == item.screen,
-                    expanded = true,
-                    onClick = { onNavigate(item.screen) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Spacing.sm)
-                        .then(if (index == 0) Modifier.focusRequester(firstItemRequester) else Modifier)
-                )
+            sidebarGroups.forEachIndexed { groupIndex, group ->
+                item {
+                    SidebarSectionHeader(
+                        labelRes = group.labelRes,
+                        modifier = Modifier.padding(horizontal = Spacing.md)
+                    )
+                }
+                itemsIndexed(group.items) { itemIndex, item ->
+                    SidebarRow(
+                        item = item,
+                        selected = current == item.screen,
+                        expanded = true,
+                        onClick = { onNavigate(item.screen) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.sm)
+                            .then(if (groupIndex == 0 && itemIndex == 0) Modifier.focusRequester(firstItemRequester) else Modifier)
+                    )
+                }
+                item { Spacer(modifier = Modifier.height(Spacing.xs)) }
             }
         }
     }

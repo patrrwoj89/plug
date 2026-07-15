@@ -27,7 +27,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 
 ### TV UI / UX
 
-- **Modern Sidebar Scaffold**: floating collapsed pill, Haze blur overlay drawer, no layout jitter, auto-collapse after 1500 ms of inactivity, D-Pad LEFT opens the menu from the leftmost item.
+- **Modern Sidebar Scaffold**: floating collapsed pill, Haze blur overlay drawer, no layout jitter, auto-collapse after 1500 ms of inactivity, D-Pad LEFT opens the menu from the leftmost item; menu items are grouped into Discover, Library, Multimedia, Downloads and System sections, and PIN-locked profiles show `Icons.Default.Lock` with a localized content description.
 - **Essential Addon Setup** onboarding screen for first-launch profiles: one-click loading of legal starter packages (IPTV/EPG, music/podcasts, public web catalogs) via `EssentialSetupScreen` and `EssentialSetupViewModel`.
 - **Library, Watchlist and Custom Lists** screens use a 5-column `LazyVerticalGrid` (`CustomListDetailScreen` for the contents of a single custom list).
 - **D-Pad focus restoration** in horizontal `LazyRow`s (`CategoryRow`) via `Modifier.focusGroup()` + `focusRestorer()`, so focus returns to the last viewed item when moving between rows.
@@ -35,6 +35,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **Spoiler Blur**: unwatched episode plot descriptions are blurred on the detail screen and can be revealed with D-Pad Center/SELECT.
 - **Subtitle settings in player**: size, color and vertical offset stored in DataStore and applied live to `SubtitleView`.
 - **Nerd Stats Overlay**: optional real-time panel with resolution, fps, active codecs, current bitrate and dropped/jank frames.
+- **Rounded media and avatar clipping**: `MediaCard` and `WideCard` clip `AsyncImage` with `RoundedCornerShape(Radius.md)`; profile avatars in `Sidebar` and `CollapsedSidebarPill` use `ContentScale.Crop` and `fillMaxSize()` inside circular containers.
 
 ### Player & media
 
@@ -260,6 +261,7 @@ The project maintains a zero-lint-warning baseline:
 - `./gradlew :app:lintDebug` reports `No issues found.`
 - `app/lint.xml` suppresses only pre-existing, informational dependency-version and icon-asset warnings.
 - All code warnings introduced by the audit were fixed (`ModifierParameter`, `PrivateResource`, `UseKtx`, `PluralsCandidate`, `FrequentlyChangingValue`, `SetJavaScriptEnabled`, `RedundantLabel`, `IntentFilterUniqueDataAttributes`, `DefaultUncaughtExceptionDelegation`, etc.).
+- Migrated deprecated Haze `hazeChild` calls to `hazeEffect` to keep the build warning-free.
 - Silent empty `catch` blocks in critical paths now log warnings via `Log.w(...)`.
 
 ## Testing
