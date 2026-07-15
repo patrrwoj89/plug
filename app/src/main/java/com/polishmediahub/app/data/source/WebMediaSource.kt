@@ -8,6 +8,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jsoup.Jsoup
@@ -19,7 +20,8 @@ import javax.inject.Singleton
 @Singleton
 class WebMediaSource @Inject constructor(
     private val client: OkHttpClient,
-    private val quickJsEngineProvider: Provider<QuickJsEngine>
+    private val quickJsEngineProvider: Provider<QuickJsEngine>,
+    private val cookieJar: MemoryCookieJar
 ) : MediaSource {
 
     override val id: String = "web"
@@ -83,7 +85,10 @@ class WebMediaSource @Inject constructor(
             type = MediaItem.Type.MOVIE
         )
         val resolvedVideoUrl = resolve(item) ?: url
-        return item.copy(videoUrl = resolvedVideoUrl)
+        return item.copy(
+            videoUrl = resolvedVideoUrl,
+            headers = headersWithCookies(resolvedVideoUrl, config.headers)
+        )
     }
 
     override suspend fun resolve(mediaItem: MediaItem): String? {
@@ -93,8 +98,26 @@ class WebMediaSource @Inject constructor(
         val url = config.itemUrlTemplate.replace("{id}", relativeId)
         val html = fetch(url, config.headers) ?: return mediaItem.videoUrl
 
-        val direct = Jsoup.parse(html).select(config.streamSelector).firstOrNull()?.attr(config.streamAttribute)
+        val doc = Jsoup.parse(html, url)
+
+        // CDA.pl native decoder
+        if (url.contains("cda.pl", ignoreCase = true)) {
+            val encoded = doc.selectFirst("[data-video-id]")?.attr("data-video-id")?.trim()
+            if (!encoded.isNullOrBlank()) {
+                val decoded = CdaDecoder.decode(encoded)
+                if (decoded.startsWith("http", ignoreCase = true)) return decoded
+            }
+        }
+
+        val direct = doc.select(config.streamSelector).firstOrNull()?.attr(config.streamAttribute)
         if (!direct.isNullOrBlank()) return resolveUrl(config.baseUrl, direct)
+
+        // Try to unpack P.A.C.K.E.R obfuscated scripts and extract a media URL
+        if (html.contains("eval(function(p,a,c,k,")) {
+            val unpacked = JsUnpacker.unpack(html)
+            val stream = findMediaUrl(unpacked)
+            if (!stream.isNullOrBlank()) return resolveUrl(config.baseUrl, stream)
+        }
 
         if (config.jsScript.isNotBlank()) {
             return runJsResolver(config.jsScript, url, mediaItem, config.headers)
@@ -204,6 +227,23 @@ class WebMediaSource @Inject constructor(
     private fun toJsObjectLiteral(map: Map<String, String>): String {
         val entries = map.map { (k, v) -> "${toJsLiteral(k)}:${toJsLiteral(v)}" }
         return "{" + entries.joinToString(",") + "}"
+    }
+
+    private fun headersWithCookies(url: String, baseHeaders: Map<String, String>): Map<String, String> {
+        val httpUrl = url.toHttpUrlOrNull() ?: return baseHeaders
+        val cookieHeader = cookieJar.cookieHeader(httpUrl) ?: return baseHeaders
+        val existing = baseHeaders["Cookie"]
+        val combined = listOfNotNull(existing, cookieHeader).joinToString("; ")
+        return baseHeaders + ("Cookie" to combined)
+    }
+
+    private fun findMediaUrl(unpacked: String): String? {
+        val mediaRegex = Regex(
+            """(https?://[^\s"'<>]+\.(?:mp4|m3u8|mpd|webm|mkv|avi|flv|ts))(?:\?[^\s"'<>]*)?""",
+            RegexOption.IGNORE_CASE
+        )
+        mediaRegex.find(unpacked)?.let { return it.groupValues[1] }
+        return Regex("""https?://[^\s"'<>]+""").find(unpacked)?.value
     }
 }
 
