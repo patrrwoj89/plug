@@ -102,7 +102,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **PIN lock** for Settings and Admin screens.
 - **Download support** for audio and video via `WorkManager`.
 - **Encrypted sensitive settings** (`EncryptedSettingsManager`): API keys, OAuth tokens and passwords (TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens, Subsonic password, MDBList key) are encrypted with AES-256-GCM using a hardware-backed key from the Android Keystore before being stored in DataStore. Plain preferences (dark theme, quality, EPG status, etc.) remain unencrypted.
-- **Global Crash Report Center**: uncaught exceptions are caught by `GlobalExceptionHandler`, a stack trace is saved and `CrashReportActivity` (in a separate `:crashreport` process) offers restart or "clear cache & restart" without returning to the Android launcher.
+- **Global Crash Report Center**: uncaught exceptions are caught by `GlobalExceptionHandler`, a stack trace is saved and `CrashReportActivity` (in a separate `:crashreport` process) offers restart, "clear cache & restart" or an offline-sanitized **send report to cloud** button (Cloudflare Worker `POST /report-error` with `X-Hub-Token` auth).
 - **Screenshot / Compose Preview tests** with Paparazzi and instrumented D-Pad tests.
 
 ## Documentation
@@ -287,8 +287,12 @@ Unhandled exceptions are caught by `GlobalExceptionHandler`:
 
 - The stack trace is saved to `filesDir/last_crash.txt`.
 - `CrashReportActivity` is started in a separate `:crashreport` process so the failing process can be killed without losing the report.
-- The user can choose **Restart app** or **Clear cache and restart** (which removes `cacheDir` contents and the optimized `plugins_dex` directory).
+- The user can choose:
+  - **Restart app** — clears the crash log and starts `MainActivity`.
+  - **Clear cache and restart** — removes `cacheDir` contents and the optimized `plugins_dex` directory, then restarts.
+  - **Send report to cloud** — reads the local crash log, runs `CrashReportSanitizer` offline to redact API keys, OAuth tokens and premium credentials, and posts the sanitized stacktrace to the Cloudflare Worker endpoint `POST /report-error` using the auth token from `ApiConfigRepository`. The upload is performed by a lightweight one-shot `OkHttpClient` whose response body, dispatcher and connection pool are explicitly closed/cleaned up in a `finally` block.
 - The crash reporter does not install the exception handler in its own process, preventing crash loops.
+- Worker URL and auth token are passed to `:crashreport` as intent extras by `GlobalExceptionHandler` so the crash process does not need to access DataStore.
 
 ## Quality & lint
 

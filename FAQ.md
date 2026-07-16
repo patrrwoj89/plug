@@ -414,6 +414,11 @@ Unhandled exceptions are caught by `GlobalExceptionHandler`. The stack trace is 
 
 - **Restart app** — clears the crash log and starts `MainActivity`.
 - **Clear cache and restart** — deletes the app cache and the optimized DEX plugin directory, then restarts. This is useful if a corrupted plugin or cached file causes a crash loop.
+- **Send report to cloud** — if a Cloudflare Worker URL and auth token are configured in `Settings > Cloudflare Bypass`, the crash log is sanitized on-device by `CrashReportSanitizer` (API keys, tokens and passwords are replaced with `****`) and then sent to the worker endpoint `POST /report-error` with the `X-Hub-Token` header. The upload client is a one-shot `OkHttpClient` whose response stream, dispatcher and connection pool are closed in a `finally` block so the `:crashreport` process does not leak sockets.
+
+### Is the crash report sanitized before it leaves the device?
+
+Yes. The `CrashReportSanitizer` scans the stacktrace for API keys, OAuth tokens, passwords and source-specific credentials and replaces their values with `****` before any HTTP request. The worker adds a timestamp and stores the report in Cloudflare Observability logs (and optionally a `CRASH_REPORTS` KV namespace if bound). No Cloudflare token or worker URL is logged to Logcat in release builds.
 
 ### Will the crash reporter loop if it crashes?
 

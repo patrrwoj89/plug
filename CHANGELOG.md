@@ -46,6 +46,16 @@ All notable changes to Polish Media Hub are documented in this file.
   - No `profileId` or media metadata is logged in release builds (`BuildConfig.DEBUG == false`).
   - Added `TvLauncherManagerTest` (JUnit) verifying `isUnfinished`, `buildWatchNextItems`, `buildWatchlistItems` and `buildPreviewItems` filtering for child and adult profiles.
 
+#### Cloud crash reporting
+- **Secured Cloud Crash Reporting Engine** (`CrashReportActivity`, `CrashReportSanitizer`, `GlobalExceptionHandler`, `cloudflare-resolver/index.ts`)
+  - Cloudflare Worker now exposes `POST /report-error` endpoint protected by `X-Hub-Token`; it appends a timestamp and emits the sanitized stacktrace to Cloudflare Observability logs (and optionally to a bound `CRASH_REPORTS` KV namespace).
+  - `CrashReportActivity` adds a D-Pad focused **Send report to cloud** `TvButton` that reads `last_crash.txt`, redacts API keys, OAuth tokens and premium credentials via `CrashReportSanitizer`, and posts the result to the Worker's `/report-error` endpoint.
+  - `GlobalExceptionHandler` passes the current `cloudflareWorkerUrl` and `cloudflareAuthToken` to `CrashReportActivity` via intent extras so the `:crashreport` process does not need to access DataStore.
+  - `CrashReportSanitizer` runs offline on the device before any network call, replacing detected secrets with `****`.
+  - A lightweight, one-shot `OkHttpClient` is used for the upload; the response body and the dispatcher/connection pool are explicitly closed/cleaned up to prevent resource leaks in the `:crashreport` process.
+  - No Cloudflare auth token, worker URL or crash report metadata is logged to Logcat in release builds (`BuildConfig.DEBUG == false`).
+  - Added `CrashReportSanitizerTest` (JUnit) verifying masking of API keys, query parameters, JSON values, `Authorization` headers and source-specific credentials.
+
 #### Search & live TV
 - **Voice Search** (`SearchScreen`, `SearchViewModel`)
   - D-Pad Mic `TvIconButton` next to the search field.

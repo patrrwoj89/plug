@@ -414,6 +414,11 @@ Nieobsługiwane wyjątki są łapane przez `GlobalExceptionHandler`. Ślad stosu
 
 - **Uruchom ponownie aplikację** — czyści log awarii i startuje `MainActivity`.
 - **Wyczyść pamięć podręczną i zrestartuj** — usuwa cache aplikacji i zoptymalizowany katalog DEX wtyczek, a następnie restartuje.
+- **Wyślij raport do chmury** — jeśli w `Ustawienia > Cloudflare Bypass` skonfigurowano adres Workera i token autoryzacyjny, log awarii jest najpierw oczyszczany lokalnie przez `CrashReportSanitizer` (klucze API, tokeny OAuth i hasła są zastępowane przez `****`), a następnie wysyłany na endpoint `POST /report-error` Workera z nagłówkiem `X-Hub-Token`. Klient wysyłający to jednorazowy `OkHttpClient`, którego strumień odpowiedzi, dispatcher i pula połączeń są zamykane w bloku `finally`, aby proces `:crashreport` nie wyciekał zasobów.
+
+### Czy raport jest anonimizowany przed wysłaniem?
+
+Tak. `CrashReportSanitizer` przeszukuje ślad stosu w poszukiwaniu kluczy API, tokenów OAuth, haseł i danych źródłowych oraz zastępuje ich wartości przez `****` przed jakimkolwiek żądaniem HTTP. Worker dodaje znacznik czasu i zapisuje raport w logach Cloudflare Observability (opcjonalnie również w przestrzeni `CRASH_REPORTS` KV, jeśli jest powiązana). Token Cloudflare, adres Workera ani metadane raportu nie są logowane do Logcat w buildach release.
 
 ### Czy raportowanie awarii zapętli się, jeśli sam ekran awarii ulegnie awarii?
 

@@ -183,6 +183,10 @@
     <string name="crash_report_hint">Możesz zapoznać się z poniższymi szczegółami lub zrestartować aplikację.</string>
     <string name="crash_report_restart">Uruchom ponownie aplikację</string>
     <string name="crash_report_clear_cache">Wyczyść pamięć podręczną i zrestartuj</string>
+    <string name="crash_report_send">Wyślij raport do chmury</string>
+    <string name="crash_report_sent">Raport został pomyślnie dostarczony do chmury!</string>
+    <string name="crash_report_send_error">Nie udało się wysłać raportu. Sprawdź sieć i ustawienia Cloudflare.</string>
+    <string name="crash_report_not_configured">Worker Cloudflare nie jest skonfigurowany. Ustaw go w Ustawieniach.</string>
     <string name="crash_report_no_details">Brak dostępnych szczegółów błędu.</string>
 
     <string name="settings_cinema_mode">Tryb Kinowy</string>

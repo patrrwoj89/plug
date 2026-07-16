@@ -3,6 +3,7 @@ import { intToToken } from './jsunpacker';
 
 export interface Env {
   HUB_TOKEN: string;
+  CRASH_REPORTS?: KVNamespace;
 }
 
 interface StreamResult {
@@ -14,7 +15,7 @@ const MEDIA_RE = /(https?:\/\/[^\s"'<>]+\.(?:mp4|m3u8|mpd|webm|mkv|avi|flv|ts))(
 const URL_RE = /https?:\/\/[^\s"'<>]+/i;
 
 export default {
-  async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') {
@@ -22,55 +23,105 @@ export default {
         status: 204,
         headers: {
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
           'Access-Control-Allow-Headers': 'X-Hub-Token, Content-Type'
         }
       });
+    }
+
+    if (url.pathname === '/report-error') {
+      return handleReportError(request, env, ctx);
     }
 
     if (url.pathname !== '/resolve') {
       return jsonResponse({ error: 'Not Found' }, 404);
     }
 
-    const token = request.headers.get('X-Hub-Token');
-    if (!token || token !== env.HUB_TOKEN) {
-      return jsonResponse({ error: 'Forbidden' }, 403);
-    }
-
-    const target = url.searchParams.get('url');
-    if (!target) {
-      return jsonResponse({ error: 'Missing url' }, 400);
-    }
-
-    const headersParam = url.searchParams.get('headers');
-    const customHeaders = parseHeaders(headersParam);
-
-    try {
-      const upstream = await fetch(target, {
-        headers: {
-          ...customHeaders,
-          'User-Agent': customHeaders['User-Agent'] || 'Mozilla/5.0'
-        },
-        redirect: 'follow'
-      });
-
-      if (!upstream.ok) {
-        return jsonResponse({ error: 'Upstream error', status: upstream.status }, 502);
-      }
-
-      const html = await upstream.text();
-      const result = extractStreamUrl(html, target);
-
-      if (!result.streamUrl) {
-        return jsonResponse({ error: 'No stream found' }, 404);
-      }
-
-      return jsonResponse(result, 200, { 'Access-Control-Allow-Origin': '*' });
-    } catch (e: any) {
-      return jsonResponse({ error: e.message || 'Upstream error' }, 502);
-    }
+    return handleResolve(request, env, ctx);
   }
 };
+
+async function handleResolve(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
+  const token = request.headers.get('X-Hub-Token');
+  if (!token || token !== env.HUB_TOKEN) {
+    return jsonResponse({ error: 'Forbidden' }, 403);
+  }
+
+  const url = new URL(request.url);
+  const target = url.searchParams.get('url');
+  if (!target) {
+    return jsonResponse({ error: 'Missing url' }, 400);
+  }
+
+  const headersParam = url.searchParams.get('headers');
+  const customHeaders = parseHeaders(headersParam);
+
+  try {
+    const upstream = await fetch(target, {
+      headers: {
+        ...customHeaders,
+        'User-Agent': customHeaders['User-Agent'] || 'Mozilla/5.0'
+      },
+      redirect: 'follow'
+    });
+
+    if (!upstream.ok) {
+      return jsonResponse({ error: 'Upstream error', status: upstream.status }, 502);
+    }
+
+    const html = await upstream.text();
+    const result = extractStreamUrl(html, target);
+
+    if (!result.streamUrl) {
+      return jsonResponse({ error: 'No stream found' }, 404);
+    }
+
+    return jsonResponse(result, 200, { 'Access-Control-Allow-Origin': '*' });
+  } catch (e: any) {
+    return jsonResponse({ error: e.message || 'Upstream error' }, 502);
+  }
+}
+
+async function handleReportError(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  if (request.method !== 'POST') {
+    return jsonResponse({ error: 'Method Not Allowed' }, 405);
+  }
+
+  const token = request.headers.get('X-Hub-Token');
+  if (!token || token !== env.HUB_TOKEN) {
+    return jsonResponse({ error: 'Forbidden' }, 403);
+  }
+
+  try {
+    const report = await request.text();
+    const timestamp = new Date().toISOString();
+    const payload = `[${timestamp}] Cloud crash report (${request.cf?.country ?? 'unknown'}):\n${report}`;
+
+    // Emit to Cloudflare Observability / worker logs so reports can be inspected
+    // in the dashboard without persisting sensitive data on the edge.
+    console.log(payload);
+
+    // If a KV namespace is bound, store a short snapshot for offline retrieval.
+    // The key uses the timestamp so repeated reports never overwrite each other.
+    if (env.CRASH_REPORTS) {
+      const key = `crash-${timestamp.replace(/[:.TZ]/g, '-')}-${cryptoRandomHex(8)}`;
+      ctx.waitUntil(env.CRASH_REPORTS.put(key, payload, { expirationTtl: 60 * 60 * 24 * 7 }));
+    }
+
+    return jsonResponse({ success: true, received: report.length }, 200);
+  } catch (e: any) {
+    return jsonResponse({ error: e.message || 'Failed to log report' }, 500);
+  }
+}
+
+function cryptoRandomHex(length: number): string {
+  const bytes = new Uint8Array(Math.ceil(length / 2));
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, length);
+}
 
 function parseHeaders(param: string | null): Record<string, string> {
   if (!param) return {};

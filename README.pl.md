@@ -102,7 +102,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - **Blokada PIN** dla Ustawień i ekranu Admin.
 - **Pobieranie** audio i wideo przez `WorkManager`.
 - **Szyfrowanie wrażliwych ustawień** (`EncryptedSettingsManager`): klucze API, tokeny OAuth i hasła (TMDB, AniList, Trakt, Debrid, tokeny Jellyfin/Plex/Emby, hasło Subsonic, klucz MDBList) są szyfrowane algorytmem AES-256-GCM z wykorzystaniem sprzętowo chronionego klucza z Android Keystore przed zapisem do DataStore. Zwykłe preferencje (motyw, jakość, status EPG itp.) pozostają w jawnej postaci.
-- **Globalny ekran awarii**: nieobsługiwane wyjątki są łapane przez `GlobalExceptionHandler`, zapisywane do pliku i uruchamiana jest `CrashReportActivity` w osobnym procesie `:crashreport`, która pozwala na restart lub wyczyszczenie pamięci podręcznej i restart — bez nagłego powrotu do launchera Android TV.
+- **Globalny ekran awarii**: nieobsługiwane wyjątki są łapane przez `GlobalExceptionHandler`, zapisywane do pliku i uruchamiana jest `CrashReportActivity` w osobnym procesie `:crashreport`, która pozwala na restart, wyczyszczenie pamięci podręcznej i restart lub bezpieczne wysłanie raportu do chmury (Cloudflare Worker `POST /report-error` z autoryzacją `X-Hub-Token`, po offline-owej anonimizacji przez `CrashReportSanitizer`) — bez nagłego powrotu do launchera Android TV.
 - **Testy zrzutów ekranu** z Paparazzi i testy instrumentacyjne D-Pad.
 
 ## Dokumentacja
@@ -286,10 +286,11 @@ Nieobsługiwane wyjątki są łapane przez `GlobalExceptionHandler`:
 
 - Ślad stosu zapisywany jest do `filesDir/last_crash.txt`.
 - Uruchamiana jest `CrashReportActivity` w osobnym procesie `:crashreport`, dzięki czemu zawieszony proces można ubić bez utraty raportu.
-- Proces kończony jest przez `Process.killProcess` + `System.exit(10)`.
-- Ekran awarii z ciemnym motywem, czerwoną ikoną ostrzeżenia, przewijanym panelem ze stacktrace i dwoma przyciskami:
-  - **Uruchom ponownie aplikację**
-  - **Wyczyść pamięć podręczną i zrestartuj** (usuwa `cacheDir` i `codeCacheDir/plugins_dex`)
+- Ekran awarii oferuje trzy opcje:
+  - **Uruchom ponownie aplikację** — czyści log awarii i uruchamia `MainActivity`.
+  - **Wyczyść pamięć podręczną i zrestartuj** — usuwa zawartość `cacheDir` oraz katalog `codeCacheDir/plugins_dex`, a następnie restartuje aplikację.
+  - **Wyślij raport do chmurze** — odczytuje lokalny log `last_crash.txt`, uruchamia offline'owy `CrashReportSanitizer` (redaguje klucze API, tokeny OAuth i dane premium), a następnie przesyła zanonimizowany ślad stosu na endpoint `POST /report-error` Cloudflare Workera z nagłówkiem `X-Hub-Token` pobranym z `ApiConfigRepository`. Do wysyłki używany jest lekki, jednorazowy `OkHttpClient`; ciało odpowiedzi oraz dispatcher i pula połączeń są jawnie zamykane/czyszczone w bloku `finally`.
+- `GlobalExceptionHandler` przekazuje adres Workera i token autoryzacyjny do `:crashreport` przez extra intentu, więc proces raportowania nie musi odczytywać DataStore.
 - Handler nie jest instalowany wewnątrz procesu `:crashreport`, co zapobiega zapętleniu awarii.
 
 ## Jakość i lint

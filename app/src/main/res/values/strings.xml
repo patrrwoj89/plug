@@ -186,6 +186,10 @@
     <string name="crash_report_hint">You can report the details below or restart the app.</string>
     <string name="crash_report_restart">Restart app</string>
     <string name="crash_report_clear_cache">Clear cache and restart</string>
+    <string name="crash_report_send">Send report to cloud</string>
+    <string name="crash_report_sent">Report successfully delivered to the cloud!</string>
+    <string name="crash_report_send_error">Failed to send report. Check network and Cloudflare settings.</string>
+    <string name="crash_report_not_configured">Cloudflare Worker not configured. Set it in Settings.</string>
     <string name="crash_report_no_details">No crash details available.</string>
 
     <string name="settings_cinema_mode">Cinema Mode</string>

@@ -77,3 +77,7 @@
 
 # Keep application class
 -keep class com.polishmediahub.app.TVHubApplication { *; }
+
+# Crash reporter
+-keep class com.polishmediahub.app.CrashReportActivity { *; }
+-keep class com.polishmediahub.app.util.CrashReportSanitizer { *; }

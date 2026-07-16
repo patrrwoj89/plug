@@ -46,6 +46,16 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
   - W wersjach produkcyjnych (`BuildConfig.DEBUG == false`) nie logowane są `profileId` ani prywatne metadane filmów.
   - Dodano test `TvLauncherManagerTest` (JUnit) weryfikujący `isUnfinished`, `buildWatchNextItems`, `buildWatchlistItems` oraz `buildPreviewItems` dla profili dziecięcych i dorosłych.
 
+#### Raportowanie awarii w chmurze
+- **Zabezpieczony silnik raportowania awarii w chmurze** (`CrashReportActivity`, `CrashReportSanitizer`, `GlobalExceptionHandler`, `cloudflare-resolver/index.ts`)
+  - Cloudflare Worker udostępnia endpoint `POST /report-error` chroniony nagłówkiem `X-Hub-Token`; dodaje znacznik czasu i emituje zanonimizowany ślad stosu do logów Observability (opcjonalnie też do powiązanej przestrzeni `CRASH_REPORTS` KV).
+  - `CrashReportActivity` dodaje obsługiwany D-Padem przycisk **Wyślij raport do chmury**, który odczytuje `last_crash.txt`, redaguje klucze API, tokeny OAuth i dane premium przez `CrashReportSanitizer`, a następnie wysyła raport na endpoint `/report-error` Workera.
+  - `GlobalExceptionHandler` przekazuje do `CrashReportActivity` bieżące `cloudflareWorkerUrl` i `cloudflareAuthToken` przez extra intentu, więc proces `:crashreport` nie musi odczytywać DataStore.
+  - `CrashReportSanitizer` działa offline na urządzeniu przed jakimkolwiek wywołaniem sieciowym, zastępując wykryte sekrety przez `****`.
+  - Do wysyłki używany jest lekki, jednorazowy `OkHttpClient`; ciało odpowiedzi oraz dispatcher/pula połączeń są jawnie zamykane/czyszczone, aby zapobiec wyciekom zasobów w procesie `:crashreport`.
+  - Token autoryzacyjny Cloudflare, adres Workera ani metadane raportu nie są logowane do Logcat w buildach release (`BuildConfig.DEBUG == false`).
+  - Dodano test `CrashReportSanitizerTest` (JUnit) weryfikujący maskowanie kluczy API, parametrów zapytania, wartości JSON, nagłówków `Authorization` i danych źródłowych.
+
 #### Wyszukiwanie i TV na żywo
 - **Wyszukiwanie głosowe** (`SearchScreen`, `SearchViewModel`)
   - D-Pad przycisk `TvIconButton` z ikoną mikrofonu obok pola wyszukiwania.

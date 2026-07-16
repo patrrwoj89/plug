@@ -8,6 +8,13 @@ import android.os.Build
 import android.os.Process
 import android.util.Log
 import com.polishmediahub.app.CrashReportActivity
+import com.polishmediahub.app.data.ApiConfigRepository
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.PrintWriter
 import java.text.SimpleDateFormat
@@ -31,11 +38,15 @@ class GlobalExceptionHandler(
             val file = File(application.filesDir, CRASH_LOG_FILE)
             file.writeText(crashLog)
 
+            val (workerUrl, authToken) = readCloudflareConfig()
+
             val intent = Intent(application, CrashReportActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TASK or
                         Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
                 putExtra(CrashReportActivity.EXTRA_CRASH_LOG_PATH, file.absolutePath)
+                putExtra(CrashReportActivity.EXTRA_WORKER_URL, workerUrl)
+                putExtra(CrashReportActivity.EXTRA_AUTH_TOKEN, authToken)
             }
             application.startActivity(intent)
 
@@ -64,6 +75,27 @@ class GlobalExceptionHandler(
             appendLine("Process: ${Process.myPid()}")
             appendLine()
             append(Log.getStackTraceString(throwable))
+        }
+    }
+
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface ApiConfigEntryPoint {
+        fun apiConfigRepository(): ApiConfigRepository
+    }
+
+    private fun readCloudflareConfig(): Pair<String, String> {
+        return try {
+            val entryPoint = EntryPointAccessors.fromApplication(
+                application,
+                ApiConfigEntryPoint::class.java
+            )
+            val repository = entryPoint.apiConfigRepository()
+            val workerUrl = runBlocking { repository.cloudflareWorkerUrl.first() }
+            val authToken = runBlocking { repository.cloudflareAuthToken.first() }
+            workerUrl to authToken
+        } catch (_: Exception) {
+            "" to ""
         }
     }
 
