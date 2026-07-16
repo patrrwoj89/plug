@@ -96,6 +96,9 @@ Wyślij pola formularza odpowiadające kluczom obsługiwanym przez `ApiConfigRep
 | `useCloudflareBypass` | `true` lub `false` — włącza Workera Cloudflare do offloadingu wyciągania strumieni web |
 | `cloudflareWorkerUrl` | URL Twojego Workera, np. `https://twoj-worker.workers.dev` |
 | `cloudflareAuthToken` | Współdzielony sekret `HUB_TOKEN`; maskowany w `GET /api/config` |
+| `homeAssistantUrl` | Bazowy adres Home Assistant, np. `https://twoj-dom.local:8123` |
+| `homeAssistantToken` | Token webhooka Home Assistant; maskowany w `GET /api/config` |
+| `homeAssistantWebhookEnabled` | `true` lub `false` — wysyłaj zdarzenia `play`/`pause`/`stop` do Home Assistant |
 | `lastProfileSyncAt` | Tylko do odczytu — znacznik czasu ostatniej synchronizacji profili z chmurą (ms od epoki) |
 | `lastProfileSyncStatus` | Tylko do odczytu — status: `success`, `error` lub pusty |
 | `lastProfileSyncError` | Tylko do odczytu — komunikat błędu z ostatniej nieudanej synchronizacji, jeśli wystąpił |
@@ -147,11 +150,14 @@ Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignoro
   "dialogueBoostGainmB": "1000",
   "useCloudflareBypass": "false",
   "cloudflareWorkerUrl": "https://twoj-worker.workers.dev",
-  "cloudflareAuthToken": "twoj-hub-token"
+  "cloudflareAuthToken": "twoj-hub-token",
+  "homeAssistantUrl": "https://twoj-dom.local:8123",
+  "homeAssistantToken": "twoj-webhook-token",
+  "homeAssistantWebhookEnabled": "true"
 }
 ```
 
-Uwaga: rzeczywisty endpoint HTTP oczekuje danych `application/x-www-form-urlencoded`, a nie surowego JSON. Powyższy JSON pokazany jest dla przejrzystości. Wrażliwe pola (MDBList, TMDB, AniList, Trakt, Debrid, tokeny Jellyfin/Plex/Emby oraz hasło Subsonic) są szyfrowane algorytmem AES-256-GCM w Android Keystore przed zapisem do DataStore. W odpowiedzi `GET /api/config` zwracane są one w postaci zamaskowanej — widoczne są tylko pierwsze 4 i ostatnie 4 znaki (np. `A1B2***********C3D4`) — więc nie są widoczne dla innych urządzeń w sieci LAN. Zapisanie nowej wartości nadal działa przez `POST /api/config`, ponieważ otrzymuje jawny tekst i szyfruje go na TV. Token `cloudflareAuthToken` jest również traktowany jako wrażliwy i maskowany w `GET /api/config`.
+Uwaga: rzeczywisty endpoint HTTP oczekuje danych `application/x-www-form-urlencoded`, a nie surowego JSON. Powyższy JSON pokazany jest dla przejrzystości. Wrażliwe pola (MDBList, TMDB, AniList, Trakt, Debrid, tokeny Jellyfin/Plex/Emby oraz hasło Subsonic) są szyfrowane algorytmem AES-256-GCM w Android Keystore przed zapisem do DataStore. W odpowiedzi `GET /api/config` zwracane są one w postaci zamaskowanej — widoczne są tylko pierwsze 4 i ostatnie 4 znaki (np. `A1B2***********C3D4`) — więc nie są widoczne dla innych urządzeń w sieci LAN. Zapisanie nowej wartości nadal działa przez `POST /api/config`, ponieważ otrzymuje jawny tekst i szyfruje go na TV. Tokeny `cloudflareAuthToken` i `homeAssistantToken` są również traktowane jako wrażliwe i maskowane w `GET /api/config`.
 
 ## Zdalna synchronizacja ustawień Kodi
 

@@ -288,6 +288,20 @@ A panel in the top-right corner of the player that shows real-time diagnostic da
 
 The stats are collected through an ExoPlayer `AnalyticsListener` and exposed in a separate `StateFlow`. Only the small stats panel recomposes, so the rest of `PlayerScreen` is not affected.
 
+## Smart Home, In-App PiP & OLED Saver
+
+### How do I connect Home Assistant?
+
+Open **Settings → Smart Home**, enable **Home Assistant webhook**, and enter your Home Assistant base URL (e.g. `https://your-home.local:8123`) and the webhook token (the long random string generated when you created the webhook in Home Assistant → Configuration → Automations). When you play, pause or stop a movie or TV channel, the app sends a small JSON POST to `https://your-home.local:8123/api/webhook/<token>` with `{"event":"play|pause|stop","profile":"...","media":"..."}`. You can then trigger automations such as dimming room lights when playback starts. The webhook URL and token are masked in the UI and never written to Logcat in release builds.
+
+### What is In-App Video Picture-in-Picture?
+
+While watching a video, press **BACK** on the remote to return to the Home screen. Instead of stopping the stream, the app keeps the same `ExoPlayer` instance and slides a small rounded mini-player into the bottom-right corner of the Home screen. The video and audio continue, and you can use the D-Pad to move focus to the mini-player and press **SELECT** to restore full-screen playback. Pressing **Stop** in the mini-player (or killing the app) fully releases the player and clears memory.
+
+### Why does the screen dim after 5 minutes on the Home screen?
+
+The **OLED Burn-In Saver** protects TVs with OLED panels. If no D-Pad key is pressed for 5 minutes and no video is playing, the screen is covered by an 85% black overlay, a minimalist digital clock and slowly moving movie posters from Coil's cache. Any remote key immediately closes the saver and restores full brightness.
+
 ## Premium Audio
 
 ### How does smart audio track selection work?

@@ -14,7 +14,9 @@ import com.polishmediahub.app.data.audio.AudioRepository
 import com.polishmediahub.app.data.remote.tmdb.TmdbMediaRepository
 import com.polishmediahub.app.data.source.BlackFrameDetector
 import com.polishmediahub.app.data.source.FrameSample
+import com.polishmediahub.app.data.remote.homeassistant.HomeAssistantWebhookClient
 import com.polishmediahub.app.data.remote.trakt.TraktMediaRepository
+import com.polishmediahub.app.ui.player.VideoPipManager
 import com.polishmediahub.app.data.torrent.TorrentMediaSource
 import com.polishmediahub.app.data.tv.TvLauncherManager
 import com.polishmediahub.app.model.AudioTrack
@@ -48,7 +50,9 @@ class PlayerViewModel @Inject constructor(
     private val tvLauncherManager: TvLauncherManager,
     private val traktMediaRepository: TraktMediaRepository,
     private val tmdbMediaRepository: TmdbMediaRepository,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val homeAssistantWebhookClient: HomeAssistantWebhookClient,
+    val videoPipManager: VideoPipManager
 ) : ViewModel() {
 
     private val _item = MutableStateFlow<MediaItem?>(null)
@@ -131,9 +135,20 @@ class PlayerViewModel @Inject constructor(
     fun setIsPlaying(playing: Boolean) {
         _isPlaying.value = playing
         currentAudioTrack?.let { audioRepository.setCurrentTrack(it, playing) }
+        notifyHomeAssistant(if (playing) "play" else "pause")
     }
     fun setPipMode(inPip: Boolean) { _isInPipMode.value = inPip }
     fun updatePlayerStats(stats: PlayerStats) { _playerStats.value = stats }
+
+    private fun notifyHomeAssistant(event: String) {
+        viewModelScope.launch {
+            try {
+                homeAssistantWebhookClient.send(event, item.value?.title)
+            } catch (e: Exception) {
+                // Best-effort webhook; failures must not interrupt playback.
+            }
+        }
+    }
 
     fun onFrameSample(sample: FrameSample, positionMs: Long, durationMs: Long) {
         val current = item.value ?: return
@@ -522,6 +537,7 @@ class PlayerViewModel @Inject constructor(
     }
 
     private suspend fun finishPlayback(mediaItem: MediaItem, positionMs: Long, durationMs: Long) {
+        notifyHomeAssistant("stop")
         if (isAudioItem(mediaItem)) {
             currentAudioTrack?.let { track ->
                 audioHistoryRepository.save(track.copy(durationMs = durationMs), positionMs)

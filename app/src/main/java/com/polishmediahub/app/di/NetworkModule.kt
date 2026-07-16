@@ -12,6 +12,10 @@ import com.polishmediahub.app.data.remote.anilist.AniListApi
 import com.polishmediahub.app.data.remote.stremio.StremioApi
 import com.polishmediahub.app.data.remote.cloud.CloudProfileSyncClient
 import com.polishmediahub.app.data.remote.cloud.OkHttpCloudProfileSyncClient
+import com.polishmediahub.app.data.ApiConfigRepository
+import com.polishmediahub.app.data.ProfileRepository
+import com.polishmediahub.app.data.remote.homeassistant.HomeAssistantWebhookClient
+import com.polishmediahub.app.data.remote.homeassistant.OkHttpHomeAssistantWebhookClient
 import com.polishmediahub.app.data.remote.tmdb.TmdbApi
 import com.polishmediahub.app.data.remote.trakt.TraktApi
 import com.polishmediahub.app.data.remote.trakt.TraktAuthenticator
@@ -73,6 +77,15 @@ object NetworkModule {
     @Singleton
     fun provideCloudProfileSyncClient(client: OkHttpClient): CloudProfileSyncClient =
         OkHttpCloudProfileSyncClient(client)
+
+    @Provides
+    @Singleton
+    fun provideHomeAssistantWebhookClient(
+        client: OkHttpClient,
+        apiConfigRepository: ApiConfigRepository,
+        profileRepository: ProfileRepository
+    ): HomeAssistantWebhookClient =
+        OkHttpHomeAssistantWebhookClient(client, apiConfigRepository, profileRepository)
 
     @Provides
     @Singleton

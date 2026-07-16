@@ -42,6 +42,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.polishmediahub.app.R
 import com.polishmediahub.app.model.MediaItem
+import com.polishmediahub.app.navigation.LocalPlayerViewModel
 import com.polishmediahub.app.navigation.Screen
 import com.polishmediahub.app.ui.components.CategoryRow
 import com.polishmediahub.app.ui.components.EmptyState
@@ -69,7 +70,9 @@ fun HomeScreen(
     val firstItemRequester = remember { FocusRequester() }
     val audioMiniPlayerViewModel = hiltViewModel<AudioMiniPlayerViewModel>()
     val currentTrack by audioMiniPlayerViewModel.currentTrack.collectAsStateWithLifecycle()
-    val miniPlayerHeight = if (currentTrack != null) 80.dp else Spacing.lg
+    val playerViewModel = LocalPlayerViewModel.current
+    val inAppVideoPip by playerViewModel.videoPipManager.isInPipMode.collectAsStateWithLifecycle()
+    val miniPlayerHeight = if (currentTrack != null && !inAppVideoPip) 80.dp else Spacing.lg
 
     LaunchedEffect(Unit) {
         firstItemRequester.requestFocus()
@@ -141,7 +144,7 @@ fun HomeScreen(
         }
     }
 
-    if (currentTrack != null) {
+    if (currentTrack != null && !inAppVideoPip) {
         AudioMiniPlayer(
             onPlay = { track -> onNavigate(Screen.Player(track.id)) },
             modifier = Modifier.align(Alignment.BottomCenter)

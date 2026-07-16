@@ -252,6 +252,13 @@
     <string name="settings_cloudflare_worker_url_hint">https://your-worker.workers.dev</string>
     <string name="settings_cloudflare_auth_token">Cloudflare Worker auth token</string>
     <string name="settings_cloudflare_auth_token_hint">Hub token shared with the worker secret</string>
+    <string name="settings_home_assistant_section">Smart Home Assistant</string>
+    <string name="settings_home_assistant_webhook_enabled">Send playback webhooks</string>
+    <string name="settings_home_assistant_webhook_enabled_subtitle">Notify Home Assistant when you play, pause or stop a video</string>
+    <string name="settings_home_assistant_url">Home Assistant URL</string>
+    <string name="settings_home_assistant_url_hint">https://homeassistant.local:8123</string>
+    <string name="settings_home_assistant_token">Webhook ID / token</string>
+    <string name="settings_home_assistant_token_hint">Created in Home Assistant automation → webhook</string>
     <string name="settings_profile_sync_section">Profile Cloud Sync</string>
     <string name="profile_sync_now">Sync profiles to cloud now</string>
     <string name="profile_last_sync">Last profile sync: %1$s — %2$s</string>

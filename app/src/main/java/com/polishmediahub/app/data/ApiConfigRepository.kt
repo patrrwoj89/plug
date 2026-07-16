@@ -67,6 +67,11 @@ class ApiConfigRepository @Inject constructor(
     val cloudflareWorkerUrl: Flow<String> = plainStringFlow(KEY_CLOUDFLARE_WORKER_URL)
     val cloudflareAuthToken: Flow<String> = stringFlow(KEY_CLOUDFLARE_AUTH_TOKEN)
 
+    val homeAssistantUrl: Flow<String> = plainStringFlow(KEY_HOME_ASSISTANT_URL)
+    val homeAssistantToken: Flow<String> = stringFlow(KEY_HOME_ASSISTANT_TOKEN)
+    val homeAssistantWebhookEnabled: Flow<Boolean> = context.apiConfigDataStore.data
+        .map { it[KEY_HOME_ASSISTANT_WEBHOOK_ENABLED] ?: false }
+
     val lastProfileSyncAt: Flow<Long> = longFlow(KEY_LAST_PROFILE_SYNC_AT)
     val lastProfileSyncStatus: Flow<String> = plainStringFlow(KEY_LAST_PROFILE_SYNC_STATUS)
     val lastProfileSyncError: Flow<String?> = nullableStringFlow(KEY_LAST_PROFILE_SYNC_ERROR)
@@ -170,6 +175,10 @@ class ApiConfigRepository @Inject constructor(
     suspend fun setCloudflareWorkerUrl(value: String) = edit(KEY_CLOUDFLARE_WORKER_URL, value)
     suspend fun setCloudflareAuthToken(value: String) = edit(KEY_CLOUDFLARE_AUTH_TOKEN, value)
 
+    suspend fun setHomeAssistantUrl(value: String) = edit(KEY_HOME_ASSISTANT_URL, value)
+    suspend fun setHomeAssistantToken(value: String) = edit(KEY_HOME_ASSISTANT_TOKEN, value)
+    suspend fun setHomeAssistantWebhookEnabled(value: Boolean) = context.apiConfigDataStore.edit { it[KEY_HOME_ASSISTANT_WEBHOOK_ENABLED] = value }
+
     suspend fun setLastProfileSync(timestamp: Long, status: String, error: String? = null) {
         context.apiConfigDataStore.edit {
             it[KEY_LAST_PROFILE_SYNC_AT] = timestamp
@@ -245,6 +254,9 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_USE_CLOUDFLARE_BYPASS = booleanPreferencesKey("use_cloudflare_bypass")
         private val KEY_CLOUDFLARE_WORKER_URL = stringPreferencesKey("cloudflare_worker_url")
         private val KEY_CLOUDFLARE_AUTH_TOKEN = stringPreferencesKey("cloudflare_auth_token")
+        private val KEY_HOME_ASSISTANT_URL = stringPreferencesKey("home_assistant_url")
+        private val KEY_HOME_ASSISTANT_TOKEN = stringPreferencesKey("home_assistant_token")
+        private val KEY_HOME_ASSISTANT_WEBHOOK_ENABLED = booleanPreferencesKey("home_assistant_webhook_enabled")
 
         private val SENSITIVE_STRING_KEYS = setOf(
             KEY_TMDB,
@@ -261,7 +273,8 @@ class ApiConfigRepository @Inject constructor(
             KEY_EMBY_TOKEN,
             KEY_SUBSONIC_PASSWORD,
             KEY_MDBLIST,
-            KEY_CLOUDFLARE_AUTH_TOKEN
+            KEY_CLOUDFLARE_AUTH_TOKEN,
+            KEY_HOME_ASSISTANT_TOKEN
         )
     }
 }

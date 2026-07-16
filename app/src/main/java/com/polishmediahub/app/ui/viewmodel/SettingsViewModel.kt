@@ -125,6 +125,15 @@ class SettingsViewModel @Inject constructor(
     val cloudflareAuthToken: StateFlow<String> = apiConfigRepository.cloudflareAuthToken
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = "")
 
+    val homeAssistantUrl: StateFlow<String> = apiConfigRepository.homeAssistantUrl
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = "")
+
+    val homeAssistantToken: StateFlow<String> = apiConfigRepository.homeAssistantToken
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = "")
+
+    val homeAssistantWebhookEnabled: StateFlow<Boolean> = apiConfigRepository.homeAssistantWebhookEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = false)
+
     val lastProfileSync: StateFlow<LastProfileSyncState> = combine(
         apiConfigRepository.lastProfileSyncAt,
         apiConfigRepository.lastProfileSyncStatus,
@@ -163,6 +172,10 @@ class SettingsViewModel @Inject constructor(
     fun setUseCloudflareBypass(value: Boolean) = viewModelScope.launch { apiConfigRepository.setUseCloudflareBypass(value) }
     fun setCloudflareWorkerUrl(value: String) = viewModelScope.launch { apiConfigRepository.setCloudflareWorkerUrl(value) }
     fun setCloudflareAuthToken(value: String) = viewModelScope.launch { apiConfigRepository.setCloudflareAuthToken(value) }
+
+    fun setHomeAssistantUrl(value: String) = viewModelScope.launch { apiConfigRepository.setHomeAssistantUrl(value) }
+    fun setHomeAssistantToken(value: String) = viewModelScope.launch { apiConfigRepository.setHomeAssistantToken(value) }
+    fun setHomeAssistantWebhookEnabled(value: Boolean) = viewModelScope.launch { apiConfigRepository.setHomeAssistantWebhookEnabled(value) }
 
     fun syncTraktNow() = viewModelScope.launch { TraktSyncWorker.startImmediate(context) }
 

@@ -96,6 +96,9 @@ Send form fields matching the keys supported by `ApiConfigRepository`. The admin
 | `useCloudflareBypass` | `true` or `false` — enable the Cloudflare Edge Offloading Worker for web stream extraction |
 | `cloudflareWorkerUrl` | Your Worker URL, e.g. `https://your-worker.workers.dev` |
 | `cloudflareAuthToken` | Shared `HUB_TOKEN` secret; masked in GET `/api/config` |
+| `homeAssistantUrl` | Home Assistant base URL, e.g. `https://your-home.local:8123` |
+| `homeAssistantToken` | Home Assistant webhook token; masked in GET `/api/config` |
+| `homeAssistantWebhookEnabled` | `true` or `false` — send `play`/`pause`/`stop` events to Home Assistant |
 | `lastProfileSyncAt` | Read-only timestamp of the last profile cloud sync (ms since epoch) |
 | `lastProfileSyncStatus` | Read-only status: `success`, `error` or empty |
 | `lastProfileSyncError` | Read-only error message from the last failed profile sync, if any |
@@ -147,11 +150,14 @@ Only the fields you actually use need to be present. Empty strings are ignored.
   "dialogueBoostGainmB": "1000",
   "useCloudflareBypass": "false",
   "cloudflareWorkerUrl": "https://your-worker.workers.dev",
-  "cloudflareAuthToken": "your-hub-token"
+  "cloudflareAuthToken": "your-hub-token",
+  "homeAssistantUrl": "https://your-home.local:8123",
+  "homeAssistantToken": "your-webhook-token",
+  "homeAssistantWebhookEnabled": "true"
 }
 ```
 
-Note: the actual HTTP endpoint expects `application/x-www-form-urlencoded` form fields, not raw JSON. The JSON example above is shown for clarity. Sensitive fields (MDBList, TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens and Subsonic password) are encrypted with AES-256-GCM in Android Keystore before being written to DataStore. When `GET /api/config` returns them they are masked to only the first 4 and last 4 characters (e.g. `A1B2***********C3D4`), so raw credentials are never visible to other devices on the LAN. Saving new values still works via `POST /api/config` because the plain value is received and encrypted on the TV. The `cloudflareAuthToken` is also treated as sensitive and masked in `GET /api/config`.
+Note: the actual HTTP endpoint expects `application/x-www-form-urlencoded` form fields, not raw JSON. The JSON example above is shown for clarity. Sensitive fields (MDBList, TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens and Subsonic password) are encrypted with AES-256-GCM in Android Keystore before being written to DataStore. When `GET /api/config` returns them they are masked to only the first 4 and last 4 characters (e.g. `A1B2***********C3D4`), so raw credentials are never visible to other devices on the LAN. Saving new values still works via `POST /api/config` because the plain value is received and encrypted on the TV. The `cloudflareAuthToken` and `homeAssistantToken` are also treated as sensitive and masked in `GET /api/config`.
 
 ## Kodi remote settings sync
 

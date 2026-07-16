@@ -6,6 +6,34 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 
 ### Dodano
 
+#### Smart Home, wewnętrzny PiP wideo i wygaszacz OLED (zamrożenie kodu)
+- **Webhooki Home Assistant Smart Cinema** (`ApiConfigRepository`, `SettingsScreen`, `AdminHttpServer`, `HomeAssistantWebhookClient`, `PlayerViewModel`, `PlayerViewModelTest`)
+  - Zaszyfrowane preferencje DataStore `homeAssistantUrl`, `homeAssistantToken`, `homeAssistantWebhookEnabled` w `ApiConfigRepository`.
+  - Sekcja w `SettingsScreen` z przełącznikiem, polem adresu Home Assistant i maskowanym tokenem webhooka.
+  - Bezprzewodowy panel admina `/api/config` eksponuje te same trzy pola z maskowaniem tokena.
+  - `OkHttpHomeAssistantWebhookClient` wysyła `POST {url}/api/webhook/{token}` z JSON `{"event":"play|pause|stop","profile":"...","media":"..."}` na `Dispatchers.IO` za pomocą globalnego `OkHttpClient`.
+  - `PlayerViewModel` wyzwala webhooki z `setIsPlaying` (play/pause) i `finishPlayback` (stop) zarówno dla ExoPlayera, jak i LibVLC.
+  - Adres i token webhooka nie są logowane do Logcat w buildach release (`BuildConfig.DEBUG == false`).
+  - `PlayerViewModelTest` weryfikuje wywołania webhooków `play`, `pause` i `stop` przy użyciu MockK.
+- **Wewnętrzny mini-player wideo na HomeScreen** (`VideoPipManager`, `InAppVideoPipOverlay`, `PlayerScreen`, `TVNavHost`, `MainActivity`)
+  - Singleton `VideoPipManager` z życiem aktywności przechowuje aktywną instancję `ExoPlayer` i `MediaItem` między ekranami.
+  - Wciśnięcie WSTECZ z `PlayerScreen` zachowuje playera, zamyka ekran i wysuwa zaokrąglony mini-odtwarzacz w prawym dolnym rogu `HomeScreen`.
+  - Wideo i dźwięk grają bez przerwy; mini-player używa małego `PlayerView` podłączonego do tego samego `ExoPlayer`.
+  - Środkowy przycisk D-Pada w mini-playerze przechodzi z powrotem do `PlayerScreen`, które ponownie przyłącza tego samego playera.
+  - Przycisk Stop w mini-playerze całkowicie zwalnia playera (`VideoPipManager.stopAndRelease()`).
+  - `MainActivity.onDestroy()` wywołuje `videoPipManager.stopAndRelease()`, aby zapobiec wyciekom przy zabijaniu aplikacji.
+  - `HomeScreen` ukrywa mini-player audio, gdy aktywny jest wideo-PiP, aby dolne paski się nie nakładały.
+  - Subskrypcje stanu wideo-PiP używają `collectAsStateWithLifecycle()` (Zasada 4).
+- **Wygaszacz ekranu OLED** (`OledBurnInSaver`, `TVNavHost`)
+  - Główny listener zdarzeń D-Pada w `TVNavHost` resetuje 5-minutowy (300 000 ms) licznik bezczynności po każdym wciśnięciu klawisza.
+  - Po upływie czasu, gdy żadne wideo nie jest odtwarzane (`PlayerViewModel.isPlaying` i `VideoPipManager.isInPipMode` false), wygaszacz nakłada ekran 85% przyciemnieniem, minimalistycznym cyfrowym zegarem i wolno poruszającymi się okładkami z cache Coil.
+  - Dowolne wciśnięcie przycisku pilota natychmiast zamyka wygaszacz i przywraca pełną jasność.
+  - Okładki i zegar używają `collectAsStateWithLifecycle()` oraz `LocalLocale`, aby spełnić wymagania lint Compose.
+- **Ostateczne utwardzenie kodu i zamrożenie**
+  - Przeprowadzono audyt nowych workerów, serwerów HTTP i komponentów odtwarzacza pod kątem poprawności `release()` / `finally`.
+  - Usunięto tymczasowe wpisy `Log.d` z `HomeViewModel`; pozostałe logowanie jest chronione przez `BuildConfig.DEBUG`.
+  - Zweryfikowano `./gradlew clean test :app:compileDebugKotlin :app:lintDebug` ze statusem `No issues found`.
+
 #### UI / UX
 - **Silnik monitorowania zdrowia źródeł w tle** (`HealthCheckWorker`, `HealthCheckEngine`, `HealthStatus`, `SourceHealth`)
   - `CoroutineWorker` uruchamiany co 4 godziny na `Dispatchers.IO` sprawdza dostępność wszystkich skonfigurowanych źródeł (Kodi, IPTV M3U, EPG, Plex, Jellyfin, Emby, Subsonic, proxy Deezer, kanały RSS podcastów, dodatki Stremio, repozytoria Cloudstream i bazowe URL-e źródeł web).

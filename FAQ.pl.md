@@ -288,6 +288,20 @@ Panel w prawym górnym rogu odtwarzacza pokazujący dane diagnostyczne w czasie 
 
 Statystyki są zbierane przez `AnalyticsListener` ExoPlayera i eksponowane w osobnym `StateFlow`. Rekompozycje dotyczą tylko małego panelu statystyk, więc reszta ekranu `PlayerScreen` nie jest odświeżana.
 
+## Smart Home, wewnętrzny PiP wideo i wygaszacz OLED
+
+### Jak połączyć aplikację z Home Assistant?
+
+Otwórz **Ustawienia → Smart Home**, włącz **Webhook Home Assistant** i podaj adres bazowy Home Assistant (np. `https://twoj-dom.local:8123`) oraz token webhooka (długi losowy ciąg wygenerowany podczas tworzenia webhooka w Home Assistant → Konfiguracja → Automatyzacje). Gdy odtwarzasz, pauzujesz lub zatrzymujesz film lub kanał TV, aplikacja wysyła mały JSON POST na `https://twoj-dom.local:8123/api/webhook/<token>` z `{"event":"play|pause|stop","profile":"...","media":"..."}`. Możesz na tej podstawie tworzyć automatyzacje, np. przyciemnianie światła w pokoju po rozpoczęciu odtwarzania. Adres i token webhooka są maskowane w UI i nigdy nie trafiają do Logcat w buildach release.
+
+### Co to jest wewnętrzny mini-player wideo?
+
+Podczas oglądania wideo wciśnij **WSTECZ** na pilocie, aby wrócić do ekranu głównego. Zamiast zatrzymywać strumień, aplikacja zachowuje tę samą instancję `ExoPlayer` i wysuwa mały, zaokrąglony mini-odtwarzacz w prawy dolny róg ekranu Home. Wideo i dźwięk grają dalej, a D-Padem możesz skupić mini-player i nacisnąć **SELECT**, aby przywrócić pełny ekran. Przycisk **Stop** w mini-playerze (lub zabicie aplikacji) całkowicie zwalnia playera i czyści pamięć.
+
+### Dlaczego ekran przyciemnia się po 5 minutach na Home?
+
+**Wygaszacz OLED** chroni telewizory z matrycami OLED. Jeśli przez 5 minut nie zostanie wciśnięty żaden klawisz D-Pada i żadne wideo nie jest odtwarzane, ekran zostaje przykryty 85% czarną nakładką, minimalistycznym cyfrowym zegarem i wolno poruszającymi się okładkami z cache Coil. Dowolny klawisz pilota natychmiast zamyka wygaszacz i przywraca pełną jasność.
+
 ## Premium Audio
 
 ### Jak działa inteligentny wybór ścieżki audio?

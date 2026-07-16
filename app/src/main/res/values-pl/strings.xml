@@ -249,6 +249,13 @@
     <string name="settings_cloudflare_worker_url_hint">https://twoj-worker.workers.dev</string>
     <string name="settings_cloudflare_auth_token">Token autoryzacyjny Workera</string>
     <string name="settings_cloudflare_auth_token_hint">Hub token współdzielony z sekretem Workera</string>
+    <string name="settings_home_assistant_section">Inteligentny dom Home Assistant</string>
+    <string name="settings_home_assistant_webhook_enabled">Wysyłaj webhooki odtwarzania</string>
+    <string name="settings_home_assistant_webhook_enabled_subtitle">Powiadamiaj Home Assistant o play, pause i stop wideo</string>
+    <string name="settings_home_assistant_url">URL Home Assistant</string>
+    <string name="settings_home_assistant_url_hint">https://homeassistant.local:8123</string>
+    <string name="settings_home_assistant_token">Webhook ID / token</string>
+    <string name="settings_home_assistant_token_hint">Utworzony w Home Assistant automation → webhook</string>
     <string name="settings_profile_sync_section">Synchronizacja profili w chmurze</string>
     <string name="profile_sync_now">Synchronizuj profile do chmury</string>
     <string name="profile_last_sync">Ostatnia synchronizacja profili: %1$s — %2$s</string>

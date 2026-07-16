@@ -88,6 +88,9 @@ fun SettingsScreen(
     val useCloudflareBypass by viewModel.useCloudflareBypass.collectAsStateWithLifecycle()
     val cloudflareWorkerUrl by viewModel.cloudflareWorkerUrl.collectAsStateWithLifecycle()
     val cloudflareAuthToken by viewModel.cloudflareAuthToken.collectAsStateWithLifecycle()
+    val homeAssistantUrl by viewModel.homeAssistantUrl.collectAsStateWithLifecycle()
+    val homeAssistantToken by viewModel.homeAssistantToken.collectAsStateWithLifecycle()
+    val homeAssistantWebhookEnabled by viewModel.homeAssistantWebhookEnabled.collectAsStateWithLifecycle()
     val lastProfileSync by viewModel.lastProfileSync.collectAsStateWithLifecycle()
     val pluginUpdateBadge by viewModel.pluginUpdateBadge.collectAsStateWithLifecycle()
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
@@ -319,6 +322,38 @@ fun SettingsScreen(
             onValueChange = viewModel::setCloudflareAuthToken,
             label = { Text(stringResource(id = R.string.settings_cloudflare_auth_token)) },
             placeholder = { Text(stringResource(id = R.string.settings_cloudflare_auth_token_hint)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions.Default
+        )
+
+        Text(
+            text = stringResource(id = R.string.settings_home_assistant_section),
+            style = AppTypography.headline,
+            modifier = Modifier.padding(top = Spacing.md)
+        )
+
+        SettingsToggle(
+            title = stringResource(id = R.string.settings_home_assistant_webhook_enabled),
+            subtitle = stringResource(id = R.string.settings_home_assistant_webhook_enabled_subtitle),
+            checked = homeAssistantWebhookEnabled,
+            onCheckedChange = viewModel::setHomeAssistantWebhookEnabled
+        )
+
+        TvOutlinedTextField(
+            value = homeAssistantUrl,
+            onValueChange = viewModel::setHomeAssistantUrl,
+            label = { Text(stringResource(id = R.string.settings_home_assistant_url)) },
+            placeholder = { Text(stringResource(id = R.string.settings_home_assistant_url_hint)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            keyboardOptions = KeyboardOptions.Default
+        )
+
+        TvOutlinedTextField(
+            value = homeAssistantToken,
+            onValueChange = viewModel::setHomeAssistantToken,
+            label = { Text(stringResource(id = R.string.settings_home_assistant_token)) },
+            placeholder = { Text(stringResource(id = R.string.settings_home_assistant_token_hint)) },
             modifier = Modifier.fillMaxWidth(0.5f),
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions.Default

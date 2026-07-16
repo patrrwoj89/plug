@@ -71,7 +71,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -102,6 +101,7 @@ import com.polishmediahub.app.R
 import com.polishmediahub.app.data.torrent.TorrentStatus
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.model.PlaybackState
+import com.polishmediahub.app.navigation.LocalPlayerViewModel
 import com.polishmediahub.app.navigation.Screen
 import com.polishmediahub.app.ui.components.TvButton
 import com.polishmediahub.app.ui.components.TvIconButton
@@ -121,7 +121,7 @@ import java.util.Locale
 fun PlayerScreen(
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: PlayerViewModel = hiltViewModel()
+    viewModel: PlayerViewModel = LocalPlayerViewModel.current
 ) {
     val item by viewModel.item.collectAsStateWithLifecycle()
     val resumePosition by viewModel.resumePosition.collectAsStateWithLifecycle()
@@ -162,44 +162,65 @@ fun PlayerScreen(
 
     val headers = item?.headers.orEmpty()
     val videoUrl = resolvedUrl ?: item?.videoUrl
-    val exoPlayer = remember(context, videoUrl) {
-        val dataSourceFactory = DefaultHttpDataSource.Factory()
-            .apply {
-                setUserAgent("PolishMediaHub/1.0 (Android TV)")
-                if (headers.isNotEmpty()) setDefaultRequestProperties(headers)
-            }
-        val drmSessionManagerProvider = DefaultDrmSessionManagerProvider()
-            .apply { setDrmHttpDataSourceFactory(dataSourceFactory) }
-        val mediaSourceFactory = DefaultMediaSourceFactory(context)
-            .setDataSourceFactory(dataSourceFactory)
-            .setDrmSessionManagerProvider(drmSessionManagerProvider)
-        val trackSelector = DefaultTrackSelector(context).apply {
-            parameters = DefaultTrackSelector.Parameters.Builder(context)
-                .setPreferredAudioLanguage("pl")
-                .setPreferredTextLanguage("pl")
-                .setSelectUndeterminedTextLanguage(true)
-                .build()
-        }
-        val isP2PStream = !videoUrl.isNullOrBlank() &&
-            (videoUrl.contains("127.0.0.1") || videoUrl.contains("localhost", ignoreCase = true))
-        val loadControl = if (isP2PStream) {
-            DefaultLoadControl.Builder()
-                .setBufferDurationsMs(15_000, 60_000, 2_500, 10_000)
-                .build()
+
+    val videoPipManager = viewModel.videoPipManager
+    val existingPlayer by videoPipManager.exoPlayer.collectAsStateWithLifecycle()
+    val existingMediaItem by videoPipManager.currentMediaItem.collectAsStateWithLifecycle()
+    val reuseExistingPlayer = existingPlayer != null && existingMediaItem?.id == item?.id
+
+    LaunchedEffect(Unit) {
+        videoPipManager.consumePipRequest()
+    }
+
+    val exoPlayer = remember(context, item?.id, videoUrl, reuseExistingPlayer) {
+        if (reuseExistingPlayer) {
+            existingPlayer!!.apply { playWhenReady = true }
         } else {
-            DefaultLoadControl.Builder().build()
+            val dataSourceFactory = DefaultHttpDataSource.Factory()
+                .apply {
+                    setUserAgent("PolishMediaHub/1.0 (Android TV)")
+                    if (headers.isNotEmpty()) setDefaultRequestProperties(headers)
+                }
+            val drmSessionManagerProvider = DefaultDrmSessionManagerProvider()
+                .apply { setDrmHttpDataSourceFactory(dataSourceFactory) }
+            val mediaSourceFactory = DefaultMediaSourceFactory(context)
+                .setDataSourceFactory(dataSourceFactory)
+                .setDrmSessionManagerProvider(drmSessionManagerProvider)
+            val trackSelector = DefaultTrackSelector(context).apply {
+                parameters = DefaultTrackSelector.Parameters.Builder(context)
+                    .setPreferredAudioLanguage("pl")
+                    .setPreferredTextLanguage("pl")
+                    .setSelectUndeterminedTextLanguage(true)
+                    .build()
+            }
+            val isP2PStream = !videoUrl.isNullOrBlank() &&
+                (videoUrl.contains("127.0.0.1") || videoUrl.contains("localhost", ignoreCase = true))
+            val loadControl = if (isP2PStream) {
+                DefaultLoadControl.Builder()
+                    .setBufferDurationsMs(15_000, 60_000, 2_500, 10_000)
+                    .build()
+            } else {
+                DefaultLoadControl.Builder().build()
+            }
+            ExoPlayer.Builder(context)
+                .setMediaSourceFactory(mediaSourceFactory)
+                .setTrackSelector(trackSelector)
+                .setLoadControl(loadControl)
+                .setRenderersFactory(DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON))
+                .build()
+                .apply { playWhenReady = true }
         }
-        ExoPlayer.Builder(context)
-            .setMediaSourceFactory(mediaSourceFactory)
-            .setTrackSelector(trackSelector)
-            .setLoadControl(loadControl)
-            .setRenderersFactory(DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON))
-            .build()
-            .apply { playWhenReady = true }
     }
 
     LaunchedEffect(preferredQuality, exoPlayer) {
         applyPreferredQuality(exoPlayer, preferredQuality)
+    }
+
+    LaunchedEffect(exoPlayer, item) {
+        if (videoPipManager.exoPlayer.value != exoPlayer) {
+            videoPipManager.stopAndRelease()
+        }
+        videoPipManager.setPlayer(exoPlayer, item)
     }
 
     DisposableEffect(exoPlayer) {
@@ -210,7 +231,11 @@ fun PlayerScreen(
     DisposableEffect(exoPlayer, item, resolvedUrl) {
         val mediaItem = item
         val url = resolvedUrl ?: mediaItem?.videoUrl
-        if (!url.isNullOrBlank()) {
+        val returningFromPip = videoPipManager.isInPipMode.value && videoPipManager.exoPlayer.value == exoPlayer
+        if (returningFromPip) {
+            videoPipManager.exitPip()
+            exoPlayer.playWhenReady = true
+        } else if (!url.isNullOrBlank()) {
             val mimeType = when {
                 url.endsWith(".m3u8", ignoreCase = true) -> MimeTypes.APPLICATION_M3U8
                 url.endsWith(".mpd", ignoreCase = true) -> MimeTypes.APPLICATION_MPD
@@ -258,9 +283,14 @@ fun PlayerScreen(
         val mediaSession = MediaSession.Builder(context, exoPlayer).build()
 
         onDispose {
-            viewModel.onPlaybackStopped(exoPlayer.currentPosition, exoPlayer.duration.coerceAtLeast(0L))
+            val keepAlive = videoPipManager.consumePipRequest()
+            if (keepAlive) {
+                videoPipManager.enterPip()
+            } else {
+                viewModel.onPlaybackStopped(exoPlayer.currentPosition, exoPlayer.duration.coerceAtLeast(0L))
+                videoPipManager.stopAndRelease()
+            }
             mediaSession.release()
-            exoPlayer.release()
         }
     }
 
@@ -287,6 +317,7 @@ fun PlayerScreen(
         nextEpisode = nextEpisode,
         autoPlayCancelled = autoPlayCancelled,
         onBack = { onNavigate(Screen.Home) },
+        onEnterInAppPip = { videoPipManager.requestEnterPip() },
         onSaveProgress = { position, duration ->
             viewModel.saveProgress(position, duration)
         },
@@ -337,6 +368,7 @@ private fun PlayerContent(
     autoPlayCancelled: Boolean,
     onBack: () -> Unit,
     onEnterPip: () -> Unit,
+    onEnterInAppPip: () -> Unit,
     onIsPlayingChanged: (Boolean) -> Unit,
     onSaveProgress: (Long, Long) -> Unit,
     onScrobbleStart: (Long, Long) -> Unit,
@@ -415,6 +447,7 @@ private fun PlayerContent(
         } else if (overlayVisible) {
             onCancelAutoPlay()
         } else {
+            onEnterInAppPip()
             onBack()
         }
     }

@@ -6,6 +6,34 @@ All notable changes to Polish Media Hub are documented in this file.
 
 ### Added
 
+#### Smart Home, In-App PiP & OLED protection (final code freeze)
+- **Home Assistant Smart Cinema webhooks** (`ApiConfigRepository`, `SettingsScreen`, `AdminHttpServer`, `HomeAssistantWebhookClient`, `PlayerViewModel`, `PlayerViewModelTest`)
+  - Encrypted DataStore preferences `homeAssistantUrl`, `homeAssistantToken`, `homeAssistantWebhookEnabled` in `ApiConfigRepository`.
+  - `SettingsScreen` section with toggle, Home Assistant URL input and masked webhook token.
+  - Wireless admin panel `/api/config` exposes the same three fields with the token masked.
+  - `OkHttpHomeAssistantWebhookClient` sends `POST {url}/api/webhook/{token}` with JSON `{"event":"play|pause|stop","profile":"...","media":"..."}` on `Dispatchers.IO` using the global `OkHttpClient`.
+  - `PlayerViewModel` triggers webhooks from `setIsPlaying` (play/pause) and `finishPlayback` (stop) for both ExoPlayer and LibVLC paths.
+  - Webhook URL and token are never logged to Logcat in release builds (`BuildConfig.DEBUG == false`).
+  - `PlayerViewModelTest` verifies `play`, `pause` and `stop` webhook calls with MockK.
+- **In-App Video Picture-in-Picture on HomeScreen** (`VideoPipManager`, `InAppVideoPipOverlay`, `PlayerScreen`, `TVNavHost`, `MainActivity`)
+  - Activity-scoped `VideoPipManager` singleton keeps the active `ExoPlayer` instance and `MediaItem` across navigation.
+  - Pressing BACK from `PlayerScreen` preserves the player, exits the screen and slides up a rounded mini-player in the bottom-right corner of `HomeScreen`.
+  - Video and audio continue without interruption; the mini-player uses a small `PlayerView` bound to the same `ExoPlayer`.
+  - D-Pad Center/SELECT on the mini-player navigates back to `PlayerScreen`, which re-attaches the same player.
+  - Stop button in the mini-player fully releases the player (`VideoPipManager.stopAndRelease()`).
+  - `MainActivity.onDestroy()` calls `videoPipManager.stopAndRelease()` to prevent leaks when the app is killed.
+  - `HomeScreen` hides the audio mini-player while the video PiP is active so the two bottom bars do not overlap.
+  - `collectAsStateWithLifecycle()` is used for all video-PiP state subscriptions (Zasada 4).
+- **OLED Burn-In Saver** (`OledBurnInSaver`, `TVNavHost`)
+  - Root-level D-Pad idle listener in `TVNavHost` resets a 5-minute (300 000 ms) timer on every key press.
+  - If the timer expires and no video is playing (`PlayerViewModel.isPlaying` and `VideoPipManager.isInPipMode` are false), the saver overlays the screen with an 85% dim, a minimalist digital clock and slowly moving movie posters pulled from Coil's disk/memory cache.
+  - Any D-Pad press immediately closes the overlay and restores full brightness.
+  - Posters and clock use `collectAsStateWithLifecycle()` and `LocalLocale` to satisfy Compose lint.
+- **Final code hardening & freeze**
+  - Audited new workers, HTTP servers and player components for `release()` / `finally` correctness.
+  - Removed temporary `Log.d` debug entries from `HomeViewModel` and left only `BuildConfig.DEBUG`-guarded logging elsewhere.
+  - Verified `./gradlew clean test :app:compileDebugKotlin :app:lintDebug` reports `No issues found`.
+
 #### UI / UX
 - **Background Source Health-Check Engine** (`HealthCheckWorker`, `HealthCheckEngine`, `HealthStatus`, `SourceHealth`)
   - `CoroutineWorker` runs every 4 hours on `Dispatchers.IO` and checks reachability of all configured sources (Kodi, IPTV M3U, EPG, Plex, Jellyfin, Emby, Subsonic, Deezer proxy, podcast feeds, Stremio addons, Cloudstream repos and web source base URLs).

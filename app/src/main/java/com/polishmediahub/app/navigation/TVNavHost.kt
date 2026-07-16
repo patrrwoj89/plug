@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -16,6 +18,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -28,6 +31,8 @@ import androidx.navigation.navDeepLink
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.polishmediahub.app.ui.components.InAppVideoPipOverlay
+import com.polishmediahub.app.ui.components.OledBurnInSaver
 import com.polishmediahub.app.ui.components.Sidebar
 import com.polishmediahub.app.ui.screens.AdminScreen
 import com.polishmediahub.app.ui.screens.AnimeScreen
@@ -45,6 +50,7 @@ import com.polishmediahub.app.ui.screens.SearchScreen
 import com.polishmediahub.app.ui.screens.SettingsScreen
 import com.polishmediahub.app.ui.screens.TorrentsScreen
 import com.polishmediahub.app.ui.screens.WatchlistScreen
+import com.polishmediahub.app.ui.viewmodel.PlayerViewModel
 import com.polishmediahub.app.ui.viewmodel.ProfileViewModel
 import com.polishmediahub.app.ui.viewmodel.SettingsViewModel
 import dev.chrisbanes.haze.HazeState
@@ -54,7 +60,8 @@ import dev.chrisbanes.haze.rememberHazeState
 @Composable
 fun TVApp(
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    playerViewModel: PlayerViewModel
 ) {
     val activity = androidx.activity.compose.LocalActivity.current
     LaunchedEffect(Unit) {
@@ -105,6 +112,7 @@ fun TVApp(
 
     val hazeState: HazeState = rememberHazeState()
     var sidebarExpanded by remember { mutableStateOf(false) }
+    var lastInteraction by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
     BackHandler(enabled = sidebarExpanded || currentScreen == Screen.Home) {
         if (sidebarExpanded) {
@@ -114,10 +122,17 @@ fun TVApp(
         }
     }
 
+    CompositionLocalProvider(LocalPlayerViewModel provides playerViewModel) {
     Box(
         modifier = modifier
             .fillMaxSize()
             .focusable()
+            .onPreviewKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown) {
+                    lastInteraction = System.currentTimeMillis()
+                }
+                false
+            }
             .onKeyEvent { event ->
                 if (event.type == KeyEventType.KeyDown &&
                     event.key == Key.DirectionLeft &&
@@ -285,6 +300,17 @@ fun TVApp(
                 onSelectProfile = { profileViewModel.selectProfile(it) },
                 onVerifyPin = { profile, code -> profileViewModel.verifyPin(profile, code) },
                 modifier = Modifier.fillMaxHeight()
+            )
+        }
+
+            InAppVideoPipOverlay(
+                onNavigate = { navController.navigate(it.route) },
+                currentScreen = currentScreen
+            )
+
+            OledBurnInSaver(
+                lastInteractionMs = lastInteraction,
+                onWake = { lastInteraction = System.currentTimeMillis() }
             )
         }
     }

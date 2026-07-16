@@ -204,6 +204,9 @@ class AdminHttpServer @Inject constructor(
                     "useCloudflareBypass" to useCloudflareBypass,
                     "cloudflareWorkerUrl" to cloudflareWorkerUrl,
                     "cloudflareAuthToken" to cloudflareAuthToken,
+                    "homeAssistantUrl" to homeAssistantUrl,
+                    "homeAssistantToken" to homeAssistantToken,
+                    "homeAssistantWebhookEnabled" to homeAssistantWebhookEnabled,
                     "lastProfileSyncAt" to lastProfileSyncAt,
                     "lastProfileSyncStatus" to lastProfileSyncStatus,
                     "lastProfileSyncError" to lastProfileSyncError.map { it ?: "" },
@@ -279,6 +282,9 @@ class AdminHttpServer @Inject constructor(
             params["useCloudflareBypass"]?.toBooleanStrictOrNull()?.let { apiConfigRepository.setUseCloudflareBypass(it) }
             params["cloudflareWorkerUrl"]?.let { apiConfigRepository.setCloudflareWorkerUrl(it) }
             params["cloudflareAuthToken"]?.let { apiConfigRepository.setCloudflareAuthToken(it) }
+            params["homeAssistantUrl"]?.let { apiConfigRepository.setHomeAssistantUrl(it) }
+            params["homeAssistantToken"]?.let { apiConfigRepository.setHomeAssistantToken(it) }
+            params["homeAssistantWebhookEnabled"]?.toBooleanStrictOrNull()?.let { apiConfigRepository.setHomeAssistantWebhookEnabled(it) }
             pushAddonSettingsIfKodiConfigured()
         }
         writeResponse(out, 200, "OK", "text/plain", "OK", corsOrigin)
@@ -459,7 +465,8 @@ class AdminHttpServer @Inject constructor(
             "embyToken",
             "subsonicPassword",
             "mdbListApiKey",
-            "cloudflareAuthToken"
+            "cloudflareAuthToken",
+            "homeAssistantToken"
         )
 
         private val ADMIN_HTML = """
@@ -579,6 +586,13 @@ label .status-dot { margin-left: 0.5rem; }
   <input type="text" name="cloudflareWorkerUrl" placeholder="https://your-worker.workers.dev">
   <label>Cloudflare Worker Auth Token</label>
   <input type="password" name="cloudflareAuthToken" placeholder="Hub token from worker secret">
+  <h3>Smart Home Assistant</h3>
+  <label>Send playback webhooks (true/false)</label>
+  <input type="text" name="homeAssistantWebhookEnabled" placeholder="true">
+  <label>Home Assistant URL</label>
+  <input type="text" name="homeAssistantUrl" placeholder="https://homeassistant.local:8123">
+  <label>Home Assistant Webhook ID / Token</label>
+  <input type="password" name="homeAssistantToken" placeholder="Webhook ID from Home Assistant automation">
   <button type="submit">Save Configuration</button>
   <div id="status" class="status"></div>
 </form>

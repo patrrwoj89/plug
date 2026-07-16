@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
                 if (showSplash) {
                     SplashRoute(onSplashFinished = { showSplash = false })
                 } else {
-                    TVApp()
+                    TVApp(playerViewModel = playerViewModel)
                 }
             }
         }
@@ -70,5 +70,10 @@ class MainActivity : ComponentActivity() {
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         playerViewModel.setPipMode(isInPictureInPictureMode)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        playerViewModel.videoPipManager.stopAndRelease()
     }
 }
