@@ -30,6 +30,14 @@ object PinSecurity {
         value != null &&
             (value.startsWith("$PBKDF2_PREFIX:") || value.startsWith("$LEGACY_SHA256_PREFIX:"))
 
+    /**
+     * True when [value] holds a non-empty PIN that is not yet in the current PBKDF2 format
+     * (i.e. a legacy plaintext or legacy salted-SHA-256 value) and should be re-hashed after
+     * the next successful verification.
+     */
+    fun needsUpgrade(value: String?): Boolean =
+        !value.isNullOrBlank() && !value.startsWith("$PBKDF2_PREFIX:")
+
     fun hash(pin: String): String {
         val salt = ByteArray(SALT_BYTES).also { SecureRandom().nextBytes(it) }
         return "$PBKDF2_PREFIX:$ITERATIONS:${salt.toHex()}:${pbkdf2(pin, salt, ITERATIONS).toHex()}"

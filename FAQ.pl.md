@@ -160,7 +160,7 @@ Po pierwszej instalacji automatycznie tworzy się profil domyślny o nazwie „D
 
 ### Czy profile są chronione PIN-em?
 
-Każdy profil może mieć `isPinLocked = true` i 4-cyfrowy `pinCode`. Po wybraniu zablokowanego profilu wyświetlany jest `PinScreen`. Weryfikacja PIN-u odbywa się przez `ProfileRepository.verifyPin()` i jest obecnie per-profil (globalny PIN dla Settings/Admin nadal istnieje w `PinRepository`). `pinCode` nigdy nie jest przechowywany jawnie: przed zapisem do Room jest haszowany solonym, wysokoiteracyjnym PBKDF2-HMAC-SHA256 (`PinSecurity`), więc lokalna baza danych oraz chmurowe kopie ZIP w Cloudflare KV generowane przez `CloudProfileSyncWorker` zawierają wyłącznie skróty. Profile zapisane przed tą zmianą działają dalej dzięki przezroczystemu fallbackowi jawnego PIN-u w `verifyPin()`.
+Każdy profil może mieć `isPinLocked = true` i 4-cyfrowy `pinCode`. Po wybraniu zablokowanego profilu wyświetlany jest `PinScreen`. Weryfikacja PIN-u odbywa się przez `ProfileRepository.verifyPin()` i jest obecnie per-profil (globalny PIN dla Settings/Admin nadal istnieje w `PinRepository`). `pinCode` nigdy nie jest przechowywany jawnie: przed zapisem do Room jest haszowany solonym, wysokoiteracyjnym PBKDF2-HMAC-SHA256 (`PinSecurity`), więc lokalna baza danych oraz chmurowe kopie ZIP w Cloudflare KV generowane przez `CloudProfileSyncWorker` zawierają wyłącznie skróty. Profile zapisane przed tą zmianą działają dalej dzięki przezroczystemu fallbackowi jawnego PIN-u w `verifyPin()`, a ich PIN jest automatycznie podnoszony do skrótu PBKDF2 przy następnym poprawnym wpisaniu.
 
 ### Jak działa Kontrola Rodzicielska?
 

@@ -127,7 +127,21 @@ class ProfileRepository @Inject constructor(
     }
 
     fun verifyPin(profile: ProfileEntity, code: String): Boolean {
-        return PinSecurity.verify(code, profile.pinCode)
+        val verified = PinSecurity.verify(code, profile.pinCode)
+        if (verified && PinSecurity.needsUpgrade(profile.pinCode)) {
+            scope.launch { upgradePinHash(profile.id, code) }
+        }
+        return verified
+    }
+
+    private suspend fun upgradePinHash(profileId: String, rawPin: String) = withContext(Dispatchers.IO) {
+        val current = profileDao.getById(profileId) ?: return@withContext
+        if (!PinSecurity.needsUpgrade(current.pinCode)) return@withContext
+        val upgraded = current.copy(pinCode = PinSecurity.hash(rawPin))
+        profileDao.upsert(upgraded)
+        if (_currentProfile.value?.id == profileId) {
+            _currentProfile.value = upgraded
+        }
     }
 
     companion object {

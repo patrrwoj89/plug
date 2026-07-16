@@ -7,7 +7,7 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 ### Bezpieczeństwo
 
 #### Prywatność kodu PIN profilu domownika (`ProfileRepository`, `ProfileEntity`, `PinSecurity`)
-- Kody PIN profili są teraz haszowane solonym, wysokoiteracyjnym PBKDF2-HMAC-SHA256 (`PinSecurity`) przed zapisem do bazy Room, dzięki czemu ani lokalna baza danych, ani chmurowe kopie ZIP w Cloudflare KV generowane przez `CloudProfileSyncWorker` nie zawierają PIN-ów w postaci jawnej. Celowo wolny KDF sprawia, że offline'owy brute force małej, 4-cyfrowej przestrzeni PIN jest kosztowny nawet po wycieku kopii. Weryfikacja PIN, starsze skróty solonego SHA-256 oraz starsze profile z jawnym PIN-em działają dalej dzięki przezroczystemu fallbackowi.
+- Kody PIN profili są teraz haszowane solonym, wysokoiteracyjnym PBKDF2-HMAC-SHA256 (`PinSecurity`) przed zapisem do bazy Room, dzięki czemu ani lokalna baza danych, ani chmurowe kopie ZIP w Cloudflare KV generowane przez `CloudProfileSyncWorker` nie zawierają PIN-ów w postaci jawnej. Celowo wolny KDF sprawia, że offline'owy brute force małej, 4-cyfrowej przestrzeni PIN jest kosztowny nawet po wycieku kopii. Weryfikacja PIN, starsze skróty solonego SHA-256 oraz starsze profile z jawnym PIN-em działają dalej dzięki przezroczystemu fallbackowi, a każda starsza wartość jest automatycznie re-haszowana do formatu PBKDF2 przy następnej udanej weryfikacji PIN, dzięki czemu jawne PIN-y przestają trafiać do kopii zapasowych.
 
 ### Zmieniono
 
