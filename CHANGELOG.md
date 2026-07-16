@@ -56,6 +56,16 @@ All notable changes to Polish Media Hub are documented in this file.
   - No Cloudflare auth token, worker URL or crash report metadata is logged to Logcat in release builds (`BuildConfig.DEBUG == false`).
   - Added `CrashReportSanitizerTest` (JUnit) verifying masking of API keys, query parameters, JSON values, `Authorization` headers and source-specific credentials.
 
+#### Developer Console / Plugin Sandbox
+- **Live JS / JSON / Python sandbox in the wireless admin panel** (`SandboxEngine`, `SandboxResult`, `AdminHttpServer`, `KodiMediaSource`, `QuickJsEngine`)
+  - New protected endpoint `POST /api/plugin/test?token=...&format=js|json|python`.
+  - **JS mode**: evaluates QuickJS snippets in `SandboxEngine` using `QuickJsEngine`; `httpFetch` / `httpFetchText` globals are available, and `QuickJsEngine.evaluateWithError` surfaces syntax/runtime errors to the UI.
+  - **JSON mode**: parses the pasted payload with `kotlinx.serialization.json.Json.parseToJsonElement` and tries to map it to the production `MediaItem` model, returning `MediaItem structure valid` with a compact preview or a validation error.
+  - **Python mode**: base64-encodes the pasted `.py` script, sends it to the configured Kodi instance via `Files.WriteFile` into `special://home/addons/plugin.video.fanfilm/test_scraper.py`, then invokes `XBMC.RunScript` and returns the JSON-RPC result. Python is executed by Kodi, not on the Android TV.
+  - Wireless admin page now has a **Developer Console** section with a CodeMirror editor (loaded from cdnjs) supporting line numbers, syntax highlighting and mode switching for JS/JSON/Python, plus a dynamic action button label (`Testuj w QuickJS`, `Waliduj strukturę JSON`, `Uruchom skrypt i debuguj w Kodi`).
+  - `SandboxEngineTest` (JUnit) verifies JSON validation (valid, malformed, missing required fields) and Python RPC orchestration (success, `Files.WriteFile` error, empty `XBMC.RunScript` response).
+  - ProGuard keep rules added for `com.polishmediahub.app.data.admin.**` and `com.polishmediahub.app.data.plugin.**`.
+
 #### Search & live TV
 - **Voice Search** (`SearchScreen`, `SearchViewModel`)
   - D-Pad Mic `TvIconButton` next to the search field.

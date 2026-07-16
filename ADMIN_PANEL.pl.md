@@ -200,6 +200,16 @@ Manifest lub wpis wtyczki może zawierać także pole `script` zamiast `scriptUr
 
 Szczegóły API JavaScript oraz ładowania binarnego znajdziesz w [PLUGIN_GUIDE.md](PLUGIN_GUIDE.md) / [PLUGIN_GUIDE.pl.md](PLUGIN_GUIDE.pl.md).
 
+## Konsola deweloperska (POST `/api/plugin/test`)
+
+Panel admina zawiera żywą piaskownicę do testowania fragmentów QuickJS, payloadów JSON `MediaItem` oraz skryptów Pythona wysyłanych do Kodi — bez dotykania UI telewizora.
+
+- Wybierz **JavaScript / QuickJS**, aby wykonać skrypt tym samym silnikiem `QuickJsEngine`, który obsługuje wtyczki. Edytor (CodeMirror załadowany z cdnjs) oferuje numery linii i kolorowanie składni. Dostępne są globalne funkcje `httpFetch(url)` oraz `httpFetchText(url)`.
+- Wybierz **JSON / MediaItem validator**, aby wkleić obiekt JSON `MediaItem`. Serwer parsuje go za pomocą `kotlinx.serialization` i zwraca informację, czy da się zamapować na produkcyjny model `MediaItem`; przy sukcesie zwraca skrócony podgląd pól.
+- Wybierz **Python / Kodi RPC**, aby wkleić skrypt `.py`. Aplikacja na TV koduje skrypt base64 i wysyła go do Kodi metodą `Files.WriteFile` do katalogu `special://home/addons/plugin.video.fanfilm/test_scraper.py`, a następnie wywołuje `XBMC.RunScript` i zwraca wynik JSON-RPC. Python **nie** jest uruchamiany na telewizorze — wykonuje go instancja Kodi, która zwraca odpowiedź RPC.
+
+Ten sam token parowania chroni endpoint `/api/plugin/test` jak pozostałe `/api/*`. Tymczasowe bufory i strumienie odpowiedzi HTTP są zamykane w blokach `finally`; treści skryptów ani dane wrażliwe nie są logowane w buildach release.
+
 ## Reaktywne aktualizacje
 
 `ApiConfigRepository` i `PluginRepository` eksponują `Flow`. Po zapisaniu konfiguracji z panelu web:

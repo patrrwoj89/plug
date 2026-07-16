@@ -56,6 +56,16 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
   - Token autoryzacyjny Cloudflare, adres Workera ani metadane raportu nie są logowane do Logcat w buildach release (`BuildConfig.DEBUG == false`).
   - Dodano test `CrashReportSanitizerTest` (JUnit) weryfikujący maskowanie kluczy API, parametrów zapytania, wartości JSON, nagłówków `Authorization` i danych źródłowych.
 
+#### Konsola deweloperska / Piaskownica wtyczek
+- **Żywa piaskownica JS / JSON / Python w bezprzewodowym panelu admina** (`SandboxEngine`, `SandboxResult`, `AdminHttpServer`, `KodiMediaSource`, `QuickJsEngine`)
+  - Nowy chroniony endpoint `POST /api/plugin/test?token=...&format=js|json|python`.
+  - **Tryb JS**: wykonuje fragmenty QuickJS w `SandboxEngine` za pomocą `QuickJsEngine`; dostępne są globalne funkcje `httpFetch` / `httpFetchText`, a `QuickJsEngine.evaluateWithError` zwraca błędy składni/runtime do UI.
+  - **Tryb JSON**: parsuje wklejony payload przez `kotlinx.serialization.json.Json.parseToJsonElement` i próbuje zamapować go na produkcyjny model `MediaItem`, zwracając `MediaItem structure valid` ze skróconym podglądem lub komunikat błędu walidacji.
+  - **Tryb Python**: koduje wklejony skrypt `.py` w base64, wysyła do skonfigurowanej instancji Kodi przez `Files.WriteFile` do `special://home/addons/plugin.video.fanfilm/test_scraper.py`, następnie wywołuje `XBMC.RunScript` i zwraca wynik JSON-RPC. Python jest wykonywany przez Kodi, a nie przez Android TV.
+  - Strona admina zawiera sekcję **Developer Console** z edytorem CodeMirror (załadowanym z cdnjs): numery linii, kolorowanie składni, przełączanie trybów JS/JSON/Python oraz dynamiczny przycisk akcji (`Testuj w QuickJS`, `Waliduj strukturę JSON`, `Uruchom skrypt i debuguj w Kodi`).
+  - `SandboxEngineTest` (JUnit) weryfikuje walidację JSON (poprawny, uszkodzony, brak wymaganych pól) oraz orkiestrację RPC Pythona (sukces, błąd `Files.WriteFile`, pusta odpowiedź `XBMC.RunScript`).
+  - Dodano reguły ProGuard `-keep` dla `com.polishmediahub.app.data.admin.**` oraz `com.polishmediahub.app.data.plugin.**`.
+
 #### Wyszukiwanie i TV na żywo
 - **Wyszukiwanie głosowe** (`SearchScreen`, `SearchViewModel`)
   - D-Pad przycisk `TvIconButton` z ikoną mikrofonu obok pola wyszukiwania.

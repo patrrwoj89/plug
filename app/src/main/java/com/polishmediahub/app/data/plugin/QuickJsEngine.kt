@@ -27,10 +27,18 @@ class QuickJsEngine @Inject constructor(
     }
 
     fun evaluate(script: String): Any? {
+        return evaluateWithError(script).first
+    }
+
+    /**
+     * Evaluates [script] and returns the result together with an optional error message.
+     * This is useful for sandbox UIs that need to surface syntax/runtime errors.
+     */
+    fun evaluateWithError(script: String): Pair<Any?, String?> {
         return try {
-            context?.evaluate(script, "plugin.js")
+            context?.evaluate(script, "plugin.js") to null
         } catch (e: Exception) {
-            null
+            null to (e.message ?: "JavaScript error")
         }
     }
 

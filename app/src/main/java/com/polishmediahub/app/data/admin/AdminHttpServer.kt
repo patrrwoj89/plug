@@ -9,6 +9,7 @@ import com.polishmediahub.app.data.remote.trakt.TraktSyncWorker
 import com.polishmediahub.app.data.source.KodiMediaSource
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import okhttp3.OkHttpClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -35,8 +36,12 @@ class AdminHttpServer @Inject constructor(
     private val apiConfigRepository: ApiConfigRepository,
     private val settingsRepository: SettingsRepository,
     private val pluginRepository: PluginRepository,
-    private val kodiMediaSource: KodiMediaSource
+    private val kodiMediaSource: KodiMediaSource,
+    private val okHttpClient: OkHttpClient
 ) {
+
+    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+    private val sandboxEngine = SandboxEngine(kodiMediaSource, okHttpClient, json)
 
     private var serverSocket: ServerSocket? = null
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -135,6 +140,7 @@ class AdminHttpServer @Inject constructor(
                     method == "GET" && path == "/admin" -> serveAdminPage(out, allowedOrigin)
                     method == "POST" && path == "/api/config" -> handleConfigPost(body, out, allowedOrigin)
                     method == "POST" && path == "/api/plugin" -> handlePluginPost(body, out, allowedOrigin)
+                    method == "POST" && path == "/api/plugin/test" -> handlePluginTest(query, body, out, allowedOrigin)
                     method == "POST" && path == "/api/trakt/sync" -> handleTraktSync(out, allowedOrigin)
                     method == "GET" && path == "/api/config" -> serveConfig(out, allowedOrigin)
                     method == "GET" && path == "/api/health" -> serveHealth(out, allowedOrigin)
@@ -301,6 +307,46 @@ class AdminHttpServer @Inject constructor(
         writeResponse(out, 200, "OK", "text/plain", "Trakt sync scheduled", corsOrigin)
     }
 
+    private fun handlePluginTest(
+        query: Map<String, String>,
+        body: String,
+        out: java.io.OutputStream,
+        corsOrigin: String?
+    ) {
+        val format = query["format"]?.lowercase(Locale.getDefault()) ?: "js"
+        val params = parseForm(body)
+        val code = params["code"]?.ifBlank { null } ?: body
+        if (code.isBlank()) {
+            writeResponse(
+                out,
+                400,
+                "Bad Request",
+                "application/json",
+                SandboxResult.error("Missing code").toJson(json),
+                corsOrigin
+            )
+            return
+        }
+
+        val result = runBlocking(Dispatchers.IO) {
+            try {
+                when (format) {
+                    "js" -> sandboxEngine.testJs(code)
+                    "json" -> sandboxEngine.testJson(code)
+                    "python" -> {
+                        val kodiUrl = apiConfigRepository.kodiUrl.first()
+                        sandboxEngine.testPython(code, kodiUrl)
+                    }
+                    else -> SandboxResult.error("Unsupported format: $format. Use js, json or python.")
+                }
+            } catch (e: Exception) {
+                SandboxResult.error(e.message ?: "Sandbox error")
+            }
+        }
+
+        writeResponse(out, 200, "OK", "application/json", result.toJson(json), corsOrigin)
+    }
+
     private fun handlePluginPost(body: String, out: java.io.OutputStream, corsOrigin: String?) {
         val params = parseForm(body)
         val url = params["url"]
@@ -415,7 +461,12 @@ button:hover { background: #29b6f6; }
 .status-dot.offline { background: #ff4d4d; }
 .status-dot.unconfigured { background: #808080; }
 label .status-dot { margin-left: 0.5rem; }
+.CodeMirror { border: 1px solid #444; border-radius: 4px; background: #222; color: #eee; min-height: 160px; font-family: monospace; font-size: 0.9rem; }
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
 </head>
 <body>
 <h1>Polish Media Hub - Admin</h1>
@@ -514,6 +565,19 @@ label .status-dot { margin-left: 0.5rem; }
   <input type="text" name="url" placeholder="https://example.com/plugin.json">
   <button type="submit">Add Plugin</button>
 </form>
+<h2>Developer Console</h2>
+<form id="sandboxForm">
+  <label>Format</label>
+  <div style="display:flex; gap:1rem; flex-wrap:wrap; margin:0.5rem 0;">
+    <label><input type="radio" name="sandboxFormat" value="js" checked> JavaScript / QuickJS</label>
+    <label><input type="radio" name="sandboxFormat" value="json"> JSON / MediaItem validator</label>
+    <label><input type="radio" name="sandboxFormat" value="python"> Python / Kodi RPC</label>
+  </div>
+  <label>Code</label>
+  <textarea id="sandboxCode" name="code" placeholder="// JS: use httpFetch('url') or write QuickJS code&#10;// JSON: paste a MediaItem JSON object&#10;// Python: paste a Kodi test_scraper.py script"></textarea>
+  <button type="submit" id="sandboxBtn">Testuj w QuickJS ⚡</button>
+  <pre id="sandboxOutput" class="status" style="display:none; white-space:pre-wrap; font-family:monospace; background:#222;"></pre>
+</form>
 <script>
 const API_TOKEN = new URLSearchParams(window.location.search).get('token') || '';
 function api(path) { return path + '?token=' + encodeURIComponent(API_TOKEN); }
@@ -546,6 +610,50 @@ document.getElementById('pluginForm').addEventListener('submit', async function(
     await fetch(api('/api/plugin'), { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params });
     alert('Plugin added');
   } catch (err) { alert(err.message); }
+});
+let sandboxEditor = CodeMirror.fromTextArea(document.getElementById('sandboxCode'), {
+  lineNumbers: true,
+  mode: 'javascript',
+  theme: 'default',
+  tabSize: 2
+});
+function setSandboxEditorMode(format) {
+  if (format === 'python') sandboxEditor.setOption('mode', 'python');
+  else if (format === 'json') sandboxEditor.setOption('mode', { name: 'javascript', json: true });
+  else sandboxEditor.setOption('mode', 'javascript');
+}
+function updateSandboxButtonLabel() {
+  const format = document.querySelector('input[name="sandboxFormat"]:checked').value;
+  const btn = document.getElementById('sandboxBtn');
+  if (format === 'js') { btn.textContent = 'Testuj w QuickJS ⚡'; }
+  else if (format === 'json') { btn.textContent = 'Waliduj strukturę JSON 🔍'; }
+  else { btn.textContent = 'Uruchom skrypt i debuguj w Kodi 🐍'; }
+  setSandboxEditorMode(format);
+}
+document.querySelectorAll('input[name="sandboxFormat"]').forEach(r => r.addEventListener('change', updateSandboxButtonLabel));
+document.getElementById('sandboxForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const format = document.querySelector('input[name="sandboxFormat"]:checked').value;
+  const code = sandboxEditor.getValue();
+  const out = document.getElementById('sandboxOutput');
+  out.style.display = 'block';
+  out.className = 'status';
+  out.textContent = 'Running...';
+  try {
+    const params = new URLSearchParams();
+    params.append('code', code);
+    const res = await fetch(api('/api/plugin/test') + '&format=' + encodeURIComponent(format), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString()
+    });
+    const result = await res.json();
+    out.textContent = JSON.stringify(result, null, 2);
+    out.className = 'status ' + (result.success ? 'ok' : 'err');
+  } catch (err) {
+    out.textContent = err.message;
+    out.className = 'status err';
+  }
 });
 async function loadEpgStatus() {
   try {
@@ -631,6 +739,7 @@ async function loadHealth() {
   } catch (e) { console.error(e); }
 }
 document.getElementById('traktSyncBtn').addEventListener('click', syncTrakt);
+updateSandboxButtonLabel();
 loadConfig();
 loadHealth();
 loadEpgStatus();

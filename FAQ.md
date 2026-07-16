@@ -71,6 +71,10 @@ See [ADMIN_PANEL.md](ADMIN_PANEL.md) for detailed endpoint descriptions and JSON
 
 The app runs a background **Source Health-Check** every 4 hours. It sends a lightweight request to each configured source (Kodi, Jellyfin, Plex, Emby, Subsonic, IPTV/EPG URLs, Stremio, Cloudstream, web sources and the Deezer proxy) with a 3-second timeout. Results are shown as colored dots on the **Settings → Source Health** screen and in the wireless admin panel: **green** = online, **red** = offline/error, **gray** = not configured. You can also tap **Check source health now** in Settings to trigger an immediate check.
 
+### Can I test plugins or scripts from the admin panel?
+
+Yes. The admin page has a **Developer Console** section with a CodeMirror editor. Choose **JavaScript / QuickJS**, **JSON / MediaItem validator** or **Python / Kodi RPC** and click the action button. JS snippets run in the app's `QuickJsEngine` (with `httpFetch`/`httpFetchText` globals); JSON is validated against the production `MediaItem` model; Python is base64-encoded, written to the configured Kodi instance via `Files.WriteFile` into `plugin.video.fanfilm/test_scraper.py` and executed with `XBMC.RunScript`, returning the JSON-RPC result in the output panel.
+
 ## MDBList
 
 ### How do I add MDBList?

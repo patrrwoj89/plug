@@ -200,6 +200,16 @@ A manifest or plugin entry can also contain a raw `script` field instead of `scr
 
 See [PLUGIN_GUIDE.md](PLUGIN_GUIDE.md) for the JavaScript API and binary plugin details.
 
+## Developer Console (POST `/api/plugin/test`)
+
+The admin page includes a live sandbox for testing QuickJS snippets, JSON `MediaItem` payloads and Python scripts against Kodi without touching the TV UI.
+
+- Select **JavaScript / QuickJS** to evaluate a script using the same `QuickJsEngine` that runs plugins. The code editor (CodeMirror loaded from cdnjs) provides line numbers and syntax highlighting. `httpFetch(url)` and `httpFetchText(url)` globals are available.
+- Select **JSON / MediaItem validator** to paste a `MediaItem` JSON object. The server parses it with `kotlinx.serialization` and reports whether it maps to the production `MediaItem` model, returning a compact preview on success.
+- Select **Python / Kodi RPC** to paste a `.py` script. The TV app base64-encodes the script and sends it to Kodi via `Files.WriteFile` into `special://home/addons/plugin.video.fanfilm/test_scraper.py`, then invokes `XBMC.RunScript` and returns the JSON-RPC result. Python is **not** executed on the TV; the Kodi instance runs the script and returns the RPC response.
+
+The same pairing token protects `/api/plugin/test` as the other `/api/*` endpoints. Any temporary buffers and HTTP response streams are closed in `finally` blocks; no script contents or credentials are logged in release builds.
+
 ## Reactive updates
 
 `ApiConfigRepository` and `PluginRepository` expose `Flow` values. As soon as you save config from the web panel:

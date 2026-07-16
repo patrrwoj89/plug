@@ -166,6 +166,41 @@ class KodiMediaSource @Inject constructor(
         null
     }
 
+    /**
+     * Writes [content] to [path] on the Kodi filesystem using the JSON-RPC Files.WriteFile method.
+     * Content is sent base64-encoded; the caller should ensure [path] is inside a writable addon
+     * directory (e.g. `special://home/addons/plugin.video.fanfilm/`).
+     */
+    suspend fun writeFile(path: String, content: String): String = try {
+        val encoded = Base64.encodeToString(content.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+        rpc(
+            "Files.WriteFile",
+            buildJsonObject {
+                put("path", path)
+                put("data", encoded)
+                put("encoding", "base64")
+            }
+        )
+    } catch (_: Exception) {
+        ""
+    }
+
+    /**
+     * Executes a Python script already present on the Kodi filesystem via the JSON-RPC
+     * XBMC.RunScript method. [path] should be a `special://` or absolute path to the script.
+     */
+    suspend fun runScript(path: String): String = try {
+        rpc(
+            "XBMC.RunScript",
+            buildJsonObject {
+                put("script", path)
+                put("wait", true)
+            }
+        )
+    } catch (_: Exception) {
+        ""
+    }
+
     suspend fun setAddonSetting(addonId: String, settingId: String, value: String): Boolean = try {
         val response = rpc(
             "Settings.SetSettingValue",

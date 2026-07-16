@@ -33,6 +33,8 @@
 -keep class com.polishmediahub.app.data.remote.health.** { *; }
 -keep class com.polishmediahub.app.data.remote.cache.** { *; }
 -keep class com.polishmediahub.app.data.source.** { *; }
+-keep class com.polishmediahub.app.data.admin.** { *; }
+-keep class com.polishmediahub.app.data.plugin.** { *; }
 -keep class com.polishmediahub.app.model.** { *; }
 -keep class retrofit2.** { *; }
 -keepclassmembers class retrofit2.** { *; }

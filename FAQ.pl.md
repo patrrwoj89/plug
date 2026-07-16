@@ -71,6 +71,10 @@ Szczegółowe opisy endpointów i przykłady JSON znajdziesz w [ADMIN_PANEL.md](
 
 Aplikacja co 4 godziny uruchamia w tle **Source Health-Check**. Wysyła lekkie żądanie do każdego skonfigurowanego źródła (Kodi, Jellyfin, Plex, Emby, Subsonic, URL-e IPTV/EPG, Stremio, Cloudstream, źródła web oraz proxy Deezer) z timeoutem 3 sekund. Wyniki wyświetlane są jako kolorowe kropki w ekranie **Ustawienia → Status źródeł** oraz w bezprzewodowym panelu admina: **zielony** = online, **czerwony** = offline/błąd, **szary** = nieskonfigurowane. Możesz też nacisnąć **Sprawdź stan źródeł teraz**, aby wymusić natychmiastowe sprawdzenie.
 
+### Czy mogę testować wtyczki lub skrypty z panelu admina?
+
+Tak. Strona admina zawiera sekcję **Developer Console** z edytorem CodeMirror. Wybierz **JavaScript / QuickJS**, **JSON / MediaItem validator** lub **Python / Kodi RPC** i kliknij przycisk akcji. Fragmenty JS wykonują się w silniku `QuickJsEngine` aplikacji (z globalnymi `httpFetch`/`httpFetchText`); JSON jest walidowany pod kątem produkcyjnego modelu `MediaItem`; Python jest kodowany base64 i wysyłany do skonfigurowanej instancji Kodi przez `Files.WriteFile` do `plugin.video.fanfilm/test_scraper.py`, a następnie wykonywany przez `XBMC.RunScript` — wynik JSON-RPC pojawia się w panelu wyników.
+
 ## MDBList
 
 ### Jak dodać MDBList?
