@@ -79,6 +79,45 @@ class SettingsViewModel @Inject constructor(
     val dialogueBoostGainmB: StateFlow<Int> = settingsRepository.dialogueBoostGainmB
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = 1000)
 
+    val amoledMode: StateFlow<Boolean> = settingsRepository.amoledMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = false)
+
+    val pureBlackSurfaces: StateFlow<Boolean> = settingsRepository.pureBlackSurfaces
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = false)
+
+    val tunneledPlaybackEnabled: StateFlow<Boolean> = settingsRepository.tunneledPlaybackEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = false)
+
+    val exoplayerParallelConnections: StateFlow<Int> = settingsRepository.exoplayerParallelConnections
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = 4)
+
+    val exoplayerMinBufferMs: StateFlow<Int> = settingsRepository.exoplayerMinBufferMs
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = 5_000)
+
+    val exoplayerMaxBufferMs: StateFlow<Int> = settingsRepository.exoplayerMaxBufferMs
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = 50_000)
+
+    val exoplayerBufferForPlaybackMs: StateFlow<Int> = settingsRepository.exoplayerBufferForPlaybackMs
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = 2_500)
+
+    val exoplayerBufferForPlaybackAfterRebufferMs: StateFlow<Int> = settingsRepository.exoplayerBufferForPlaybackAfterRebufferMs
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = 5_000)
+
+    val exoplayerBackBufferMs: StateFlow<Int> = settingsRepository.exoplayerBackBufferMs
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = 0)
+
+    val exoplayerInitialAllocationCount: StateFlow<Int> = settingsRepository.exoplayerInitialAllocationCount
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = 0)
+
+    val exoplayerTargetBufferBytes: StateFlow<Int> = settingsRepository.exoplayerTargetBufferBytes
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = -1)
+
+    val streamRules: StateFlow<String> = settingsRepository.streamRules
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = "")
+
+    val bingeGroupingEnabled: StateFlow<Boolean> = settingsRepository.bingeGroupingEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = true)
+
     val isFirstLaunch: StateFlow<Boolean?> = settingsRepository.isFirstLaunch
         .stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = null)
 
@@ -164,6 +203,19 @@ class SettingsViewModel @Inject constructor(
     fun setPreferredAudioType(value: String) = viewModelScope.launch { settingsRepository.setPreferredAudioType(value) }
     fun setNightModeEnabled(value: Boolean) = viewModelScope.launch { settingsRepository.setNightModeEnabled(value) }
     fun setDialogueBoostGainmB(value: Int) = viewModelScope.launch { settingsRepository.setDialogueBoostGainmB(value) }
+    fun setAmoledMode(value: Boolean) = viewModelScope.launch { settingsRepository.setAmoledMode(value) }
+    fun setPureBlackSurfaces(value: Boolean) = viewModelScope.launch { settingsRepository.setPureBlackSurfaces(value) }
+    fun setTunneledPlaybackEnabled(value: Boolean) = viewModelScope.launch { settingsRepository.setTunneledPlaybackEnabled(value) }
+    fun setExoplayerParallelConnections(value: Int) = viewModelScope.launch { settingsRepository.setExoplayerParallelConnections(value) }
+    fun setExoplayerMinBufferMs(value: Int) = viewModelScope.launch { settingsRepository.setExoplayerMinBufferMs(value) }
+    fun setExoplayerMaxBufferMs(value: Int) = viewModelScope.launch { settingsRepository.setExoplayerMaxBufferMs(value) }
+    fun setExoplayerBufferForPlaybackMs(value: Int) = viewModelScope.launch { settingsRepository.setExoplayerBufferForPlaybackMs(value) }
+    fun setExoplayerBufferForPlaybackAfterRebufferMs(value: Int) = viewModelScope.launch { settingsRepository.setExoplayerBufferForPlaybackAfterRebufferMs(value) }
+    fun setExoplayerBackBufferMs(value: Int) = viewModelScope.launch { settingsRepository.setExoplayerBackBufferMs(value) }
+    fun setExoplayerInitialAllocationCount(value: Int) = viewModelScope.launch { settingsRepository.setExoplayerInitialAllocationCount(value) }
+    fun setExoplayerTargetBufferBytes(value: Int) = viewModelScope.launch { settingsRepository.setExoplayerTargetBufferBytes(value) }
+    fun setStreamRules(value: String) = viewModelScope.launch { settingsRepository.setStreamRules(value) }
+    fun setBingeGroupingEnabled(value: Boolean) = viewModelScope.launch { settingsRepository.setBingeGroupingEnabled(value) }
 
     fun setMdbListApiKey(value: String) = viewModelScope.launch { apiConfigRepository.setMdbListApiKey(value) }
     fun setTraktClientId(value: String) = viewModelScope.launch { apiConfigRepository.setTraktClientId(value) }

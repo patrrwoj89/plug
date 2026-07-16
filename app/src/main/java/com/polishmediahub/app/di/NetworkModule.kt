@@ -4,6 +4,7 @@ import android.content.Context
 import coil.ImageLoader
 import coil.imageLoader
 import com.polishmediahub.app.BuildConfig
+import com.polishmediahub.app.data.SettingsRepository
 import com.polishmediahub.app.data.remote.RetryInterceptor
 import com.polishmediahub.app.data.remote.debrid.DebridAuthenticator
 import com.polishmediahub.app.data.source.CloudflareBypassInterceptor
@@ -24,6 +25,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import okhttp3.Cache
@@ -31,6 +33,8 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import kotlinx.coroutines.runBlocking
+import okhttp3.Dispatcher
 import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Named
@@ -54,12 +58,21 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(
         @ApplicationContext context: Context,
+        settingsRepository: SettingsRepository,
         debridAuthenticator: DebridAuthenticator,
         cookieJar: MemoryCookieJar,
         cloudflareBypassInterceptor: CloudflareBypassInterceptor
     ): OkHttpClient {
         val cacheDir = File(context.cacheDir, "http_cache").apply { mkdirs() }
+        val parallelConnections = runBlocking {
+            settingsRepository.exoplayerParallelConnections.first().coerceIn(1, 16)
+        }
+        val dispatcher = Dispatcher().apply {
+            maxRequests = parallelConnections
+            maxRequestsPerHost = parallelConnections
+        }
         return OkHttpClient.Builder()
+            .dispatcher(dispatcher)
             .cache(Cache(cacheDir, 50 * 1024 * 1024))
             .cookieJar(cookieJar)
             .authenticator(debridAuthenticator)

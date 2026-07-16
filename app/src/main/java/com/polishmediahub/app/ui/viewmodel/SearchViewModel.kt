@@ -4,17 +4,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.polishmediahub.app.data.MediaRepository
 import com.polishmediahub.app.data.SearchHistoryRepository
+import com.polishmediahub.app.data.source.LevenshteinEngine
 import com.polishmediahub.app.model.MediaItem
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -38,7 +42,8 @@ class SearchViewModel @Inject constructor(
 
         @OptIn(FlowPreview::class)
         _query
-            .debounce(300)
+            .debounce(300L)
+            .distinctUntilChanged()
             .onEach { query ->
                 if (query.isBlank()) {
                     _uiState.update { it.copy(query = query, results = emptyList(), isLoading = false, error = null) }
@@ -46,8 +51,11 @@ class SearchViewModel @Inject constructor(
                 }
                 _uiState.update { it.copy(query = query, isLoading = true, error = null) }
                 try {
-                    val results = mediaRepository.search(query)
-                    _uiState.update { it.copy(results = results, isLoading = false, error = null) }
+                    val results = withContext(Dispatchers.IO) { mediaRepository.search(query) }
+                    val sorted = withContext(Dispatchers.Default) {
+                        LevenshteinEngine.sort(query, results, LevenshteinEngine.MAX_DISTANCE_THRESHOLD) { it.title }
+                    }
+                    _uiState.update { it.copy(results = sorted, isLoading = false, error = null) }
                 } catch (e: Exception) {
                     _uiState.update { it.copy(results = emptyList(), isLoading = false, error = e.message) }
                 }

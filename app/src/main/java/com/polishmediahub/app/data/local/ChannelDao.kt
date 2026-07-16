@@ -12,6 +12,9 @@ interface ChannelDao {
     @Query("SELECT * FROM iptv_channels ORDER BY COALESCE(channelNumber, '999999'), name")
     fun observeAll(): Flow<List<ChannelEntity>>
 
+    @Query("SELECT * FROM iptv_channels WHERE name LIKE :pattern OR groupTitle LIKE :pattern OR tvgName LIKE :pattern OR tvgId LIKE :pattern ORDER BY name COLLATE NOCASE LIMIT :limit")
+    suspend fun search(pattern: String, limit: Int = 100): List<ChannelEntity>
+
     @Query("SELECT * FROM iptv_channels WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): ChannelEntity?
 

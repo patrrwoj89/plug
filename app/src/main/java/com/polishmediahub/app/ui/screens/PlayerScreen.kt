@@ -87,9 +87,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.TrackGroup
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
-import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManagerProvider
@@ -115,6 +113,9 @@ import com.polishmediahub.app.ui.player.UniversalVlcPlayer
 import com.polishmediahub.app.ui.viewmodel.PlayerViewModel
 import com.polishmediahub.app.ui.player.AudioLevelMonitor
 import com.polishmediahub.app.ui.player.FrameSampler
+import com.polishmediahub.app.ui.player.ExoPlayerTuningConfig
+import com.polishmediahub.app.ui.player.createDefaultTrackSelector
+import com.polishmediahub.app.ui.player.createLoadControl
 import com.polishmediahub.app.data.source.FrameSample
 import kotlinx.coroutines.delay
 import java.util.Locale
@@ -147,6 +148,7 @@ fun PlayerScreen(
     val preferredAudioType by viewModel.preferredAudioType.collectAsStateWithLifecycle()
     val nightModeEnabled by viewModel.nightModeEnabled.collectAsStateWithLifecycle()
     val dialogueBoostGainmB by viewModel.dialogueBoostGainmB.collectAsStateWithLifecycle()
+    val exoPlayerTuningConfig by viewModel.exoPlayerTuningConfig.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val density = LocalDensity.current
@@ -175,7 +177,7 @@ fun PlayerScreen(
         videoPipManager.consumePipRequest()
     }
 
-    val exoPlayer = remember(context, item?.id, videoUrl, reuseExistingPlayer) {
+    val exoPlayer = remember(context, item?.id, videoUrl, reuseExistingPlayer, exoPlayerTuningConfig) {
         if (reuseExistingPlayer) {
             existingPlayer!!.apply { playWhenReady = true }
         } else {
@@ -189,22 +191,8 @@ fun PlayerScreen(
             val mediaSourceFactory = DefaultMediaSourceFactory(context)
                 .setDataSourceFactory(dataSourceFactory)
                 .setDrmSessionManagerProvider(drmSessionManagerProvider)
-            val trackSelector = DefaultTrackSelector(context).apply {
-                parameters = DefaultTrackSelector.Parameters.Builder(context)
-                    .setPreferredAudioLanguage("pl")
-                    .setPreferredTextLanguage("pl")
-                    .setSelectUndeterminedTextLanguage(true)
-                    .build()
-            }
-            val isP2PStream = !videoUrl.isNullOrBlank() &&
-                (videoUrl.contains("127.0.0.1") || videoUrl.contains("localhost", ignoreCase = true))
-            val loadControl = if (isP2PStream) {
-                DefaultLoadControl.Builder()
-                    .setBufferDurationsMs(15_000, 60_000, 2_500, 10_000)
-                    .build()
-            } else {
-                DefaultLoadControl.Builder().build()
-            }
+            val trackSelector = createDefaultTrackSelector(context, exoPlayerTuningConfig)
+            val loadControl = exoPlayerTuningConfig.createLoadControl()
             ExoPlayer.Builder(context)
                 .setMediaSourceFactory(mediaSourceFactory)
                 .setTrackSelector(trackSelector)
@@ -1328,7 +1316,7 @@ private fun Format.trackLabel(): String {
     val base = when (lang) {
         "pl", "pol" -> "Polski"
         "en", "eng", "en-gb", "en-us" -> "English"
-        else -> java.util.Locale(lang).getDisplayLanguage(java.util.Locale.getDefault())
+        else -> java.util.Locale.forLanguageTag(lang).getDisplayLanguage(java.util.Locale.getDefault())
             .replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() }
     }
     val role = when {

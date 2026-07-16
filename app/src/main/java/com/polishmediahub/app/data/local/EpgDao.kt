@@ -20,6 +20,9 @@ interface EpgDao {
     @Query("SELECT DISTINCT channelId, channelName FROM epg_entries WHERE startTime >= :from AND endTime <= :to ORDER BY channelId")
     fun observeDistinctChannels(from: Long, to: Long): Flow<List<EpgChannel>>
 
+    @Query("SELECT * FROM epg_entries WHERE (title LIKE :pattern OR description LIKE :pattern OR channelName LIKE :pattern) AND startTime >= :from AND startTime <= :to ORDER BY startTime LIMIT :limit")
+    suspend fun search(pattern: String, from: Long, to: Long, limit: Int = 100): List<EpgEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(entries: List<EpgEntity>)
 

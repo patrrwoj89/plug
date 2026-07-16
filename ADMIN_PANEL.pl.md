@@ -99,6 +99,19 @@ Wyślij pola formularza odpowiadające kluczom obsługiwanym przez `ApiConfigRep
 | `homeAssistantUrl` | Bazowy adres Home Assistant, np. `https://twoj-dom.local:8123` |
 | `homeAssistantToken` | Token webhooka Home Assistant; maskowany w `GET /api/config` |
 | `homeAssistantWebhookEnabled` | `true` lub `false` — wysyłaj zdarzenia `play`/`pause`/`stop` do Home Assistant |
+| `amoledMode` | `true` lub `false` — wymuś czyste czarne tło `#000000` |
+| `pureBlackSurfaces` | `true` lub `false` — ustaw karty/warstwy surface na czystą czerń w trybie AMOLED |
+| `tunneledPlaybackEnabled` | `true` lub `false` — włącz odtwarzanie tunelowane ExoPlayera dla 4K/HDR |
+| `exoplayerParallelConnections` | Liczba równoległych połączeń HTTP, `1` do `16` (domyślnie `4`) |
+| `exoplayerMinBufferMs` | Minimalny czas buforowania w milisekundach (domyślnie `5000`) |
+| `exoplayerMaxBufferMs` | Maksymalny czas buforowania w milisekundach (domyślnie `50000`) |
+| `exoplayerBufferForPlaybackMs` | Bufor wymagany przed startem odtwarzania (domyślnie `2500`) |
+| `exoplayerBufferForPlaybackAfterRebufferMs` | Bufor wymagany po rebufferze (domyślnie `5000`) |
+| `exoplayerBackBufferMs` | Back buffer dla błyskawicznego cofania, `0` do `120000` (domyślnie `0`) |
+| `exoplayerInitialAllocationCount` | Początkowa liczba segmentów alokatora, `0` do `64` (domyślnie `0`) |
+| `exoplayerTargetBufferBytes` | Docelowy rozmiar bufora w bajtach, `0` dla domyślnego (domyślnie `-1`) |
+| `streamRules` | Łańcuch JSON z konfiguracją filtrów `StreamRules` |
+| `bingeGroupingEnabled` | `true` lub `false` — zapamiętuj wybrany profil źródła dla następnego odcinka |
 | `lastProfileSyncAt` | Tylko do odczytu — znacznik czasu ostatniej synchronizacji profili z chmurą (ms od epoki) |
 | `lastProfileSyncStatus` | Tylko do odczytu — status: `success`, `error` lub pusty |
 | `lastProfileSyncError` | Tylko do odczytu — komunikat błędu z ostatniej nieudanej synchronizacji, jeśli wystąpił |
@@ -153,7 +166,20 @@ Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignoro
   "cloudflareAuthToken": "twoj-hub-token",
   "homeAssistantUrl": "https://twoj-dom.local:8123",
   "homeAssistantToken": "twoj-webhook-token",
-  "homeAssistantWebhookEnabled": "true"
+  "homeAssistantWebhookEnabled": "true",
+  "amoledMode": "false",
+  "pureBlackSurfaces": "false",
+  "tunneledPlaybackEnabled": "false",
+  "exoplayerParallelConnections": "4",
+  "exoplayerMinBufferMs": "5000",
+  "exoplayerMaxBufferMs": "50000",
+  "exoplayerBufferForPlaybackMs": "2500",
+  "exoplayerBufferForPlaybackAfterRebufferMs": "5000",
+  "exoplayerBackBufferMs": "0",
+  "exoplayerInitialAllocationCount": "0",
+  "exoplayerTargetBufferBytes": "-1",
+  "streamRules": "{\"enabled\":true,\"sizeMinMb\":500,\"sizeMaxMb\":51200,\"resolutions\":[\"1080p\",\"4K\"],\"preferredEncoders\":[\"HEVC\"]}",
+  "bingeGroupingEnabled": "true"
 }
 ```
 

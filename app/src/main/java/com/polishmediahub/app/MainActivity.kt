@@ -36,7 +36,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settingsViewModel = hiltViewModel<SettingsViewModel>()
             val darkTheme by settingsViewModel.darkTheme.collectAsStateWithLifecycle()
-            TVHubTheme(darkTheme = darkTheme) {
+            val amoledMode by settingsViewModel.amoledMode.collectAsStateWithLifecycle()
+            val pureBlackSurfaces by settingsViewModel.pureBlackSurfaces.collectAsStateWithLifecycle()
+            TVHubTheme(darkTheme = darkTheme, amoledMode = amoledMode, pureBlackSurfaces = pureBlackSurfaces) {
                 var showSplash by rememberSaveable { mutableStateOf(true) }
                 if (showSplash) {
                     SplashRoute(onSplashFinished = { showSplash = false })

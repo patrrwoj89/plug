@@ -22,6 +22,39 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
   - Niezabezpieczone wywołania `Log` w `PlayerViewModel` i `UniversalVlcPlayer` zostały opakowane przez `if (BuildConfig.DEBUG)`, więc parametry sesji audio i URL-e nie trafią do Logcat w buildach release.
   - Rozszerzono `PlayerViewModelTest` o testy MockK weryfikujące trzy nowe przełączniki szybkich ustawień.
 
+#### Tuning silnika ExoPlayer, reguły streamów, tryb AMOLED i Binge Grouping
+- **Tuning natywnego silnika ExoPlayer** (`ExoPlayerTuningConfig`, `PlayerScreen`, `SettingsScreen`, `NetworkModule`)
+  - `ExoPlayerTuningConfig` grupuje odtwarzanie tunelowane, połączenia równoległe, min/max/back buffer, początkową liczbę alokacji i target buffer size.
+  - `PlayerScreen` buduje `ExoPlayer` z dostrojonym `DefaultLoadControl` (pre-alokowany `DefaultAllocator`) i `DefaultTrackSelector` z `setTunnelingEnabled`.
+  - `NetworkModule` konfiguruje `OkHttpClient.dispatcher.maxRequests` i `maxRequestsPerHost` zgodnie z ustawieniami użytkownika.
+  - Nowe ustawienia w `SettingsScreen` udostępniają wszystkie parametry tuningowe za pomocą suwaków i przełączników sterowanych pilotem.
+- **Reguły Debrid / TorBox Stream Rules** (`StreamRulesEngine`, `StreamRules`, `CompositeMediaRepository`, `SettingsScreen`)
+  - `StreamRulesEngine` analizuje tytuły/podtytuły/opisy źródeł i filtruje po zakresie rozmiaru, rozdzielczości, wymaganych/preferowanych/wykluczonych tagach wideo/audio i enkoderach.
+  - Model `@Serializable` `StreamRules` przechowywany jako JSON w DataStore; `CompositeMediaRepository` aplikuje reguły do wyników wyszukiwania i szczegółów.
+  - Panel admina `/api/config` przyjmuje i zwraca JSON `streamRules`; `SettingsScreen` udostępnia pole tekstowe do edycji JSON.
+- **Tryb AMOLED / Pure Black** (`TVHubTheme`, `MainActivity`, `SettingsScreen`)
+  - `SettingsScreen` dodaje przełączniki `AMOLED Mode` i `Pure Black Surfaces`.
+  - `MainActivity` zbiera flow ustawień i przekazuje je do `TVHubTheme`, który ustawia tło, surface i surface variant na `#000000` gdy włączone.
+  - Dostępne są composition local `LocalAmoledMode` i `LocalPureBlackSurfaces` do dalszej stylizacji kart/plakatów.
+- **Binge Grouping** (`PlayerViewModel`, `StreamRulesEngine`)
+  - Gdy użytkownik ręcznie wybierze profil źródła podczas oglądania serialu, w pamięci RAM tworzony jest `BingeProfile` na podstawie rozwiązanych metadanych strumienia.
+  - `findNextEpisode` automatycznie aplikuje ten sam profil/okno do następnego odcinka, wykorzystując ranking `StreamRulesEngine`.
+  - Przełącznik włączenia/wyłączenia w `SettingsScreen`.
+- **Testy i hardening**
+  - Dodano `StreamRulesEngineTest` z użyciem MockK, weryfikujący wyłączone reguły, filtrowanie po rozmiarze, rozdzielczości, wymaganych/wykluczonych tagach, rankingu preferencji i `maxResults`.
+  - Żadne klucze API, hashe, parametry filtrów ani linki źródeł nie są logowane do Logcat w buildach release (`BuildConfig.DEBUG == false`).
+
+#### Natywne Fuzzy Search z odległością Levenshteina
+- **LevenshteinEngine** (`app/data/source/LevenshteinEngine.kt`)
+  - Pamięciowo zoptymalizowany algorytm z dwiema naprzemiennymi tablicami `IntArray`, progiem `maxDistanceThreshold = 2` i normalizacją `lowercase` + `trim`.
+  - Udostępnia helpery `calculateDistance`, `score`, `isFuzzyMatch` i `sort`.
+- **Reaktywne wyszukiwanie z debounce** (`SearchViewModel`, `EpgDao`, `ChannelDao`, `IptvRepository`)
+  - `SearchViewModel` używa teraz `MutableStateFlow<String>` z `debounce(300L)` i `distinctUntilChanged()`.
+  - Końcowe sortowanie trafień odbywa się na `Dispatchers.Default`, chroniąc wątek główny przed przycięciami klatek.
+  - `EpgDao` i `ChannelDao` wykorzystują pre-filtry `LIKE %fraza%`; `IptvRepository` sortuje połączone wyniki lokalne + EPG + zdalne przez `LevenshteinEngine.sort`.
+- **Testy**
+  - `ExampleUnitTest` został usunięty; dodano `LevenshteinEngineTest` weryfikujący odległości dla polskich literówek (`Widźmin` vs `Wiedźmin`, `Filman` vs `Flman`) i kolejność sortowania.
+
 #### Smart Home, wewnętrzny PiP wideo i wygaszacz OLED (zamrożenie kodu)
 - **Webhooki Home Assistant Smart Cinema** (`ApiConfigRepository`, `SettingsScreen`, `AdminHttpServer`, `HomeAssistantWebhookClient`, `PlayerViewModel`, `PlayerViewModelTest`)
   - Zaszyfrowane preferencje DataStore `homeAssistantUrl`, `homeAssistantToken`, `homeAssistantWebhookEnabled` w `ApiConfigRepository`.

@@ -22,6 +22,39 @@ All notable changes to Polish Media Hub are documented in this file.
   - Unguarded `Log` calls in `PlayerViewModel` and `UniversalVlcPlayer` are now wrapped with `if (BuildConfig.DEBUG)` so audio session parameters and URLs are never logged in release builds.
   - Extended `PlayerViewModelTest` with MockK tests verifying the three quick-setting toggles call the correct `SettingsRepository` setters.
 
+#### ExoPlayer native engine tuning, stream rules, AMOLED mode and Binge Grouping
+- **ExoPlayer native engine tuning** (`ExoPlayerTuningConfig`, `PlayerScreen`, `SettingsScreen`, `NetworkModule`)
+  - `ExoPlayerTuningConfig` wraps tunneled playback, parallel connections, min/max/playback/back buffer, initial allocation count and target buffer size.
+  - `PlayerScreen` builds `ExoPlayer` with a tuned `DefaultLoadControl` (pre-allocated `DefaultAllocator`) and `DefaultTrackSelector` with `setTunnelingEnabled`.
+  - `NetworkModule` configures `OkHttpClient.dispatcher.maxRequests` and `maxRequestsPerHost` from user settings.
+  - New settings in `SettingsScreen` expose all tuning parameters with D-Pad-enabled sliders and toggles.
+- **Debrid / TorBox Stream Rules** (`StreamRulesEngine`, `StreamRules`, `CompositeMediaRepository`, `SettingsScreen`)
+  - `StreamRulesEngine` parses source titles/subtitles/descriptions and filters by size range, resolution, required/preferred/excluded video/audio tags and encoders.
+  - `@Serializable` `StreamRules` model stored as JSON in DataStore; `CompositeMediaRepository` applies rules to search and detail results.
+  - Admin panel `/api/config` accepts and exposes `streamRules` JSON; `SettingsScreen` provides a JSON text field for editing.
+- **AMOLED / Pure Black mode** (`TVHubTheme`, `MainActivity`, `SettingsScreen`)
+  - `SettingsScreen` adds toggles for `AMOLED Mode` and `Pure Black Surfaces`.
+  - `MainActivity` collects the flows and passes them to `TVHubTheme`, which now sets background, surface and surface variant to `#000000` when enabled.
+  - `LocalAmoledMode` and `LocalPureBlackSurfaces` composition locals are available for future card/poster customization.
+- **Binge Grouping** (`PlayerViewModel`, `StreamRulesEngine`)
+  - When a user manually picks a source profile while watching a series, an in-memory `BingeProfile` is built from the resolved stream metadata.
+  - `findNextEpisode` automatically applies the same profile/window to the next episode, reusing `StreamRulesEngine` ranking.
+  - Enable/disable toggle in `SettingsScreen`.
+- **Tests and hardening**
+  - Added `StreamRulesEngineTest` using MockK to verify disabled rules, size filtering, resolution filtering, required/excluded tags, preferred ranking and `maxResults`.
+  - No API keys, hashes, filter parameters or source links are logged to Logcat in release builds (`BuildConfig.DEBUG == false`).
+
+#### Native Fuzzy Search with Levenshtein distance
+- **LevenshteinEngine** (`app/data/source/LevenshteinEngine.kt`)
+  - Memory-optimized two-row `IntArray` algorithm with `maxDistanceThreshold = 2` and lowercase+trim normalization.
+  - Exposes `calculateDistance`, `score`, `isFuzzyMatch` and `sort` helpers.
+- **Reactive search with debounce** (`SearchViewModel`, `EpgDao`, `ChannelDao`, `IptvRepository`)
+  - `SearchViewModel` now uses `MutableStateFlow<String>` with `debounce(300L)` and `distinctUntilChanged()`.
+  - Final ranking runs on `Dispatchers.Default` to protect the main thread.
+  - `EpgDao` and `ChannelDao` use `LIKE %query%` pre-filters; `IptvRepository` ranks combined local + EPG + remote results with `LevenshteinEngine.sort`.
+- **Tests**
+  - `ExampleUnitTest` is removed; added `LevenshteinEngineTest` verifying distances for Polish TV typos (`Widźmin` vs `Wiedźmin`, `Filman` vs `Flman`) and sorted result ordering.
+
 #### Smart Home, In-App PiP & OLED protection (final code freeze)
 - **Home Assistant Smart Cinema webhooks** (`ApiConfigRepository`, `SettingsScreen`, `AdminHttpServer`, `HomeAssistantWebhookClient`, `PlayerViewModel`, `PlayerViewModelTest`)
   - Encrypted DataStore preferences `homeAssistantUrl`, `homeAssistantToken`, `homeAssistantWebhookEnabled` in `ApiConfigRepository`.

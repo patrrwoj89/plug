@@ -220,7 +220,20 @@ class AdminHttpServer @Inject constructor(
                         "useAlternativePlayer" to useAlternativePlayer,
                         "preferredAudioType" to preferredAudioType,
                         "nightModeEnabled" to nightModeEnabled,
-                        "dialogueBoostGainmB" to dialogueBoostGainmB
+                        "dialogueBoostGainmB" to dialogueBoostGainmB,
+                        "amoledMode" to amoledMode,
+                        "pureBlackSurfaces" to pureBlackSurfaces,
+                        "tunneledPlaybackEnabled" to tunneledPlaybackEnabled,
+                        "exoplayerParallelConnections" to exoplayerParallelConnections,
+                        "exoplayerMinBufferMs" to exoplayerMinBufferMs,
+                        "exoplayerMaxBufferMs" to exoplayerMaxBufferMs,
+                        "exoplayerBufferForPlaybackMs" to exoplayerBufferForPlaybackMs,
+                        "exoplayerBufferForPlaybackAfterRebufferMs" to exoplayerBufferForPlaybackAfterRebufferMs,
+                        "exoplayerBackBufferMs" to exoplayerBackBufferMs,
+                        "exoplayerInitialAllocationCount" to exoplayerInitialAllocationCount,
+                        "exoplayerTargetBufferBytes" to exoplayerTargetBufferBytes,
+                        "streamRules" to streamRules,
+                        "bingeGroupingEnabled" to bingeGroupingEnabled
                     )
                 }
             }.mapValues { (_, flow) -> flow.first().toString() }
@@ -279,6 +292,19 @@ class AdminHttpServer @Inject constructor(
             params["preferredAudioType"]?.let { settingsRepository.setPreferredAudioType(it) }
             params["nightModeEnabled"]?.toBooleanStrictOrNull()?.let { settingsRepository.setNightModeEnabled(it) }
             params["dialogueBoostGainmB"]?.toIntOrNull()?.let { settingsRepository.setDialogueBoostGainmB(it.coerceIn(0, 3000)) }
+            params["amoledMode"]?.toBooleanStrictOrNull()?.let { settingsRepository.setAmoledMode(it) }
+            params["pureBlackSurfaces"]?.toBooleanStrictOrNull()?.let { settingsRepository.setPureBlackSurfaces(it) }
+            params["tunneledPlaybackEnabled"]?.toBooleanStrictOrNull()?.let { settingsRepository.setTunneledPlaybackEnabled(it) }
+            params["exoplayerParallelConnections"]?.toIntOrNull()?.let { settingsRepository.setExoplayerParallelConnections(it) }
+            params["exoplayerMinBufferMs"]?.toIntOrNull()?.let { settingsRepository.setExoplayerMinBufferMs(it) }
+            params["exoplayerMaxBufferMs"]?.toIntOrNull()?.let { settingsRepository.setExoplayerMaxBufferMs(it) }
+            params["exoplayerBufferForPlaybackMs"]?.toIntOrNull()?.let { settingsRepository.setExoplayerBufferForPlaybackMs(it) }
+            params["exoplayerBufferForPlaybackAfterRebufferMs"]?.toIntOrNull()?.let { settingsRepository.setExoplayerBufferForPlaybackAfterRebufferMs(it) }
+            params["exoplayerBackBufferMs"]?.toIntOrNull()?.let { settingsRepository.setExoplayerBackBufferMs(it) }
+            params["exoplayerInitialAllocationCount"]?.toIntOrNull()?.let { settingsRepository.setExoplayerInitialAllocationCount(it) }
+            params["exoplayerTargetBufferBytes"]?.toIntOrNull()?.let { settingsRepository.setExoplayerTargetBufferBytes(it) }
+            params["streamRules"]?.let { settingsRepository.setStreamRules(it) }
+            params["bingeGroupingEnabled"]?.toBooleanStrictOrNull()?.let { settingsRepository.setBingeGroupingEnabled(it) }
             params["useCloudflareBypass"]?.toBooleanStrictOrNull()?.let { apiConfigRepository.setUseCloudflareBypass(it) }
             params["cloudflareWorkerUrl"]?.let { apiConfigRepository.setCloudflareWorkerUrl(it) }
             params["cloudflareAuthToken"]?.let { apiConfigRepository.setCloudflareAuthToken(it) }
@@ -579,6 +605,34 @@ label .status-dot { margin-left: 0.5rem; }
   <input type="text" name="nightModeEnabled" placeholder="false">
   <label>Dialogue Boost (mB, 0-3000)</label>
   <input type="text" name="dialogueBoostGainmB" placeholder="1000">
+  <h3>Appearance &amp; Playback Premium</h3>
+  <label>AMOLED Mode (true/false)</label>
+  <input type="text" name="amoledMode" placeholder="false">
+  <label>Pure Black Surfaces (true/false)</label>
+  <input type="text" name="pureBlackSurfaces" placeholder="false">
+  <h4>ExoPlayer Native Engine</h4>
+  <label>Tunneled Playback (true/false)</label>
+  <input type="text" name="tunneledPlaybackEnabled" placeholder="false">
+  <label>Parallel Connections (1-16)</label>
+  <input type="text" name="exoplayerParallelConnections" placeholder="4">
+  <label>Min Buffer (ms, 1000-120000)</label>
+  <input type="text" name="exoplayerMinBufferMs" placeholder="5000">
+  <label>Max Buffer (ms, 1000-1200000)</label>
+  <input type="text" name="exoplayerMaxBufferMs" placeholder="50000">
+  <label>Buffer for Playback (ms, 0-60000)</label>
+  <input type="text" name="exoplayerBufferForPlaybackMs" placeholder="2500">
+  <label>Buffer for Playback After Rebuffer (ms, 0-60000)</label>
+  <input type="text" name="exoplayerBufferForPlaybackAfterRebufferMs" placeholder="5000">
+  <label>Back Buffer (ms, 0-120000)</label>
+  <input type="text" name="exoplayerBackBufferMs" placeholder="0">
+  <label>Initial Allocation Count (0-64)</label>
+  <input type="text" name="exoplayerInitialAllocationCount" placeholder="0">
+  <label>Target Buffer Bytes (0-2GB)</label>
+  <input type="text" name="exoplayerTargetBufferBytes" placeholder="-1">
+  <h4>Debrid / TorBox Stream Rules (JSON)</h4>
+  <textarea name="streamRules" placeholder='{"enabled":true,"sizeMinMb":500,"sizeMaxMb":51200,"resolutions":["1080p","4K"],"preferredEncoders":["HEVC"]}'></textarea>
+  <label>Binge Grouping (true/false)</label>
+  <input type="text" name="bingeGroupingEnabled" placeholder="true">
   <h3>Cloudflare Edge Offloading</h3>
   <label>Use Cloudflare bypass (true/false)</label>
   <input type="text" name="useCloudflareBypass" placeholder="false">

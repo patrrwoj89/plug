@@ -433,6 +433,34 @@ Tak. `JsUnpacker` dekoduje powszechne skrypty spakowane formatem `eval(function(
 
 `cloudflare-resolver/` to opcjonalny Cloudflare Worker (TypeScript/Wrangler), który na brzegu sieci wykonuje tę samą logikę rozpakowywania P.A.C.K.E.R, dekodowania CDA i wyrażeń regularnych na URL-ach mediów, odciążając procesor telewizora. Włącz go w `Ustawienia → Offloading Chmury Cloudflare` (lub panelu admina), wpisując URL Workera i współdzielony token autoryzacyjny. Aplikacja wysyła docelowy URL i opcjonalne nagłówki na `https://<worker>/resolve?url=...` z nagłówkiem `X-Hub-Token`; Worker zwraca `{ "streamUrl": "...", "headers": { ... } }`. Jeśli Worker zawiedzie (błąd sieci, 5xx, 403, timeout), `WebMediaSource` transparentnie wraca do lokalnego resolvera Kotlina, zachowując ciągłość odtwarzania.
 
+## Tuning ExoPlayer, reguły Stream Rules, AMOLED i Binge Grouping
+
+### Co mogę dostroić w ExoPlayerze?
+
+`Ustawienia → Wygląd i Odtwarzanie Premium → Silnik ExoPlayer Native` pozwala włączyć **odtwarzanie tunelowane**, ustawić **połączenia równoległe** (1–16) oraz dostroić bufory: `Min/Max Buffer`, `Back Buffer`, `Initial Allocation Count` i `Target Buffer Size`. Ustawienia są przechowywane w DataStore i odbudowują `ExoPlayer` przy następnym starcie strumienia. Dostępne są również w panelu admina `/api/config`.
+
+### Czym są Stream Rules?
+
+Stream Rules to filtr JSON (`Ustawienia → Wygląd i Odtwarzanie Premium → Reguły strumieni Debrid/TorBox`), który aplikacja nakłada na surowe listy źródeł z TorBox, Real-Debrid i dodatków Stremio. Można filtrować po rozmiarze pliku, rozdzielczości (4K, 1080p, 720p), wymaganych/preferowanych/wykluczonych tagach wideo (HDR, Dolby Vision) i audio (Atmos, DTS) oraz enkoderach (HEVC, AV1, H264). `StreamRulesEngine` parsuje tytuły, podtytuły i opisy; śmieciowe/niechciane linki są odrzucane przed wyświetleniem w UI.
+
+### Czym jest Binge Grouping?
+
+Gdy włączone, aplikacja zapamiętuje profil źródła wybrany dla bieżącego odcinka (rozdzielczość, tagi audio, wskazówki enkodera) i automatycznie próbuje zastosować ten sam profil przy wyborze następnego odcinka w sezonie. Profil przechowywany jest wyłącznie w pamięci RAM na czas bieżącej sesji odtwarzania.
+
+### Czym jest tryb AMOLED / Pure Black?
+
+**Tryb AMOLED** wymusza na tle aplikacji kolor `#000000`. **Pure Black Surfaces** dodatkowo ustawia karty i warstwy surface na czystą czerń, zmniejszając ryzyko wypalenia na panelach OLED. Oba przełączniki są zbierane przez `MainActivity` i aplikowane w `TVHubTheme`.
+
+## Fuzzy Search (rozmyte wyszukiwanie)
+
+### Dlaczego wyszukiwanie czeka chwilę przed odświeżeniem?
+
+`SearchViewModel` używa `MutableStateFlow<String>` z `debounce(300L)` i `distinctUntilChanged()`. Wyszukiwanie uruchamia się 300 ms po zatrzymaniu wpisywania i pomija powtórzone zapytania, gdy tekst się nie zmienił. Końcowy ranking Levenshteina wykonywany jest na `Dispatchers.Default`, aby nie blokować wątku UI.
+
+### Jak rozmyte wyszukiwanie radzi sobie z literówkami?
+
+Wbudowany `LevenshteinEngine` używa pamięciowo zoptymalizowanego algorytmu z dwiema naprzemiennymi tablicami `IntArray` i progiem 2. Normalizuje zapytania przez `lowercase`/`trim` i sortuje lokalne wyniki IPTV/Room według odległości edycyjnej, więc pilotowe literówki takie jak `Widźmin` → `Wiedźmin` czy `Flman` → `Filman` nadal wyświetlą właściwą pozycję.
+
 ## Panel administracyjny i kod QR
 
 ### Kod QR się nie skanuje.

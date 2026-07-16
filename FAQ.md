@@ -433,6 +433,34 @@ Yes. `JsUnpacker` decodes common `eval(function(p,a,c,k,...) )` P.A.C.K.E.R. pac
 
 `cloudflare-resolver/` is an optional Cloudflare Worker (TypeScript/Wrangler) that runs the same P.A.C.K.E.R unpacker, CDA decoder and media-regex extraction on Cloudflare's edge, offloading CPU work from the TV. Enable it in `Settings → Cloudflare Edge Offloading` (or the admin panel) by entering the Worker URL and a shared auth token. The app sends the target page URL and optional headers to `https://<worker>/resolve?url=...` with `X-Hub-Token`; the Worker returns `{ "streamUrl": "...", "headers": { ... } }`. If the Worker fails (network error, 5xx, 403, timeout), `WebMediaSource` transparently falls back to the local Kotlin resolver, so playback continuity is always preserved.
 
+## ExoPlayer tuning, Stream Rules, AMOLED & Binge Grouping
+
+### What can I tune in ExoPlayer?
+
+`Settings → Appearance & Playback Premium → ExoPlayer Native Engine` lets you enable **Tunneled Playback**, set **Parallel Connections** (1–16), and adjust buffer values: `Min/Max Buffer`, `Back Buffer`, `Initial Allocation Count` and `Target Buffer Size`. The settings are stored in DataStore and rebuild `ExoPlayer` on the next stream start. They are also exposed in the admin panel `/api/config`.
+
+### What are Stream Rules?
+
+Stream Rules are a JSON filter (`Settings → Appearance & Playback Premium → Debrid/TorBox Stream Rules`) that the app applies to raw source lists from TorBox, Real-Debrid and Stremio add-ons. You can filter by file size, resolution (4K, 1080p, 720p), required/preferred/excluded video tags (HDR, Dolby Vision), audio tags (Atmos, DTS) and encoders (HEVC, AV1, H264). `StreamRulesEngine` parses titles, subtitles and descriptions; invalid/undesired links are dropped before they reach the UI.
+
+### What is Binge Grouping?
+
+When enabled, the app remembers the source profile you selected for the current episode (resolution, audio tags, encoder hints) and automatically tries to apply the same profile to the next episode in the season. The profile is kept in RAM only for the current playback session.
+
+### What is AMOLED / Pure Black mode?
+
+**AMOLED Mode** forces the app background to `#000000`. **Pure Black Surfaces** additionally sets cards and surface layers to pure black, reducing burn-in on OLED panels. Both are collected by `MainActivity` and applied to `TVHubTheme`.
+
+## Fuzzy Search
+
+### Why does search wait a moment before refreshing?
+
+`SearchViewModel` uses `MutableStateFlow<String>` with `debounce(300L)` and `distinctUntilChanged()`. It starts searching 300 ms after you stop typing, and skips repeated queries if the text did not change. Final Levenshtein ranking runs on `Dispatchers.Default` to keep the UI thread smooth.
+
+### How does fuzzy search handle typos?
+
+The built-in `LevenshteinEngine` uses a memory-optimized two-row `IntArray` algorithm with a threshold of 2. It normalizes queries to lowercase/trim and ranks local IPTV/Room results by edit distance, so TV-remote typos like `Widźmin` → `Wiedźmin` or `Flman` → `Filman` still surface the correct item.
+
 ## Admin Panel & QR Code
 
 ### The QR code does not scan.

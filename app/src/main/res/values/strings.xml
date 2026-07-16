@@ -279,4 +279,23 @@
     <string name="sync_status_never">Never</string>
     <string name="sync_status_success">Success</string>
     <string name="sync_status_error">Error</string>
+
+    <string name="settings_appearance_and_playback_premium_title">Appearance &amp; Playback Premium</string>
+    <string name="settings_amoled_mode">AMOLED Mode</string>
+    <string name="settings_amoled_mode_subtitle">Force pure black (#000000) background</string>
+    <string name="settings_pure_black_surfaces">Pure Black Surfaces</string>
+    <string name="settings_pure_black_surfaces_subtitle">Blend cards and tiles with the background in AMOLED mode</string>
+    <string name="settings_exoplayer_tuning_title">ExoPlayer Native Engine</string>
+    <string name="settings_tunneled_playback">Tunneled playback</string>
+    <string name="settings_tunneled_playback_subtitle">Offload AV sync to hardware for 4K/HDR</string>
+    <string name="settings_exoplayer_parallel_connections">Parallel connections</string>
+    <string name="settings_exoplayer_min_buffer">Min buffer (ms)</string>
+    <string name="settings_exoplayer_max_buffer">Max buffer (ms)</string>
+    <string name="settings_exoplayer_back_buffer">Back buffer (ms)</string>
+    <string name="settings_exoplayer_initial_allocation">Initial allocation count</string>
+    <string name="settings_exoplayer_target_buffer">Target buffer bytes</string>
+    <string name="settings_stream_rules_title">Debrid/TorBox Stream Rules</string>
+    <string name="settings_stream_rules_subtitle">JSON filter rules for Debrid/TorBox/Stremio sources</string>
+    <string name="settings_binge_grouping">Binge grouping</string>
+    <string name="settings_binge_grouping_subtitle">Remember chosen source profile for the next episode</string>
 </resources>

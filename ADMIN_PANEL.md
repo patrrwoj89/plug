@@ -99,6 +99,19 @@ Send form fields matching the keys supported by `ApiConfigRepository`. The admin
 | `homeAssistantUrl` | Home Assistant base URL, e.g. `https://your-home.local:8123` |
 | `homeAssistantToken` | Home Assistant webhook token; masked in GET `/api/config` |
 | `homeAssistantWebhookEnabled` | `true` or `false` — send `play`/`pause`/`stop` events to Home Assistant |
+| `amoledMode` | `true` or `false` — force pure black `#000000` background |
+| `pureBlackSurfaces` | `true` or `false` — set cards/surface layers to pure black in AMOLED mode |
+| `tunneledPlaybackEnabled` | `true` or `false` — enable ExoPlayer tunneled playback for 4K/HDR |
+| `exoplayerParallelConnections` | Number of parallel HTTP connections, `1` to `16` (default `4`) |
+| `exoplayerMinBufferMs` | Minimum buffer duration in milliseconds (default `5000`) |
+| `exoplayerMaxBufferMs` | Maximum buffer duration in milliseconds (default `50000`) |
+| `exoplayerBufferForPlaybackMs` | Buffer required before playback starts (default `2500`) |
+| `exoplayerBufferForPlaybackAfterRebufferMs` | Buffer required after rebuffer (default `5000`) |
+| `exoplayerBackBufferMs` | Back buffer for instant rewind, `0` to `120000` (default `0`) |
+| `exoplayerInitialAllocationCount` | Pre-allocated allocator segments, `0` to `64` (default `0`) |
+| `exoplayerTargetBufferBytes` | Target buffer size in bytes, `0` for default (default `-1`) |
+| `streamRules` | JSON string with `StreamRules` filter configuration |
+| `bingeGroupingEnabled` | `true` or `false` — remember chosen source profile for next episode |
 | `lastProfileSyncAt` | Read-only timestamp of the last profile cloud sync (ms since epoch) |
 | `lastProfileSyncStatus` | Read-only status: `success`, `error` or empty |
 | `lastProfileSyncError` | Read-only error message from the last failed profile sync, if any |
@@ -153,7 +166,20 @@ Only the fields you actually use need to be present. Empty strings are ignored.
   "cloudflareAuthToken": "your-hub-token",
   "homeAssistantUrl": "https://your-home.local:8123",
   "homeAssistantToken": "your-webhook-token",
-  "homeAssistantWebhookEnabled": "true"
+  "homeAssistantWebhookEnabled": "true",
+  "amoledMode": "false",
+  "pureBlackSurfaces": "false",
+  "tunneledPlaybackEnabled": "false",
+  "exoplayerParallelConnections": "4",
+  "exoplayerMinBufferMs": "5000",
+  "exoplayerMaxBufferMs": "50000",
+  "exoplayerBufferForPlaybackMs": "2500",
+  "exoplayerBufferForPlaybackAfterRebufferMs": "5000",
+  "exoplayerBackBufferMs": "0",
+  "exoplayerInitialAllocationCount": "0",
+  "exoplayerTargetBufferBytes": "-1",
+  "streamRules": "{\"enabled\":true,\"sizeMinMb\":500,\"sizeMaxMb\":51200,\"resolutions\":[\"1080p\",\"4K\"],\"preferredEncoders\":[\"HEVC\"]}",
+  "bingeGroupingEnabled": "true"
 }
 ```
 

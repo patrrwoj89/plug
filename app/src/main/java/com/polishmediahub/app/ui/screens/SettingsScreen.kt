@@ -85,6 +85,19 @@ fun SettingsScreen(
     val preferredAudioType by viewModel.preferredAudioType.collectAsStateWithLifecycle()
     val nightModeEnabled by viewModel.nightModeEnabled.collectAsStateWithLifecycle()
     val dialogueBoostGainmB by viewModel.dialogueBoostGainmB.collectAsStateWithLifecycle()
+    val amoledMode by viewModel.amoledMode.collectAsStateWithLifecycle()
+    val pureBlackSurfaces by viewModel.pureBlackSurfaces.collectAsStateWithLifecycle()
+    val tunneledPlaybackEnabled by viewModel.tunneledPlaybackEnabled.collectAsStateWithLifecycle()
+    val exoplayerParallelConnections by viewModel.exoplayerParallelConnections.collectAsStateWithLifecycle()
+    val exoplayerMinBufferMs by viewModel.exoplayerMinBufferMs.collectAsStateWithLifecycle()
+    val exoplayerMaxBufferMs by viewModel.exoplayerMaxBufferMs.collectAsStateWithLifecycle()
+    val exoplayerBufferForPlaybackMs by viewModel.exoplayerBufferForPlaybackMs.collectAsStateWithLifecycle()
+    val exoplayerBufferForPlaybackAfterRebufferMs by viewModel.exoplayerBufferForPlaybackAfterRebufferMs.collectAsStateWithLifecycle()
+    val exoplayerBackBufferMs by viewModel.exoplayerBackBufferMs.collectAsStateWithLifecycle()
+    val exoplayerInitialAllocationCount by viewModel.exoplayerInitialAllocationCount.collectAsStateWithLifecycle()
+    val exoplayerTargetBufferBytes by viewModel.exoplayerTargetBufferBytes.collectAsStateWithLifecycle()
+    val streamRules by viewModel.streamRules.collectAsStateWithLifecycle()
+    val bingeGroupingEnabled by viewModel.bingeGroupingEnabled.collectAsStateWithLifecycle()
     val useCloudflareBypass by viewModel.useCloudflareBypass.collectAsStateWithLifecycle()
     val cloudflareWorkerUrl by viewModel.cloudflareWorkerUrl.collectAsStateWithLifecycle()
     val cloudflareAuthToken by viewModel.cloudflareAuthToken.collectAsStateWithLifecycle()
@@ -293,6 +306,118 @@ fun SettingsScreen(
                         else -> false
                     }
                 }
+        )
+
+        Text(
+            text = stringResource(id = R.string.settings_appearance_and_playback_premium_title),
+            style = AppTypography.headline,
+            modifier = Modifier.padding(top = Spacing.md)
+        )
+
+        SettingsToggle(
+            title = stringResource(id = R.string.settings_amoled_mode),
+            subtitle = stringResource(id = R.string.settings_amoled_mode_subtitle),
+            checked = amoledMode,
+            onCheckedChange = viewModel::setAmoledMode
+        )
+
+        SettingsToggle(
+            title = stringResource(id = R.string.settings_pure_black_surfaces),
+            subtitle = stringResource(id = R.string.settings_pure_black_surfaces_subtitle),
+            checked = pureBlackSurfaces,
+            onCheckedChange = viewModel::setPureBlackSurfaces
+        )
+
+        Text(
+            text = stringResource(id = R.string.settings_exoplayer_tuning_title),
+            style = AppTypography.title,
+            modifier = Modifier.padding(top = Spacing.md)
+        )
+
+        SettingsToggle(
+            title = stringResource(id = R.string.settings_tunneled_playback),
+            subtitle = stringResource(id = R.string.settings_tunneled_playback_subtitle),
+            checked = tunneledPlaybackEnabled,
+            onCheckedChange = viewModel::setTunneledPlaybackEnabled
+        )
+
+        SettingsSlider(
+            title = stringResource(id = R.string.settings_exoplayer_parallel_connections),
+            value = exoplayerParallelConnections.toFloat(),
+            valueRange = 1f..16f,
+            steps = 14,
+            onValueChange = { viewModel.setExoplayerParallelConnections(it.roundToInt()) }
+        )
+
+        SettingsSlider(
+            title = stringResource(id = R.string.settings_exoplayer_min_buffer),
+            value = exoplayerMinBufferMs.toFloat(),
+            valueRange = 1000f..120000f,
+            steps = 118,
+            onValueChange = { viewModel.setExoplayerMinBufferMs(it.roundToInt()) },
+            valueDisplay = { "${it.roundToInt()} ms" }
+        )
+
+        SettingsSlider(
+            title = stringResource(id = R.string.settings_exoplayer_max_buffer),
+            value = exoplayerMaxBufferMs.toFloat(),
+            valueRange = 1000f..1200000f,
+            steps = 1199,
+            onValueChange = { viewModel.setExoplayerMaxBufferMs(it.roundToInt()) },
+            valueDisplay = { "${it.roundToInt()} ms" }
+        )
+
+        SettingsSlider(
+            title = stringResource(id = R.string.settings_exoplayer_back_buffer),
+            value = exoplayerBackBufferMs.toFloat(),
+            valueRange = 0f..120000f,
+            steps = 119,
+            onValueChange = { viewModel.setExoplayerBackBufferMs(it.roundToInt()) },
+            valueDisplay = { "${it.roundToInt()} ms" }
+        )
+
+        SettingsSlider(
+            title = stringResource(id = R.string.settings_exoplayer_initial_allocation),
+            value = exoplayerInitialAllocationCount.toFloat(),
+            valueRange = 0f..64f,
+            steps = 63,
+            onValueChange = { viewModel.setExoplayerInitialAllocationCount(it.roundToInt()) },
+            valueDisplay = { "${it.roundToInt()}" }
+        )
+
+        SettingsSlider(
+            title = stringResource(id = R.string.settings_exoplayer_target_buffer),
+            value = exoplayerTargetBufferBytes.coerceAtLeast(0).toFloat(),
+            valueRange = 0f..2_000_000_000f,
+            steps = 1999,
+            onValueChange = { viewModel.setExoplayerTargetBufferBytes(it.roundToInt()) },
+            valueDisplay = { "${it.roundToInt()}" }
+        )
+
+        Text(
+            text = stringResource(id = R.string.settings_stream_rules_title),
+            style = AppTypography.title,
+            modifier = Modifier.padding(top = Spacing.md)
+        )
+        Text(
+            text = stringResource(id = R.string.settings_stream_rules_subtitle),
+            style = AppTypography.caption,
+            color = AppColor.OnSurfaceVariant
+        )
+        TvOutlinedTextField(
+            value = streamRules,
+            onValueChange = viewModel::setStreamRules,
+            label = { Text(stringResource(id = R.string.settings_stream_rules_title)) },
+            placeholder = { Text("{\"enabled\":true,\"sizeMinMb\":500,\"sizeMaxMb\":51200,\"resolutions\":[\"1080p\",\"4K\"]}") },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            keyboardOptions = KeyboardOptions.Default
+        )
+
+        SettingsToggle(
+            title = stringResource(id = R.string.settings_binge_grouping),
+            subtitle = stringResource(id = R.string.settings_binge_grouping_subtitle),
+            checked = bingeGroupingEnabled,
+            onCheckedChange = viewModel::setBingeGroupingEnabled
         )
 
         Text(
@@ -638,6 +763,46 @@ private fun SettingsSelector(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SettingsSlider(
+    title: String,
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    onValueChange: (Float) -> Unit,
+    valueDisplay: (Float) -> String = { it.roundToInt().toString() }
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Text(title, style = AppTypography.title)
+        Text(valueDisplay(value), style = AppTypography.caption, color = AppColor.OnSurface)
+        Slider(
+            value = value.coerceIn(valueRange.start, valueRange.endInclusive),
+            onValueChange = { onValueChange(it) },
+            valueRange = valueRange,
+            steps = steps,
+            modifier = Modifier
+                .fillMaxWidth(0.5f)
+                .focusProperties { canFocus = true }
+                .focusable()
+                .onKeyEvent { event ->
+                    if (event.nativeKeyEvent.action != KeyEvent.ACTION_DOWN) return@onKeyEvent false
+                    val step = (valueRange.endInclusive - valueRange.start) / (steps + 1)
+                    when (event.nativeKeyEvent.keyCode) {
+                        KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                            onValueChange((value + step).coerceAtMost(valueRange.endInclusive))
+                            true
+                        }
+                        KeyEvent.KEYCODE_DPAD_LEFT -> {
+                            onValueChange((value - step).coerceAtLeast(valueRange.start))
+                            true
+                        }
+                        else -> false
+                    }
+                }
+        )
     }
 }
 

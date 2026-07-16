@@ -23,15 +23,18 @@ import com.polishmediahub.app.data.tv.TvLauncherManager
 import com.polishmediahub.app.model.AudioTrack
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.model.PlaybackState
+import com.polishmediahub.app.ui.player.ExoPlayerTuningConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import androidx.media3.common.Format
 import androidx.media3.common.VideoSize
@@ -119,11 +122,50 @@ class PlayerViewModel @Inject constructor(
     private val _skipIntroState = MutableStateFlow(SkipIntroState())
     val skipIntroState: StateFlow<SkipIntroState> = _skipIntroState.asStateFlow()
 
+    val exoPlayerTuningConfig: StateFlow<ExoPlayerTuningConfig> = run {
+        val bufferingPrimary = combine(
+            settingsRepository.tunneledPlaybackEnabled,
+            settingsRepository.exoplayerParallelConnections,
+            settingsRepository.exoplayerMinBufferMs,
+            settingsRepository.exoplayerMaxBufferMs,
+            settingsRepository.exoplayerBufferForPlaybackMs
+        ) { tunneled, parallel, minBuffer, maxBuffer, playback ->
+            BufferingPrimary(tunneled, parallel, minBuffer, maxBuffer, playback)
+        }
+        val bufferingSecondary = combine(
+            settingsRepository.exoplayerBufferForPlaybackAfterRebufferMs,
+            settingsRepository.exoplayerBackBufferMs,
+            settingsRepository.exoplayerInitialAllocationCount,
+            settingsRepository.exoplayerTargetBufferBytes
+        ) { rebuffer, backBuffer, initialAlloc, targetBuffer ->
+            BufferingSecondary(rebuffer, backBuffer, initialAlloc, targetBuffer)
+        }
+        combine(bufferingPrimary, bufferingSecondary) { primary, secondary ->
+            ExoPlayerTuningConfig(
+                tunneledPlaybackEnabled = primary.tunneled,
+                parallelConnections = primary.parallel,
+                minBufferMs = primary.minBuffer,
+                maxBufferMs = primary.maxBuffer,
+                bufferForPlaybackMs = primary.playback,
+                bufferForPlaybackAfterRebufferMs = secondary.rebuffer,
+                backBufferMs = secondary.backBuffer,
+                initialAllocationCount = secondary.initialAlloc,
+                targetBufferBytes = secondary.targetBuffer
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ExoPlayerTuningConfig())
+    }
+
+    private val _streamRulesJson = MutableStateFlow("")
+    val streamRulesJson: StateFlow<String> = _streamRulesJson.asStateFlow()
+
     private val blackFrameDetector = BlackFrameDetector()
     private val _blackFrameState = MutableStateFlow(BlackFrameDetector.State())
 
     private val _pendingSeekToMs = MutableStateFlow<Long?>(null)
     val pendingSeekToMs: StateFlow<Long?> = _pendingSeekToMs.asStateFlow()
+
+    private var bingeGroupingEnabled = true
+    private var bingeProfile: BingeProfile? = null
 
     private val _forceAutoPlayOverlay = MutableStateFlow(false)
     val forceAutoPlayOverlay: StateFlow<Boolean> = _forceAutoPlayOverlay.asStateFlow()
@@ -198,7 +240,7 @@ class PlayerViewModel @Inject constructor(
         val hasExplicitMarkers = current.introStartMs != null && current.introEndMs != null
 
         val introEnd = when {
-            hasExplicitMarkers -> current.introEndMs!!
+            hasExplicitMarkers -> current.introEndMs
             black.showSkipIntro -> black.introEndMs
             else -> (skipSettings.introEndSeconds * 1_000L)
         }
@@ -271,6 +313,7 @@ class PlayerViewModel @Inject constructor(
                 val resolved = mediaRepository.resolveItem(mediaItem)
                 _item.value = resolved
                 _resolvedUrl.value = resolved.videoUrl
+                updateBingeProfile(resolved)
                 watchHistoryRepository.observePosition(mediaId).collect { position ->
                     _resumePosition.value = position
                 }
@@ -348,6 +391,14 @@ class PlayerViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            settingsRepository.streamRules.collect { _streamRulesJson.value = it }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.bingeGroupingEnabled.collect { bingeGroupingEnabled = it }
+        }
+
+        viewModelScope.launch {
             _item.filterNotNull().collect { current ->
                 _cinemaInfo.value = CinemaInfo()
                 if (_cinemaMode.value) {
@@ -410,6 +461,7 @@ class PlayerViewModel @Inject constructor(
                 val resolved = mediaRepository.resolveItem(next)
                 _item.value = resolved
                 _resolvedUrl.value = resolved.videoUrl
+                updateBingeProfile(resolved)
                 _resumePosition.value = 0L
                 _nextEpisode.value = null
                 _autoPlayCancelled.value = false
@@ -476,19 +528,32 @@ class PlayerViewModel @Inject constructor(
         val currentEpisode = current.episode ?: if (current.type == MediaItem.Type.SERIES) 0 else 1
         val nextEpisodeNumber = currentEpisode + 1
 
-        return results
+        val candidates = results
             .filter { it.id != current.id }
             .filter {
                 it.type == MediaItem.Type.EPISODE ||
                     it.type == MediaItem.Type.SERIES ||
                     it.title.contains(current.title, ignoreCase = true)
             }
-            .firstOrNull { it.season == currentSeason && it.episode == nextEpisodeNumber }
-            ?: results.firstOrNull {
-                it.id != current.id &&
-                    it.title.contains(current.title, ignoreCase = true) &&
-                    it.episode == nextEpisodeNumber
+            .filter { it.season == currentSeason && it.episode == nextEpisodeNumber }
+            .ifEmpty {
+                results.filter {
+                    it.id != current.id &&
+                        it.title.contains(current.title, ignoreCase = true) &&
+                        it.episode == nextEpisodeNumber
+                }
             }
+
+        val profile = bingeProfile
+        return if (bingeGroupingEnabled && profile != null) {
+            candidates
+                .map { it to scoreForBinge(it, profile) }
+                .sortedByDescending { it.second }
+                .firstOrNull()?.first
+                ?: candidates.firstOrNull()
+        } else {
+            candidates.firstOrNull()
+        }
     }
 
     private fun buildSearchQuery(current: MediaItem): String {
@@ -501,6 +566,100 @@ class PlayerViewModel @Inject constructor(
 
     private fun isSeriesLike(mediaItem: MediaItem): Boolean {
         return mediaItem.type == MediaItem.Type.SERIES || mediaItem.type == MediaItem.Type.EPISODE
+    }
+
+    private data class BingeProfile(
+        val resolution: String?,
+        val audioTag: String?,
+        val videoTags: Set<String>,
+        val sourceKeywords: Set<String>
+    )
+
+    private data class BufferingPrimary(
+        val tunneled: Boolean,
+        val parallel: Int,
+        val minBuffer: Int,
+        val maxBuffer: Int,
+        val playback: Int
+    )
+
+    private data class BufferingSecondary(
+        val rebuffer: Int,
+        val backBuffer: Int,
+        val initialAlloc: Int,
+        val targetBuffer: Int
+    )
+
+    private fun updateBingeProfile(mediaItem: MediaItem) {
+        if (isSeriesLike(mediaItem)) {
+            bingeProfile = extractBingeProfile(mediaItem)
+        }
+    }
+
+    private fun extractBingeProfile(mediaItem: MediaItem): BingeProfile {
+        val text = buildString {
+            append(mediaItem.title)
+            if (mediaItem.subtitle.isNotBlank()) append(" ").append(mediaItem.subtitle)
+            if (mediaItem.description.isNotBlank()) append(" ").append(mediaItem.description)
+        }.lowercase()
+        val resolution = resolutionRegex.find(text)?.groupValues?.get(1)
+            ?.let { resolveResolution(it) }
+        val audioTag = audioTagRegex.find(text)?.groupValues?.get(1)
+            ?.let { resolveAudioTag(it) }
+        val videoTags = videoTagRegex.findAll(text).map { resolveVideoTag(it.groupValues[1]) }.toSet()
+        val sourceKeywords = sourceRegex.findAll(text).map { it.value }.toSet()
+        return BingeProfile(resolution, audioTag, videoTags, sourceKeywords)
+    }
+
+    private fun scoreForBinge(item: MediaItem, profile: BingeProfile): Int {
+        val text = buildString {
+            append(item.title)
+            if (item.subtitle.isNotBlank()) append(" ").append(item.subtitle)
+            if (item.description.isNotBlank()) append(" ").append(item.description)
+        }.lowercase()
+        var score = 0
+        profile.resolution?.let { if (text.contains(it, ignoreCase = true)) score += 10 }
+        profile.audioTag?.let { if (text.contains(it, ignoreCase = true)) score += 8 }
+        profile.videoTags.forEach { tag -> if (text.contains(tag, ignoreCase = true)) score += 5 }
+        profile.sourceKeywords.forEach { keyword -> if (text.contains(keyword, ignoreCase = true)) score += 6 }
+        return score
+    }
+
+    private val resolutionRegex = Regex("\\b(4k|uhd|2160p|1080p|1080i|720p|720i|480p)\\b")
+    private val audioTagRegex = Regex("\\b(atmos|dts[-:]?x|dts[-]?hd|dts|truehd|ddp5\\.1|dd\\+|eac3|ac3|aac|lector|dubbing)\\b")
+    private val videoTagRegex = Regex("\\b(hdr10\\+|hdr10|hdr|dolby\\s*vision|dv|dovi|sdr)\\b")
+    private val sourceRegex = Regex("\\b(torbox|real.?debrid|alldebrid|premiumize|stremio|torrent|web.?dl|webrip|bluray|brrip)\\b")
+
+    private fun resolveResolution(token: String): String = when (token.lowercase()) {
+        "4k", "uhd", "2160p" -> "4k"
+        "1080p", "1080i" -> "1080p"
+        "720p", "720i" -> "720p"
+        "480p" -> "480p"
+        else -> token
+    }
+
+    private fun resolveAudioTag(token: String): String = when (token.lowercase().replace(Regex("[-:]", RegexOption.IGNORE_CASE), "")) {
+        "atmos" -> "atmos"
+        "dtsx", "dts:x" -> "dtsx"
+        "dtshd", "dts-hd" -> "dtshd"
+        "dts" -> "dts"
+        "truehd" -> "truehd"
+        "ddp51", "ddp5.1", "dd+" -> "dd+"
+        "eac3" -> "eac3"
+        "ac3" -> "ac3"
+        "aac" -> "aac"
+        "lector" -> "lector"
+        "dubbing" -> "dubbing"
+        else -> token.lowercase()
+    }
+
+    private fun resolveVideoTag(token: String): String = when (token.lowercase().replace(" ", "")) {
+        "hdr10+", "hdr10plus" -> "hdr10+"
+        "hdr10" -> "hdr10"
+        "hdr" -> "hdr"
+        "dolbyvision", "dv", "dovi" -> "dolby vision"
+        "sdr" -> "sdr"
+        else -> token.lowercase()
     }
 
     fun scrobbleStart(positionMs: Long, durationMs: Long) {

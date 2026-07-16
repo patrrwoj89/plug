@@ -276,4 +276,23 @@
     <string name="sync_status_never">Nigdy</string>
     <string name="sync_status_success">Sukces</string>
     <string name="sync_status_error">Błąd</string>
+
+    <string name="settings_appearance_and_playback_premium_title">Wygląd i Odtwarzanie Premium</string>
+    <string name="settings_amoled_mode">Tryb AMOLED</string>
+    <string name="settings_amoled_mode_subtitle">Wymuś czyste czarne tło (#000000)</string>
+    <string name="settings_pure_black_surfaces">Pure Black Surfaces</string>
+    <string name="settings_pure_black_surfaces_subtitle">Kafelki i karty zlewają się z tłem w trybie AMOLED</string>
+    <string name="settings_exoplayer_tuning_title">Silnik ExoPlayer Native</string>
+    <string name="settings_tunneled_playback">Odtwarzanie tunelowane</string>
+    <string name="settings_tunneled_playback_subtitle">Odciąż synchronizację AV na sprzęt dla 4K/HDR</string>
+    <string name="settings_exoplayer_parallel_connections">Połączenia równoległe</string>
+    <string name="settings_exoplayer_min_buffer">Min bufor (ms)</string>
+    <string name="settings_exoplayer_max_buffer">Max bufor (ms)</string>
+    <string name="settings_exoplayer_back_buffer">Back buffer (ms)</string>
+    <string name="settings_exoplayer_initial_allocation">Początkowa liczba alokacji</string>
+    <string name="settings_exoplayer_target_buffer">Target buffer (bajty)</string>
+    <string name="settings_stream_rules_title">Reguły strumieni Debrid/TorBox</string>
+    <string name="settings_stream_rules_subtitle">JSON z filtrami dla źródeł Debrid/TorBox/Stremio</string>
+    <string name="settings_binge_grouping">Binge grouping</string>
+    <string name="settings_binge_grouping_subtitle">Zapamiętaj wybrany profil źródła dla kolejnego odcinka</string>
 </resources>
