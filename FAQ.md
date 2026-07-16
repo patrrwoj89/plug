@@ -160,7 +160,7 @@ When you first install the app, a default profile called "Default" is created au
 
 ### Are profiles protected by a PIN?
 
-Each profile can have `isPinLocked = true` and a 4-digit `pinCode`. When a locked profile is selected, `PinScreen` is shown. PIN verification is handled by `ProfileRepository.verifyPin()` and is currently per-profile (the global Settings/Admin PIN still exists in `PinRepository`).
+Each profile can have `isPinLocked = true` and a 4-digit `pinCode`. When a locked profile is selected, `PinScreen` is shown. PIN verification is handled by `ProfileRepository.verifyPin()` and is currently per-profile (the global Settings/Admin PIN still exists in `PinRepository`). The `pinCode` is never stored in clear text: it is hashed with a per-PIN salted, high-iteration PBKDF2-HMAC-SHA256 (`PinSecurity`) before it is written to Room, so the local database and the Cloudflare KV ZIP backups produced by `CloudProfileSyncWorker` only ever contain hashes. Profiles saved before this change keep working thanks to a transparent plaintext fallback in `verifyPin()`, and their PIN is transparently upgraded to the PBKDF2 hash on the next successful entry.
 
 ### How does Parental Control work?
 

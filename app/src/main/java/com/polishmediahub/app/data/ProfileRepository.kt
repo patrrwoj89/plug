@@ -80,7 +80,7 @@ class ProfileRepository @Inject constructor(
                 name = name,
                 avatarUrl = avatarUrl,
                 isPinLocked = !pinCode.isNullOrBlank(),
-                pinCode = pinCode,
+                pinCode = pinCode?.takeIf { it.isNotBlank() }?.let { PinSecurity.hash(it) },
                 maxAgeRating = null,
                 allowNsfw = false
             )
@@ -92,10 +92,16 @@ class ProfileRepository @Inject constructor(
         }
 
     suspend fun updateProfile(profile: ProfileEntity) = withContext(Dispatchers.IO) {
-        profileDao.upsert(profile)
-        if (_currentProfile.value?.id == profile.id) {
-            _currentProfile.value = profile
+        val secured = profile.copy(pinCode = securePin(profile.pinCode))
+        profileDao.upsert(secured)
+        if (_currentProfile.value?.id == secured.id) {
+            _currentProfile.value = secured
         }
+    }
+
+    private fun securePin(pinCode: String?): String? {
+        val raw = pinCode?.takeIf { it.isNotBlank() } ?: return null
+        return if (PinSecurity.isHashed(raw)) raw else PinSecurity.hash(raw)
     }
 
     suspend fun updateParentalControls(
@@ -121,7 +127,21 @@ class ProfileRepository @Inject constructor(
     }
 
     fun verifyPin(profile: ProfileEntity, code: String): Boolean {
-        return profile.pinCode == code
+        val verified = PinSecurity.verify(code, profile.pinCode)
+        if (verified && PinSecurity.needsUpgrade(profile.pinCode)) {
+            scope.launch { upgradePinHash(profile.id, code) }
+        }
+        return verified
+    }
+
+    private suspend fun upgradePinHash(profileId: String, rawPin: String) = withContext(Dispatchers.IO) {
+        val current = profileDao.getById(profileId) ?: return@withContext
+        if (!PinSecurity.needsUpgrade(current.pinCode)) return@withContext
+        val upgraded = current.copy(pinCode = PinSecurity.hash(rawPin))
+        profileDao.upsert(upgraded)
+        if (_currentProfile.value?.id == profileId) {
+            _currentProfile.value = upgraded
+        }
     }
 
     companion object {

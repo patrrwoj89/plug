@@ -1,5 +1,7 @@
 package com.polishmediahub.app.data.plugin
 
+import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.source.MediaSource
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
@@ -109,7 +111,8 @@ class QuickJsMediaSource @Inject constructor(
     private fun withContextOrEmpty(block: () -> Any?) {
         try {
             block()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            if (BuildConfig.DEBUG) Log.w("QuickJsMediaSource", "script evaluation failed: ${e.message}")
         }
     }
 

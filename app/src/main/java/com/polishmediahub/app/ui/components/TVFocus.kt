@@ -26,11 +26,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -47,21 +46,47 @@ import com.polishmediahub.app.ui.theme.Radius
 import com.polishmediahub.app.ui.theme.Spacing
 
 /**
+ * Pure visual focus highlight (outline + glow) drawn only while [focused]. Takes the
+ * focus state as a parameter so the caller owns the single [collectIsFocusedAsState]
+ * subscription and no state is observed twice.
+ */
+fun Modifier.focusHighlight(
+    focused: Boolean,
+    outlineColor: Color = AppColor.FocusOutline,
+    glowColor: Color = AppColor.FocusGlow,
+    shape: Shape = RoundedCornerShape(Radius.md)
+): Modifier = if (focused) {
+    this
+        .border(Focus.outlineWidth, outlineColor, shape)
+        .background(
+            brush = Brush.radialGradient(
+                0.0f to glowColor,
+                1.0f to Color.Transparent,
+                radius = 200f
+            ),
+            shape = shape
+        )
+} else this
+
+/**
  * Modifier that adds D-Pad/TV-friendly focus behavior: scale, outline and subtle glow.
  *
  * When [focusTarget] is `false` only the visual effects are applied. The caller must
  * connect the same [interactionSource] to an inner focusable component (e.g.
- * [OutlinedTextField]) so the visual state tracks the real focus.
+ * [OutlinedTextField]) so the visual state tracks the real focus. When [canFocus] is
+ * `false` the element is excluded from D-Pad navigation entirely.
  */
+@Composable
 fun Modifier.tvFocusable(
-    interactionSource: MutableInteractionSource = MutableInteractionSource(),
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     scale: Float = Focus.scale,
     outlineColor: Color = AppColor.FocusOutline,
     glowColor: Color = AppColor.FocusGlow,
     shape: Shape = RoundedCornerShape(Radius.md),
     focusTarget: Boolean = true,
+    canFocus: Boolean = true,
     onClick: (() -> Unit)? = null
-): Modifier = this.composed {
+): Modifier {
     val isFocused by interactionSource.collectIsFocusedAsState()
     val animatedScale by animateFloatAsState(
         targetValue = if (isFocused) scale else 1f,
@@ -69,20 +94,7 @@ fun Modifier.tvFocusable(
         label = "focus-scale"
     )
 
-    val focusedModifier = if (isFocused) {
-        Modifier
-            .border(Focus.outlineWidth, outlineColor, shape)
-            .background(
-                brush = Brush.radialGradient(
-                    0.0f to glowColor,
-                    1.0f to Color.Transparent,
-                    radius = 200f
-                ),
-                shape = shape
-            )
-    } else Modifier
-
-    val focusModifier = if (focusTarget) {
+    val focusModifier = if (focusTarget && canFocus) {
         if (onClick != null) {
             Modifier.clickable(
                 interactionSource = interactionSource,
@@ -94,13 +106,18 @@ fun Modifier.tvFocusable(
         }
     } else Modifier
 
-    this
+    return this
         .then(focusModifier)
-        .onFocusChanged { }
         .scale(animatedScale)
-        .then(focusedModifier)
+        .focusHighlight(isFocused, outlineColor, glowColor, shape)
 }
 
+/**
+ * Single authoritative surface for focusable TV elements. It owns the only
+ * [collectIsFocusedAsState] subscription and computes the scale animation and the
+ * outline/glow highlight in one place. When [canFocus] is `false` the surface is
+ * removed from D-Pad navigation and does not react to clicks.
+ */
 @Composable
 fun FocusableSurface(
     onClick: () -> Unit,
@@ -109,6 +126,7 @@ fun FocusableSurface(
     scale: Float = Focus.scale,
     backgroundColor: Color = AppColor.SurfaceVariant,
     focusedBackgroundColor: Color = AppColor.SurfaceHover,
+    canFocus: Boolean = true,
     contentAlignment: Alignment = Alignment.Center,
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -120,15 +138,19 @@ fun FocusableSurface(
         label = "surface-scale"
     )
 
+    val interactionModifier = if (canFocus) {
+        Modifier.clickable(
+            interactionSource = interactionSource,
+            indication = LocalIndication.current,
+            onClick = onClick
+        )
+    } else Modifier
+
     Box(
         modifier = modifier
+            .then(interactionModifier)
             .scale(animatedScale)
-            .tvFocusable(
-                interactionSource = interactionSource,
-                scale = 1f,
-                shape = shape,
-                onClick = onClick
-            )
+            .focusHighlight(isFocused, shape = shape)
             .background(
                 if (isFocused) focusedBackgroundColor else backgroundColor,
                 shape
@@ -146,8 +168,9 @@ fun TvButton(
     content: @Composable () -> Unit
 ) {
     FocusableSurface(
-        onClick = { if (enabled) onClick() },
-        modifier = modifier,
+        onClick = onClick,
+        modifier = if (enabled) modifier else modifier.alpha(0.5f),
+        canFocus = enabled,
         backgroundColor = AppColor.Accent,
         focusedBackgroundColor = AppColor.Accent
     ) {

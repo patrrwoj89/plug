@@ -89,3 +89,10 @@
 # Crash reporter
 -keep class com.polishmediahub.app.CrashReportActivity { *; }
 -keep class com.polishmediahub.app.util.CrashReportSanitizer { *; }
+
+# Strip debug/verbose logging from the release .apk
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int d(...);
+    public static int v(...);
+}

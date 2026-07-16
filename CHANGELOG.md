@@ -4,6 +4,17 @@ All notable changes to Polish Media Hub are documented in this file.
 
 ## [Unreleased]
 
+### Security
+
+#### Household profile PIN privacy (`ProfileRepository`, `ProfileEntity`, `PinSecurity`)
+- Profile PIN codes are now hashed with a per-PIN salted, high-iteration PBKDF2-HMAC-SHA256 (`PinSecurity`) before being written to the Room database, so neither the local database nor the Cloudflare KV ZIP backups produced by `CloudProfileSyncWorker` contain clear-text PINs. The deliberately slow KDF makes offline brute force of the small 4-digit PIN keyspace expensive even if a backup leaks. PIN verification, legacy salted-SHA-256 hashes and legacy plaintext profiles remain fully supported via a transparent fallback, and any legacy value is transparently re-hashed to the PBKDF2 format on the next successful PIN verification so clear-text PINs stop shipping in backups.
+
+### Changed
+
+#### D-Pad focus engine consolidation (`TVFocus.kt`)
+- Removed the deprecated `composed {}` wrapper from `tvFocusable`, eliminating the duplicated `1f`-target scale animation and the double `interactionSource` subscription. Scale and the outline/glow highlight are now computed once in `FocusableSurface` through a shared `focusHighlight` modifier.
+- `TvButton` with `enabled = false` is now dimmed with `.alpha(0.5f)` and completely excluded from D-Pad navigation (`canFocus = false`), so the remote highlight can no longer land on dead actions.
+
 ### Added
 
 #### P2P, anime and Kodi ecosystem hardening
@@ -30,6 +41,11 @@ All notable changes to Polish Media Hub are documented in this file.
 - `plugins/scripts/test-pmh.js` provides a Node smoke test using a synchronous `httpFetch` mock.
 
 ### Fixed
+
+#### Anime tile duplication and final code-freeze hardening
+- **Duplicate Anime tiles** (`MediaSourceModule.kt`) — removed the `@IntoSet` multibinding for `DocchiMediaSource`; it is now injected exclusively into `AnimeRepository` (like `KitsuMediaSource`) and is no longer double-queried through `SourceRegistry.all`, permanently removing the duplicated Anime tiles and category rows on the home screen and in search.
+- **Silent catch blocks** — added `Log.w` logging to the previously empty catch blocks in `KodiDiscoveryManager` (`stopServiceDiscovery`) and `QuickJsMediaSource` (`withContextOrEmpty`).
+- **Release log stripping** (`app/proguard-rules.pro`) — added an `-assumenosideeffects` rule that removes `Log.d`/`Log.v`/`isLoggable` calls from the release `.apk`.
 
 - `QuickJsEngine.extractHeaders` now also accepts a JSON string for headers in addition to a JS object/Map.
 - `PluginRepository.applyPlugin` now falls back to `config.scriptUrl` when `config.script` is not present for `quickjs` sources.
