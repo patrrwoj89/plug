@@ -16,6 +16,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
   - **Cloudstream** plugin-style repositories and **Aniyomi** `.apk` extensions loaded dynamically via `DexClassLoader`.
   - **QuickJS plugins** (`.js`) with built-in `httpFetch` network bridge, headers and async evaluation.
   - **Web scraping** configuration via JSON with validation and dynamic fallback to QuickJS.
+  - **Cloudflare Edge Offloading Engine** (`cloudflare-resolver/`): an optional TypeScript/Wrangler Worker (`https://*.workers.dev/resolve`) handles heavy web stream extraction (P.A.C.K.E.R unpacking, CDA decoding, media-regex extraction) in the cloud. `WebMediaSource.resolve()` calls the Worker first when enabled and transparently falls back to the local Kotlin resolver on network errors, 5xx or 403. Returned stream headers are merged into `MediaItem.headers`.
   - **IPTV/M3U** with XMLTV EPG support, local Room cache, background refresh by `IptvUpdateWorker` and a professional **EPG Timeline Grid**.
   - **Jellyfin, Plex, Emby, Subsonic/Airsonic, Stremio, AniList, TMDB, Trakt, MDBList, podcasts (RSS)**, internet radio and Deezer proxy.
   - **MDBList integration** (`MdbListMediaSource`): public top lists, user lists, media search and cross-ID lookup by imdb/tmdb/trakt/tvdb; every item carries `tmdbId`, `imdbId` and `traktId` for matching with other sources.
@@ -66,6 +67,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 ### Network & anti-bot
 
 - **Cloudflare bypass**: headless `WebView` solver (`HeadlessWebSolver`), `MemoryCookieJar`, `CloudflareBypassInterceptor` and a native P.A.C.K.E.R. unpacker (`JsUnpacker`).
+- **Cloudflare Edge Offloading Engine** (`cloudflare-resolver/`): optional Cloudflare Worker that runs the same unpacker/CDA decoder logic at the edge, offloading CPU work from the TV. Configurable from `Settings → Cloudflare Edge Offloading` or the wireless admin panel.
 - **CDA decoder** for extracting `data-video-id` from `cda.pl` links.
 - Global `OkHttpClient` shared across repositories and plugin code.
 
@@ -78,6 +80,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **Background Trakt.tv sync** (`TraktSyncWorker`) runs every 6 hours with network/battery constraints. You can also trigger an immediate sync from `Settings` or the admin panel.
 - **Automatic Trakt token refresh** (`TraktAuthenticator`): when a Trakt API call returns 401, a dedicated `OkHttpClient` refreshes the `access_token` using the encrypted `refresh_token`, stores the new tokens in the Android Keystore and retries the original request transparently.
 - **Smart Skip Intro/Outro settings**: toggle and default intro/outro durations can be set from `Settings` or the wireless admin panel.
+- **Cloudflare Edge Offloading settings**: toggle, Worker URL and masked auth token can be set from `Settings → Cloudflare Edge Offloading` or the wireless admin panel.
 - **First-launch onboarding** lets new users pick legal starter source packages, including an MDBList starter package in `legal_sources.json`.
 
 ### Android TV integration

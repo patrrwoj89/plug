@@ -72,6 +72,14 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
   - Dodano test jednostkowy `HomePreFetchWorkerTest` z MockK weryfikujący wyciąganie URL-i i wywołania `ImageLoader.execute()`.
 
 #### Źródła
+- **Silnik Offloadingu Chmury Cloudflare** (subprojekt `cloudflare-resolver` + integracja `WebMediaSource`)
+  - Nowy podprojekt `cloudflare-resolver/` w TypeScript/Wrangler wdrażany jako Cloudflare Worker pod adresem `https://*.workers.dev/resolve`.
+  - Worker przyjmuje parametr zapytania `?url=`, opcjonalny `?headers=` w formacie JSON, weryfikuje nagłówek `X-Hub-Token` względem sekretu Workera (`HUB_TOKEN`), pobiera stronę docelową i wyciąga adres strumienia za pomocą tych samych mechanizmów co aplikacja: rozpakowywania P.A.C.K.E.R, dekodera CDA i wyrażeń regularnych na URL-ach mediów.
+  - `WebMediaSource` odczytuje teraz `useCloudflareBypass`, `cloudflareWorkerUrl` i `cloudflareAuthToken` z `ApiConfigRepository` (szyfrowany DataStore).
+  - Gdy bypass jest aktywny, `WebMediaSource.resolve()` najpierw odpytuje Workera; przy każdym błędzie sieci, timeout, kodzie 5xx lub 403 natychmiast i cicho wraca do lokalnego resolvera Kotlina (`JsUnpacker`, `CdaDecoder`, `QuickJsEngine`).
+  - Nagłówki strumienia zwrócone przez Workera są scalane do `MediaItem.headers` w `resolveItem()`, dzięki czemu ExoPlayer / LibVLC otrzymują poprawny `Referer` / `User-Agent`.
+  - Panel konfiguracyjny dodany do `SettingsScreen` i bezprzewodowego panelu QR `AdminHttpServer` (przełącznik, URL Workera, maskowany token); wrażliwy token jest maskowany w `serveConfig`.
+  - Dodano `WebMediaSourceTest` z MockWebServer weryfikujący kierowanie zapytań do Workera, nagłówek `X-Hub-Token`, scalanie nagłówków i zachowanie fallbacku lokalnego.
 - **Integracja MDBList** (`MdbListMediaSource`, modele `MdbListApi`)
   - Nowe federowane źródło `MediaSource` podpięte do `SourceRegistry`.
   - Ładuje publiczne listy top (`/lists/top`), listy użytkownika (`/lists/user`) i elementy list (`/lists/{id}/items`).

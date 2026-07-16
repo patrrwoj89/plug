@@ -114,6 +114,15 @@ class SettingsViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = null)
 
+    val useCloudflareBypass: StateFlow<Boolean> = apiConfigRepository.useCloudflareBypass
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = false)
+
+    val cloudflareWorkerUrl: StateFlow<String> = apiConfigRepository.cloudflareWorkerUrl
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = "")
+
+    val cloudflareAuthToken: StateFlow<String> = apiConfigRepository.cloudflareAuthToken
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = "")
+
     fun setDarkTheme(value: Boolean) = viewModelScope.launch { settingsRepository.setDarkTheme(value) }
     fun setAutoplayTrailers(value: Boolean) = viewModelScope.launch { settingsRepository.setAutoplayTrailers(value) }
     fun setSaveSearchHistory(value: Boolean) = viewModelScope.launch { settingsRepository.setSaveSearchHistory(value) }
@@ -135,6 +144,10 @@ class SettingsViewModel @Inject constructor(
     fun setMdbListApiKey(value: String) = viewModelScope.launch { apiConfigRepository.setMdbListApiKey(value) }
     fun setTraktClientId(value: String) = viewModelScope.launch { apiConfigRepository.setTraktClientId(value) }
     fun setTraktAccessToken(value: String) = viewModelScope.launch { apiConfigRepository.setTraktAccessToken(value) }
+
+    fun setUseCloudflareBypass(value: Boolean) = viewModelScope.launch { apiConfigRepository.setUseCloudflareBypass(value) }
+    fun setCloudflareWorkerUrl(value: String) = viewModelScope.launch { apiConfigRepository.setCloudflareWorkerUrl(value) }
+    fun setCloudflareAuthToken(value: String) = viewModelScope.launch { apiConfigRepository.setCloudflareAuthToken(value) }
 
     fun syncTraktNow() = viewModelScope.launch { TraktSyncWorker.startImmediate(context) }
 

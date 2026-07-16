@@ -188,7 +188,10 @@ class AdminHttpServer @Inject constructor(
                     "lastEpgSyncError" to lastEpgSyncError.map { it ?: "" },
                     "lastTraktSyncAt" to lastTraktSyncAt,
                     "lastTraktSyncStatus" to lastTraktSyncStatus,
-                    "lastTraktSyncError" to lastTraktSyncError.map { it ?: "" }
+                    "lastTraktSyncError" to lastTraktSyncError.map { it ?: "" },
+                    "useCloudflareBypass" to useCloudflareBypass,
+                    "cloudflareWorkerUrl" to cloudflareWorkerUrl,
+                    "cloudflareAuthToken" to cloudflareAuthToken
                 ) + with(settingsRepository) {
                     mapOf(
                         "autoSkipIntro" to autoSkipIntro,
@@ -256,6 +259,9 @@ class AdminHttpServer @Inject constructor(
             params["preferredAudioType"]?.let { settingsRepository.setPreferredAudioType(it) }
             params["nightModeEnabled"]?.toBooleanStrictOrNull()?.let { settingsRepository.setNightModeEnabled(it) }
             params["dialogueBoostGainmB"]?.toIntOrNull()?.let { settingsRepository.setDialogueBoostGainmB(it.coerceIn(0, 3000)) }
+            params["useCloudflareBypass"]?.toBooleanStrictOrNull()?.let { apiConfigRepository.setUseCloudflareBypass(it) }
+            params["cloudflareWorkerUrl"]?.let { apiConfigRepository.setCloudflareWorkerUrl(it) }
+            params["cloudflareAuthToken"]?.let { apiConfigRepository.setCloudflareAuthToken(it) }
             pushAddonSettingsIfKodiConfigured()
         }
         writeResponse(out, 200, "OK", "text/plain", "OK", corsOrigin)
@@ -380,7 +386,8 @@ class AdminHttpServer @Inject constructor(
             "plexToken",
             "embyToken",
             "subsonicPassword",
-            "mdbListApiKey"
+            "mdbListApiKey",
+            "cloudflareAuthToken"
         )
 
         private val ADMIN_HTML = """
@@ -488,6 +495,13 @@ label .status-dot { margin-left: 0.5rem; }
   <input type="text" name="nightModeEnabled" placeholder="false">
   <label>Dialogue Boost (mB, 0-3000)</label>
   <input type="text" name="dialogueBoostGainmB" placeholder="1000">
+  <h3>Cloudflare Edge Offloading</h3>
+  <label>Use Cloudflare bypass (true/false)</label>
+  <input type="text" name="useCloudflareBypass" placeholder="false">
+  <label>Cloudflare Worker URL</label>
+  <input type="text" name="cloudflareWorkerUrl" placeholder="https://your-worker.workers.dev">
+  <label>Cloudflare Worker Auth Token</label>
+  <input type="password" name="cloudflareAuthToken" placeholder="Hub token from worker secret">
   <button type="submit">Save Configuration</button>
   <div id="status" class="status"></div>
 </form>

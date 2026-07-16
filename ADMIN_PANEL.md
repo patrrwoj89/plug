@@ -90,6 +90,9 @@ Send form fields matching the keys supported by `ApiConfigRepository`. The admin
 | `preferredAudioType` | `lector` or `dubbing` — Polish audio preference |
 | `nightModeEnabled` | `true` or `false` — enable the ExoPlayer `LoudnessEnhancer` for dynamic range compression |
 | `dialogueBoostGainmB` | Night-mode gain in millibels, `0` to `3000` (default `1000` mB) |
+| `useCloudflareBypass` | `true` or `false` — enable the Cloudflare Edge Offloading Worker for web stream extraction |
+| `cloudflareWorkerUrl` | Your Worker URL, e.g. `https://your-worker.workers.dev` |
+| `cloudflareAuthToken` | Shared `HUB_TOKEN` secret; masked in GET `/api/config` |
 
 Only the fields you actually use need to be present. Empty strings are ignored.
 
@@ -132,11 +135,14 @@ Only the fields you actually use need to be present. Empty strings are ignored.
   "useAlternativePlayer": "false",
   "preferredAudioType": "lector",
   "nightModeEnabled": "false",
-  "dialogueBoostGainmB": "1000"
+  "dialogueBoostGainmB": "1000",
+  "useCloudflareBypass": "false",
+  "cloudflareWorkerUrl": "https://your-worker.workers.dev",
+  "cloudflareAuthToken": "your-hub-token"
 }
 ```
 
-Note: the actual HTTP endpoint expects `application/x-www-form-urlencoded` form fields, not raw JSON. The JSON example above is shown for clarity. Sensitive fields (MDBList, TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens and Subsonic password) are encrypted with AES-256-GCM in Android Keystore before being written to DataStore. When `GET /api/config` returns them they are masked to only the first 4 and last 4 characters (e.g. `A1B2***********C3D4`), so raw credentials are never visible to other devices on the LAN. Saving new values still works via `POST /api/config` because the plain value is received and encrypted on the TV.
+Note: the actual HTTP endpoint expects `application/x-www-form-urlencoded` form fields, not raw JSON. The JSON example above is shown for clarity. Sensitive fields (MDBList, TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens and Subsonic password) are encrypted with AES-256-GCM in Android Keystore before being written to DataStore. When `GET /api/config` returns them they are masked to only the first 4 and last 4 characters (e.g. `A1B2***********C3D4`), so raw credentials are never visible to other devices on the LAN. Saving new values still works via `POST /api/config` because the plain value is received and encrypted on the TV. The `cloudflareAuthToken` is also treated as sensitive and masked in `GET /api/config`.
 
 ## Kodi remote settings sync
 

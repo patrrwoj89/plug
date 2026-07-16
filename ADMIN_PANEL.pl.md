@@ -90,6 +90,9 @@ Wyślij pola formularza odpowiadające kluczom obsługiwanym przez `ApiConfigRep
 | `preferredAudioType` | `lector` lub `dubbing` — preferencja polskiego dźwięku |
 | `nightModeEnabled` | `true` lub `false` — włącza `LoudnessEnhancer` ExoPlayera do kompresji dynamiki |
 | `dialogueBoostGainmB` | Wzmocnienie trybu nocnego w mili-decybelach, `0` do `3000` (domyślnie `1000` mB) |
+| `useCloudflareBypass` | `true` lub `false` — włącza Workera Cloudflare do offloadingu wyciągania strumieni web |
+| `cloudflareWorkerUrl` | URL Twojego Workera, np. `https://twoj-worker.workers.dev` |
+| `cloudflareAuthToken` | Współdzielony sekret `HUB_TOKEN`; maskowany w `GET /api/config` |
 
 Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignorowane.
 
@@ -132,11 +135,14 @@ Wystarczą tylko pola, których faktycznie używasz. Puste łańcuchy są ignoro
   "useAlternativePlayer": "false",
   "preferredAudioType": "lector",
   "nightModeEnabled": "false",
-  "dialogueBoostGainmB": "1000"
+  "dialogueBoostGainmB": "1000",
+  "useCloudflareBypass": "false",
+  "cloudflareWorkerUrl": "https://twoj-worker.workers.dev",
+  "cloudflareAuthToken": "twoj-hub-token"
 }
 ```
 
-Uwaga: rzeczywisty endpoint HTTP oczekuje danych `application/x-www-form-urlencoded`, a nie surowego JSON. Powyższy JSON pokazany jest dla przejrzystości. Wrażliwe pola (MDBList, TMDB, AniList, Trakt, Debrid, tokeny Jellyfin/Plex/Emby oraz hasło Subsonic) są szyfrowane algorytmem AES-256-GCM w Android Keystore przed zapisem do DataStore. W odpowiedzi `GET /api/config` zwracane są one w postaci zamaskowanej — widoczne są tylko pierwsze 4 i ostatnie 4 znaki (np. `A1B2***********C3D4`) — więc nie są widoczne dla innych urządzeń w sieci LAN. Zapisanie nowej wartości nadal działa przez `POST /api/config`, ponieważ otrzymuje jawny tekst i szyfruje go na TV.
+Uwaga: rzeczywisty endpoint HTTP oczekuje danych `application/x-www-form-urlencoded`, a nie surowego JSON. Powyższy JSON pokazany jest dla przejrzystości. Wrażliwe pola (MDBList, TMDB, AniList, Trakt, Debrid, tokeny Jellyfin/Plex/Emby oraz hasło Subsonic) są szyfrowane algorytmem AES-256-GCM w Android Keystore przed zapisem do DataStore. W odpowiedzi `GET /api/config` zwracane są one w postaci zamaskowanej — widoczne są tylko pierwsze 4 i ostatnie 4 znaki (np. `A1B2***********C3D4`) — więc nie są widoczne dla innych urządzeń w sieci LAN. Zapisanie nowej wartości nadal działa przez `POST /api/config`, ponieważ otrzymuje jawny tekst i szyfruje go na TV. Token `cloudflareAuthToken` jest również traktowany jako wrażliwy i maskowany w `GET /api/config`.
 
 ## Zdalna synchronizacja ustawień Kodi
 

@@ -241,4 +241,11 @@
     <string name="settings_night_mode_subtitle">Flatten dynamic range to boost quiet dialogue and tame loud effects</string>
     <string name="settings_dialogue_boost">Dialogue boost</string>
     <string name="settings_dialogue_boost_subtitle">Gain applied by the loudness enhancer when night mode is on, in millibels</string>
+    <string name="settings_cloudflare_title">Cloudflare Edge Offloading</string>
+    <string name="settings_cloudflare_bypass">Use Cloudflare bypass</string>
+    <string name="settings_cloudflare_bypass_subtitle">Offload heavy web stream extraction to your private Cloudflare Worker</string>
+    <string name="settings_cloudflare_worker_url">Cloudflare Worker URL</string>
+    <string name="settings_cloudflare_worker_url_hint">https://your-worker.workers.dev</string>
+    <string name="settings_cloudflare_auth_token">Cloudflare Worker auth token</string>
+    <string name="settings_cloudflare_auth_token_hint">Hub token shared with the worker secret</string>
 </resources>

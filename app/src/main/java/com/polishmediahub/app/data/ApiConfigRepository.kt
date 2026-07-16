@@ -61,6 +61,11 @@ class ApiConfigRepository @Inject constructor(
 
     val healthStatuses: Flow<String> = plainStringFlow(KEY_HEALTH_STATUSES)
 
+    val useCloudflareBypass: Flow<Boolean> = context.apiConfigDataStore.data
+        .map { it[KEY_USE_CLOUDFLARE_BYPASS] ?: false }
+    val cloudflareWorkerUrl: Flow<String> = plainStringFlow(KEY_CLOUDFLARE_WORKER_URL)
+    val cloudflareAuthToken: Flow<String> = stringFlow(KEY_CLOUDFLARE_AUTH_TOKEN)
+
     suspend fun setTmdbApiKey(value: String) = edit(KEY_TMDB, value)
     suspend fun setAniListToken(value: String) = edit(KEY_ANILIST, value)
     suspend fun setTraktClientId(value: String) = edit(KEY_TRAKT_ID, value)
@@ -143,6 +148,10 @@ class ApiConfigRepository @Inject constructor(
 
     suspend fun setHealthStatuses(value: String) = edit(KEY_HEALTH_STATUSES, value)
 
+    suspend fun setUseCloudflareBypass(value: Boolean) = context.apiConfigDataStore.edit { it[KEY_USE_CLOUDFLARE_BYPASS] = value }
+    suspend fun setCloudflareWorkerUrl(value: String) = edit(KEY_CLOUDFLARE_WORKER_URL, value)
+    suspend fun setCloudflareAuthToken(value: String) = edit(KEY_CLOUDFLARE_AUTH_TOKEN, value)
+
     companion object {
         private val KEY_TMDB = stringPreferencesKey("tmdb_api_key")
         private val KEY_ANILIST = stringPreferencesKey("anilist_token")
@@ -181,6 +190,9 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_LAST_TRAKT_SYNC_STATUS = stringPreferencesKey("last_trakt_sync_status")
         private val KEY_LAST_TRAKT_SYNC_ERROR = stringPreferencesKey("last_trakt_sync_error")
         private val KEY_HEALTH_STATUSES = stringPreferencesKey("health_statuses")
+        private val KEY_USE_CLOUDFLARE_BYPASS = booleanPreferencesKey("use_cloudflare_bypass")
+        private val KEY_CLOUDFLARE_WORKER_URL = stringPreferencesKey("cloudflare_worker_url")
+        private val KEY_CLOUDFLARE_AUTH_TOKEN = stringPreferencesKey("cloudflare_auth_token")
 
         private val SENSITIVE_STRING_KEYS = setOf(
             KEY_TMDB,
@@ -196,7 +208,8 @@ class ApiConfigRepository @Inject constructor(
             KEY_PLEX_TOKEN,
             KEY_EMBY_TOKEN,
             KEY_SUBSONIC_PASSWORD,
-            KEY_MDBLIST
+            KEY_MDBLIST,
+            KEY_CLOUDFLARE_AUTH_TOKEN
         )
     }
 }

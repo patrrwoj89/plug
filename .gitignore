@@ -29,5 +29,11 @@ output.json
 # OS
 Thumbs.db
 
+# Node / Cloudflare Worker subproject
+node_modules/
+.cloudflare-resolver/node_modules/
+cloudflare-resolver/.wrangler/
+cloudflare-resolver/secrets.json
+
 # Raw branding assets (process and output into res/)
 branding_source/

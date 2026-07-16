@@ -388,6 +388,10 @@ The app includes a **Cloudflare bypass stack**:
 
 Yes. `JsUnpacker` decodes common `eval(function(p,a,c,k,...) )` P.A.C.K.E.R. packed scripts and extracts stream URLs, which are then passed to ExoPlayer with the correct headers.
 
+### What is the Cloudflare Edge Offloading Engine?
+
+`cloudflare-resolver/` is an optional Cloudflare Worker (TypeScript/Wrangler) that runs the same P.A.C.K.E.R unpacker, CDA decoder and media-regex extraction on Cloudflare's edge, offloading CPU work from the TV. Enable it in `Settings → Cloudflare Edge Offloading` (or the admin panel) by entering the Worker URL and a shared auth token. The app sends the target page URL and optional headers to `https://<worker>/resolve?url=...` with `X-Hub-Token`; the Worker returns `{ "streamUrl": "...", "headers": { ... } }`. If the Worker fails (network error, 5xx, 403, timeout), `WebMediaSource` transparently falls back to the local Kotlin resolver, so playback continuity is always preserved.
+
 ## Admin Panel & QR Code
 
 ### The QR code does not scan.

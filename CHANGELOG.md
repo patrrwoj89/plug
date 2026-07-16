@@ -72,6 +72,14 @@ All notable changes to Polish Media Hub are documented in this file.
   - Added `HomePreFetchWorkerTest` with MockK, verifying URL extraction and `ImageLoader.execute()` invocations.
 
 #### Sources
+- **Cloudflare Edge Offloading Engine** (`cloudflare-resolver` Worker + `WebMediaSource` integration)
+  - New `cloudflare-resolver/` TypeScript/Wrangler subproject deployed as a Cloudflare Worker on `https://*.workers.dev/resolve`.
+  - The Worker accepts a `?url=` query parameter and optional `?headers=` JSON, validates `X-Hub-Token` against a Worker secret (`HUB_TOKEN`), fetches the target page, and extracts a stream URL using the same P.A.C.K.E.R unpacker, CDA decoder and media-regex logic as the Android app.
+  - `WebMediaSource` now reads `useCloudflareBypass`, `cloudflareWorkerUrl` and `cloudflareAuthToken` from `ApiConfigRepository` (encrypted DataStore).
+  - When Cloudflare bypass is enabled, `WebMediaSource.resolve()` calls the Worker first; on any network error, timeout, 5xx or 403 it transparently falls back to the local Kotlin resolver (`JsUnpacker`, `CdaDecoder`, `QuickJsEngine`).
+  - Resolved stream headers returned by the Worker are merged into `MediaItem.headers` in `resolveItem()` so ExoPlayer / LibVLC receive the correct `Referer` / `User-Agent`.
+  - Configuration UI added to `SettingsScreen` and the wireless `AdminHttpServer` QR panel (toggle, Worker URL, masked auth token); sensitive token is masked in `serveConfig`.
+  - Added `WebMediaSourceTest` with MockWebServer verifying Worker routing, `X-Hub-Token` header, header merging and local fallback behavior.
 - **MDBList integration** (`MdbListMediaSource`, `MdbListApi` models)
   - New federated `MediaSource` bound into `SourceRegistry`.
   - Loads public top lists (`/lists/top`), authenticated user lists (`/lists/user`) and list items (`/lists/{id}/items`).

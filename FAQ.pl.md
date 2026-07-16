@@ -388,6 +388,10 @@ Aplikacja zawiera **stos obejścia Cloudflare**:
 
 Tak. `JsUnpacker` dekoduje powszechne skrypty spakowane formatem `eval(function(p,a,c,k,...) )` i wyciąga URL-e strumieni, które następnie przekazywane są do ExoPlayera z właściwymi nagłówkami.
 
+### Czym jest Silnik Offloadingu Chmury Cloudflare?
+
+`cloudflare-resolver/` to opcjonalny Cloudflare Worker (TypeScript/Wrangler), który na brzegu sieci wykonuje tę samą logikę rozpakowywania P.A.C.K.E.R, dekodowania CDA i wyrażeń regularnych na URL-ach mediów, odciążając procesor telewizora. Włącz go w `Ustawienia → Offloading Chmury Cloudflare` (lub panelu admina), wpisując URL Workera i współdzielony token autoryzacyjny. Aplikacja wysyła docelowy URL i opcjonalne nagłówki na `https://<worker>/resolve?url=...` z nagłówkiem `X-Hub-Token`; Worker zwraca `{ "streamUrl": "...", "headers": { ... } }`. Jeśli Worker zawiedzie (błąd sieci, 5xx, 403, timeout), `WebMediaSource` transparentnie wraca do lokalnego resolvera Kotlina, zachowując ciągłość odtwarzania.
+
 ## Panel administracyjny i kod QR
 
 ### Kod QR się nie skanuje.

@@ -238,4 +238,11 @@
     <string name="settings_night_mode_subtitle">Spłaszcza dynamikę, podbija ciche dialogi i tłumi głośne efekty</string>
     <string name="settings_dialogue_boost">Podbicie dialogów</string>
     <string name="settings_dialogue_boost_subtitle">Wzmocnienie stosowane przez normalizator głośności w trybie nocnym, w mili-decybelach</string>
+    <string name="settings_cloudflare_title">Offloading Chmury Cloudflare</string>
+    <string name="settings_cloudflare_bypass">Użyj obejścia Cloudflare</string>
+    <string name="settings_cloudflare_bypass_subtitle">Przenieś ciężkie wyciąganie strumieni web na prywatny Worker Cloudflare</string>
+    <string name="settings_cloudflare_worker_url">URL Workera Cloudflare</string>
+    <string name="settings_cloudflare_worker_url_hint">https://twoj-worker.workers.dev</string>
+    <string name="settings_cloudflare_auth_token">Token autoryzacyjny Workera</string>
+    <string name="settings_cloudflare_auth_token_hint">Hub token współdzielony z sekretem Workera</string>
 </resources>

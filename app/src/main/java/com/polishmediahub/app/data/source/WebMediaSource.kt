@@ -1,18 +1,25 @@
 package com.polishmediahub.app.data.source
 
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
+import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.plugin.QuickJsEngine
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.flow.first
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jsoup.Jsoup
 import java.net.URLDecoder
+import java.net.URLEncoder
 import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
@@ -21,7 +28,8 @@ import javax.inject.Singleton
 class WebMediaSource @Inject constructor(
     private val client: OkHttpClient,
     private val quickJsEngineProvider: Provider<QuickJsEngine>,
-    private val cookieJar: MemoryCookieJar
+    private val cookieJar: MemoryCookieJar,
+    private val apiConfigRepository: ApiConfigRepository
 ) : MediaSource {
 
     override val id: String = "web"
@@ -84,20 +92,90 @@ class WebMediaSource @Inject constructor(
             headers = config.headers,
             type = MediaItem.Type.MOVIE
         )
-        val resolvedVideoUrl = resolve(item) ?: url
-        return item.copy(
-            videoUrl = resolvedVideoUrl,
-            headers = headersWithCookies(resolvedVideoUrl, config.headers)
+        val resolvedItem = resolveItem(item)
+        return resolvedItem.copy(
+            headers = headersWithCookies(resolvedItem.videoUrl.orEmpty(), resolvedItem.headers)
         )
     }
 
-    override suspend fun resolve(mediaItem: MediaItem): String? {
-        val config = configs.find { mediaItem.id.startsWith("web:${it.id}:") } ?: return mediaItem.videoUrl
-        val relativeId = mediaItem.id.removePrefix("web:${config.id}:")
-        if (config.itemUrlTemplate.isBlank()) return mediaItem.videoUrl
-        val url = config.itemUrlTemplate.replace("{id}", relativeId)
-        val html = fetch(url, config.headers) ?: return mediaItem.videoUrl
+    override suspend fun resolve(mediaItem: MediaItem): String? = resolveStream(mediaItem).url
 
+    override suspend fun resolveItem(mediaItem: MediaItem): MediaItem {
+        val result = resolveStream(mediaItem)
+        return if (result.url.isNotBlank() && result.url != mediaItem.videoUrl) {
+            mediaItem.copy(videoUrl = result.url, headers = mediaItem.headers + result.headers)
+        } else {
+            mediaItem
+        }
+    }
+
+    private data class StreamResult(val url: String, val headers: Map<String, String>)
+
+    private suspend fun resolveStream(mediaItem: MediaItem): StreamResult {
+        val config = configs.find { mediaItem.id.startsWith("web:${it.id}:") }
+            ?: return StreamResult(mediaItem.videoUrl.orEmpty(), emptyMap())
+        val relativeId = mediaItem.id.removePrefix("web:${config.id}:")
+        if (config.itemUrlTemplate.isBlank()) return StreamResult(mediaItem.videoUrl.orEmpty(), emptyMap())
+        val url = config.itemUrlTemplate.replace("{id}", relativeId)
+
+        val useCloudflare = runCatching { apiConfigRepository.useCloudflareBypass.first() }.getOrDefault(false)
+        val workerUrl = runCatching { apiConfigRepository.cloudflareWorkerUrl.first() }.getOrDefault("").trim()
+        val authToken = runCatching { apiConfigRepository.cloudflareAuthToken.first() }.getOrDefault("").trim()
+
+        if (useCloudflare && workerUrl.isNotBlank() && authToken.isNotBlank()) {
+            val cloudResult = resolveViaCloudflare(workerUrl, authToken, url, config.headers)
+            if (cloudResult != null) {
+                if (BuildConfig.DEBUG) Log.d("WebMediaSource", "Resolved stream via Cloudflare worker")
+                return cloudResult
+            }
+            if (BuildConfig.DEBUG) Log.d("WebMediaSource", "Cloudflare worker failed, falling back to local resolver")
+        }
+
+        val localUrl = resolveLocal(url, config, mediaItem)
+        return StreamResult(localUrl ?: mediaItem.videoUrl.orEmpty(), emptyMap())
+    }
+
+    private suspend fun resolveViaCloudflare(
+        workerUrl: String,
+        authToken: String,
+        targetUrl: String,
+        headers: Map<String, String>
+    ): StreamResult? {
+        return try {
+            val headersJson = json.encodeToString(
+                MapSerializer(String.serializer(), String.serializer()),
+                headers
+            )
+            val query = buildString {
+                append("?url=")
+                append(URLEncoder.encode(targetUrl, "UTF-8"))
+                if (headers.isNotEmpty()) {
+                    append("&headers=")
+                    append(URLEncoder.encode(headersJson, "UTF-8"))
+                }
+            }
+            val request = Request.Builder()
+                .url("${workerUrl.removeSuffix("/")}/resolve$query")
+                .header("X-Hub-Token", authToken)
+                .header("Accept", "application/json")
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return null
+                val body = response.body?.string()
+                if (body.isNullOrBlank()) return null
+                val parsed = json.decodeFromString(CloudflareResponse.serializer(), body)
+                if (parsed.streamUrl.isBlank()) return null
+                StreamResult(parsed.streamUrl, parsed.headers)
+            }
+        } catch (e: Exception) {
+            if (BuildConfig.DEBUG) Log.w("WebMediaSource", "Cloudflare resolve failed: ${e.message}")
+            null
+        }
+    }
+
+    private suspend fun resolveLocal(url: String, config: WebSourceConfig, mediaItem: MediaItem): String? {
+        val html = fetch(url, config.headers) ?: return null
         val doc = Jsoup.parse(html, url)
 
         // CDA.pl native decoder
@@ -123,7 +201,7 @@ class WebMediaSource @Inject constructor(
             return runJsResolver(config.jsScript, url, mediaItem, config.headers)
         }
 
-        return mediaItem.videoUrl
+        return null
     }
 
     private suspend fun scrape(config: WebSourceConfig, query: String? = null): List<MediaItem> {
@@ -267,4 +345,11 @@ data class WebSourceConfig(
     val streamAttribute: String = "src",
     val headers: Map<String, String> = emptyMap(),
     val jsScript: String = ""
+)
+
+@Serializable
+@SerialName("CloudflareResponse")
+data class CloudflareResponse(
+    @SerialName("streamUrl") val streamUrl: String = "",
+    @SerialName("headers") val headers: Map<String, String> = emptyMap()
 )

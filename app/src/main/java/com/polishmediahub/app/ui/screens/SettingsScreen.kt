@@ -84,6 +84,9 @@ fun SettingsScreen(
     val preferredAudioType by viewModel.preferredAudioType.collectAsStateWithLifecycle()
     val nightModeEnabled by viewModel.nightModeEnabled.collectAsStateWithLifecycle()
     val dialogueBoostGainmB by viewModel.dialogueBoostGainmB.collectAsStateWithLifecycle()
+    val useCloudflareBypass by viewModel.useCloudflareBypass.collectAsStateWithLifecycle()
+    val cloudflareWorkerUrl by viewModel.cloudflareWorkerUrl.collectAsStateWithLifecycle()
+    val cloudflareAuthToken by viewModel.cloudflareAuthToken.collectAsStateWithLifecycle()
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
     val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
     val lastEpgSync by viewModel.lastEpgSync.collectAsStateWithLifecycle()
@@ -284,6 +287,38 @@ fun SettingsScreen(
                         else -> false
                     }
                 }
+        )
+
+        Text(
+            text = stringResource(id = R.string.settings_cloudflare_title),
+            style = AppTypography.headline,
+            modifier = Modifier.padding(top = Spacing.md)
+        )
+
+        SettingsToggle(
+            title = stringResource(id = R.string.settings_cloudflare_bypass),
+            subtitle = stringResource(id = R.string.settings_cloudflare_bypass_subtitle),
+            checked = useCloudflareBypass,
+            onCheckedChange = viewModel::setUseCloudflareBypass
+        )
+
+        TvOutlinedTextField(
+            value = cloudflareWorkerUrl,
+            onValueChange = viewModel::setCloudflareWorkerUrl,
+            label = { Text(stringResource(id = R.string.settings_cloudflare_worker_url)) },
+            placeholder = { Text(stringResource(id = R.string.settings_cloudflare_worker_url_hint)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            keyboardOptions = KeyboardOptions.Default
+        )
+
+        TvOutlinedTextField(
+            value = cloudflareAuthToken,
+            onValueChange = viewModel::setCloudflareAuthToken,
+            label = { Text(stringResource(id = R.string.settings_cloudflare_auth_token)) },
+            placeholder = { Text(stringResource(id = R.string.settings_cloudflare_auth_token_hint)) },
+            modifier = Modifier.fillMaxWidth(0.5f),
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions.Default
         )
 
         Text(

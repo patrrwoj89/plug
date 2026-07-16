@@ -16,6 +16,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
   - **Cloudstream** — repozytoria i wtyczki oraz **Aniyomi** rozszerzenia `.apk` ładowane dynamicznie przez `DexClassLoader`.
   - **Wtyczki QuickJS** (`.js`) z globalnym mostkiem sieciowym `httpFetch`, nagłówkami i asynchroniczną ewaluacją.
   - **Web scraping** przez konfigurację JSON z walidacją i dynamicznym fallbackiem do QuickJS.
+  - **Silnik Offloadingu Chmury Cloudflare** (`cloudflare-resolver/`): opcjonalny Worker TypeScript/Wrangler (`https://*.workers.dev/resolve`) wykonuje ciężkie wyciąganie linków web (rozpakowywanie P.A.C.K.E.R, dekoder CDA, regex URL mediów) w chmurze. `WebMediaSource.resolve()` najpierw odpytuje Workera, gdy opcja jest włączona, i transparentnie wraca do lokalnego resolvera Kotlina przy błędach sieci, kodach 5xx lub 403. Zwrócone nagłówki strumienia są scalane do `MediaItem.headers`.
   - **IPTV/M3U** z obsługą XMLTV EPG, lokalnym cache Room, tłem odświeżaniem przez `IptvUpdateWorker` oraz profesjonalną **siatką EPG Timeline Grid**.
   - **Jellyfin, Plex, Emby, Subsonic/Airsonic, Stremio, AniList, TMDB, Trakt, MDBList, podcasty (RSS)**, radio internetowe i proxy Deezer.
   - **Integracja MDBList** (`MdbListMediaSource`): publiczne listy top, listy użytkownika, wyszukiwanie mediów i lookup po identyfikatorach imdb/tmdb/trakt/tvdb; każdy element zawiera `tmdbId`, `imdbId` i `traktId`, co ułatwia dopasowanie do innych źródeł.
@@ -66,6 +67,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 ### Sieć i ochrona przed botami
 
 - **Obejście Cloudflare**: headless `WebView` (`HeadlessWebSolver`), `MemoryCookieJar`, `CloudflareBypassInterceptor` oraz natywny dekoder P.A.C.K.E.R. (`JsUnpacker`).
+- **Silnik Offloadingu Chmury Cloudflare** (`cloudflare-resolver/`): opcjonalny Cloudflare Worker uruchamiający tę samą logikę rozpakowywania/dekodowania na brzegu sieci, odciążając procesor telewizora. Konfigurowany z `Ustawienia → Offloading Chmury Cloudflare` lub bezprzewodowego panelu admina.
 - **Dekoder CDA** (`CdaDecoder`) dla ekstrakcji `data-video-id` z `cda.pl`.
 - Globalny `OkHttpClient` współdzielony przez repozytoria i kod wtyczek.
 
@@ -78,6 +80,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - **Tło synchronizacji Trakt.tv** (`TraktSyncWorker`) uruchamia się co 6 godzin z ograniczeniami sieci/baterii. Pobiera historię obejrzanych i listę do obejrzenia z Trakt do Room oraz wysyła lokalne zmiany z powrotem do Trakt. Od czerwca 2026 r. Trakt wymusza paginację na `sync/watched` i `sync/watchlist`; repozytorium odczytuje `X-Pagination-Page-Count` i ładuje wszystkie strony (max 250 na stronę). Można też uruchomić natychmiastową synchronizację z poziomu Ustawień lub panelu admina.
 - **Automatyczne odświeżanie tokenów Trakt** (`TraktAuthenticator`): gdy zapytanie do API Trakt zwróci 401, dedykowany klient `OkHttpClient` odświeża `access_token` za pomocą zaszyfrowanego `refresh_token`, zapisuje nowe tokeny w Android Keystore i transparentnie ponawia pierwotne żądanie.
 - **Ustawienia pomijania czołówki / końcówki**: przełącznik oraz domyślne czasy trwania można zmienić w `Ustawienia` lub w bezprzewodowym panelu admina.
+- **Ustawienia offloadingu Cloudflare**: przełącznik, URL Workera oraz maskowany token autoryzacyjny można ustawić w `Ustawienia → Offloading Chmury Cloudflare` lub w bezprzewodowym panelu admina.
 - **Onboarding pierwszego uruchomienia** pozwala nowym użytkownikom wybrać legalne pakiety startowe.
 
 ### Integracja z Android TV
