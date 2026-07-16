@@ -560,3 +560,21 @@ Gdy element `MediaItem` nie ma jawnych znaczników `introStartMs`/`introEndMs`, 
 ### Dlaczego u dołu ekranu Home pojawia się mały odtwarzacz?
 
 Gdy uruchomisz stream radiowy lub podcast z sekcji Muzyka, `AudioRepository` udostępnia bieżący utwór. `AudioMiniPlayer` wysuwa się z dołu `HomeScreen`, wyświetlając okładkę, tytuł, wykonawcę i przyciski Pauza/Stop obsługiwane D-Padem. Naciśnięcie Center/SELECT na pasku otwiera odtwarzacz. Stan jest zbierany przez `collectAsStateWithLifecycle()`, więc mini-player znika automatycznie po zatrzymaniu odtwarzania.
+
+## P2P, anime i automatyczna konfiguracja Kodi
+
+### Dlaczego do torrentów dodawane są automatycznie trackery?
+
+`TorrentEngine` sieje każdy plik `.torrent` i link `magnet:` przygotowaną listą polskich i publicznych serwerów ogłoszeniowych (np. `electro-torrent.pl`, `tracker.opentrackr.org`). Dzięki temu szybciej odnajdywane są polskie wydania z lektorem/dubbingiem, bez modyfikowania źródłowego pliku.
+
+### Czym jest źródło Docchi?
+
+Sekcja **Anime** używa **Docchi** (`DocchiMediaSource`) jako głównego polskiego backendu anime. Odpytuje ono `https://api.docchi.pl/v1` o tytuły, opisy i linki do odtwarzaczy odcinków, a w razie niedostępności przechodzi na AniList i Kitsu.
+
+### Jak ładowane są rozszerzenia Aniyomi?
+
+Aplikacja dostarcza domyślny polski indeks rozszerzeń Aniyomi w `legal_sources.json` (`yuzono/anime-repo`). `PluginRepository` pobiera `index.min.json`, rozwija bezwzględne URL-e APK i oblicza najlepszy `mainClass`, dzięki czemu `DynamicPluginLoader` może załadować `.apk` przez `DexClassLoader` bez systemowego instalatora.
+
+### Dlaczego FanFilm otrzymuje ustawienia TorBox?
+
+Gdy Kodi jest skonfigurowane i `debridProvider` to `torbox`, `AdminHttpServer` wstrzykuje do dodatku `plugin.video.fanfilm` przez JSON-RPC klucze `torbox_token` i `torbox_apikey`, uzbrajając FanFilm w pełni z poziomu panelu admina z kodem QR.

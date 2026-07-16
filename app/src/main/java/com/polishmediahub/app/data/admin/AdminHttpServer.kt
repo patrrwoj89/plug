@@ -322,24 +322,32 @@ class AdminHttpServer @Inject constructor(
             val kodiUrl = apiConfigRepository.kodiUrl.first()
             if (kodiUrl.isBlank()) return
             kodiMediaSource.configure(kodiUrl)
-            val debrid = apiConfigRepository.debridApiKey.first()
+
+            val debridApiKey = apiConfigRepository.debridApiKey.first()
+            val debridAccessToken = apiConfigRepository.debridAccessToken.first()
             val debridProvider = apiConfigRepository.debridProvider.first()
             when (debridProvider) {
                 "real_debrid" -> {
-                    if (debrid.isNotBlank()) {
-                        kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "realdebrid_token", debrid)
+                    if (debridApiKey.isNotBlank()) {
+                        kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "realdebrid_token", debridApiKey)
                     }
                 }
                 "torbox" -> {
-                    if (debrid.isNotBlank()) {
-                        kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "torbox_token", debrid)
-                        kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "torbox_apikey", debrid)
+                    if (debridApiKey.isNotBlank()) {
+                        kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "torbox_apikey", debridApiKey)
+                        kodiMediaSource.setAddonSetting(
+                            "plugin.video.fanfilm",
+                            "torbox_token",
+                            debridAccessToken.ifBlank { debridApiKey }
+                        )
                     }
                 }
             }
-            val traktId = apiConfigRepository.traktClientId.first()
-            if (traktId.isNotBlank()) {
-                kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "trakt_token", traktId)
+
+            val traktToken = apiConfigRepository.traktAccessToken.first()
+                .ifBlank { apiConfigRepository.traktClientId.first() }
+            if (traktToken.isNotBlank()) {
+                kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "trakt_token", traktToken)
             }
         } catch (e: Exception) {
             if (BuildConfig.DEBUG) Log.w("AdminHttpServer", "pushAddonSettingsIfKodiConfigured failed: ${e.message}", e)

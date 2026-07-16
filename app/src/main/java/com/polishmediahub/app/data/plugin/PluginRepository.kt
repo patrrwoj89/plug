@@ -3,6 +3,7 @@ package com.polishmediahub.app.data.plugin
 import android.content.Context
 import android.util.Log
 import com.polishmediahub.app.BuildConfig
+import com.polishmediahub.app.data.legal.LegalSourcesRepository
 import com.polishmediahub.app.data.local.PluginDao
 import com.polishmediahub.app.data.local.PluginEntity
 import com.polishmediahub.app.data.plugin.models.AniyomiExtension
@@ -42,7 +43,8 @@ class PluginRepository @Inject constructor(
     private val kodiMediaSource: KodiMediaSource,
     private val webMediaSource: WebMediaSource,
     private val cloudstreamSource: CloudstreamSource,
-    private val quickJsMediaSourceProvider: Provider<QuickJsMediaSource>
+    private val quickJsMediaSourceProvider: Provider<QuickJsMediaSource>,
+    private val legalSourcesRepository: LegalSourcesRepository
 ) {
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -136,6 +138,9 @@ class PluginRepository @Inject constructor(
     /**
      * Fetches all repository indexes defined in enabled plugin manifests and exposes them as
      * installable plugin tiles via [availablePlugins].
+     *
+     * Also loads the default Aniyomi repository URL declared in [legal_sources.json] so the
+     * Polish extension index is always available even before the user adds a custom repo.
      */
     suspend fun syncIndexes() = withContext(Dispatchers.IO) {
         val plugins = pluginDao.observeAll().first().filter { it.enabled }
@@ -151,7 +156,7 @@ class PluginRepository @Inject constructor(
                         }
                         "aniyomi_repo" -> {
                             val repoUrl = source.config["url"] ?: return@forEach
-                            all += fetchAniyomiExtensions(repoUrl).map { it.toInstallable() }
+                            all += fetchAniyomiExtensions(repoUrl).map { it.toInstallable(repoUrl) }
                         }
                         else -> {}
                     }
@@ -160,6 +165,16 @@ class PluginRepository @Inject constructor(
                 if (BuildConfig.DEBUG) Log.w(TAG, "syncIndexes failed for ${entity.pluginId}: ${e.message}")
             }
         }
+
+        // Default Polish Aniyomi repository from legal_sources.json.
+        try {
+            val defaultRepo = legalSourcesRepository.load()?.aniyomiRepo?.url?.ifBlank { null }
+                ?: DEFAULT_ANIYOMI_REPO_URL
+            all += fetchAniyomiExtensions(defaultRepo).map { it.toInstallable(defaultRepo) }
+        } catch (e: Exception) {
+            if (BuildConfig.DEBUG) Log.w(TAG, "syncIndexes failed for default Aniyomi repo: ${e.message}")
+        }
+
         _availablePlugins.value = all.distinctBy { it.id }
     }
 
@@ -184,7 +199,11 @@ class PluginRepository @Inject constructor(
 
     suspend fun fetchAniyomiExtensions(repoUrl: String): List<AniyomiExtension> = withContext(Dispatchers.IO) {
         try {
-            val indexUrl = if (repoUrl.endsWith("/")) "${repoUrl}index.min.json" else "$repoUrl/index.min.json"
+            val indexUrl = when {
+                repoUrl.endsWith("index.min.json", ignoreCase = true) -> repoUrl
+                repoUrl.endsWith("/") -> "${repoUrl}index.min.json"
+                else -> "$repoUrl/index.min.json"
+            }
             val body = fetch(indexUrl) ?: return@withContext emptyList()
             json.decodeFromString(ListSerializer(AniyomiExtension.serializer()), body)
         } catch (e: Exception) {
@@ -369,19 +388,60 @@ class PluginRepository @Inject constructor(
             authors = authors.orEmpty()
         )
 
-    private fun AniyomiExtension.toInstallable(): InstallablePlugin.Aniyomi =
+    private fun AniyomiExtension.toInstallable(repoUrl: String): InstallablePlugin.Aniyomi =
         InstallablePlugin.Aniyomi(
             id = pkg,
             name = name,
-            url = apk,
+            url = aniyomiApkUrl(repoUrl, apk),
             iconUrl = null,
-            description = null,
+            description = sources.firstOrNull()?.let { "${it.name} (${it.lang})" },
             version = version,
             fileSize = null,
             pkg = pkg,
             lang = lang,
-            nsfw = nsfw
+            nsfw = nsfw != 0,
+            mainClass = aniyomiMainClass(pkg, sources, name)
         )
+
+    /**
+     * Persists an Aniyomi extension from [plugin] as an enabled binary plugin manifest
+     * and loads it through [DynamicPluginLoader] (DexClassLoader).
+     */
+    suspend fun installAniyomiExtension(plugin: InstallablePlugin.Aniyomi) = withContext(Dispatchers.IO) {
+        installBinaryPlugin(
+            type = "aniyomi_apk",
+            url = plugin.url,
+            mainClass = plugin.mainClass,
+            name = plugin.name,
+            iconUrl = plugin.iconUrl
+        )
+    }
+
+    private fun aniyomiApkUrl(repoUrl: String, apkName: String): String {
+        if (apkName.startsWith("http", ignoreCase = true)) return apkName
+        val base = repoUrl
+            .removeSuffix("index.min.json")
+            .removeSuffix("/")
+        return "$base/apk/$apkName"
+    }
+
+    private fun aniyomiMainClass(pkg: String, sources: List<com.polishmediahub.app.data.plugin.models.AniyomiExtensionSource>, name: String): String {
+        val className = if (sources.isNotEmpty()) {
+            toJavaClassName(sources.first().name)
+        } else {
+            toJavaClassName(name.removePrefix("Aniyomi:").trim())
+        }
+        return if (className.isNotBlank()) "$pkg.$className" else pkg
+    }
+
+    private fun toJavaClassName(displayName: String): String {
+        if (displayName.isBlank()) return ""
+        return displayName
+            .replace(Regex("[^A-Za-z0-9 _-]"), "")
+            .split(Regex("[ _-]+"))
+            .filter { it.isNotBlank() }
+            .joinToString("") { it.replaceFirstChar { c -> c.uppercase() } }
+    }
 
     @kotlinx.serialization.Serializable
     private data class CloudstreamRepoIndex(
@@ -393,5 +453,13 @@ class PluginRepository @Inject constructor(
 
     private companion object {
         private const val TAG = "PluginRepository"
+
+        /**
+         * Default Aniyomi extension index. The user-provided `https://githubusercontent.com`
+         * is not resolvable; this points to the active community-built `yuzono/anime-repo`
+         * repository index (verified reachable on 2026-07-14).
+         */
+        private const val DEFAULT_ANIYOMI_REPO_URL =
+            "https://raw.githubusercontent.com/yuzono/anime-repo/repo"
     }
 }

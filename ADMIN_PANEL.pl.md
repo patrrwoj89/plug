@@ -196,8 +196,9 @@ Dedykowany klient `@Named("trakt")` `OkHttpClient` instaluje `TraktAuthenticator
 Gdy zapiszesz token Debrid lub Trakt w panelu administracyjnym, aplikacja próbuje automatycznie przesłać go do skonfigurowanego Kodi:
 
 - Wywoływana jest metoda JSON-RPC `Settings.SetSettingValue` dla `plugin.video.fanfilm`.
-- Aktualizowane są ustawienia `realdebrid_token` i `trakt_token`.
-- Gdy `debridProvider` to `torbox`, ten sam klucz API jest przesyłany jako `torbox_token` i `torbox_apikey` dla kompatybilności wstecznej.
+- `realdebrid_token` jest przesyłane, gdy `debridProvider` to `real_debrid`.
+- `torbox_token` i `torbox_apikey` są przesyłane, gdy `debridProvider` to `torbox`; `torbox_apikey` używa `debridApiKey`, natomiast `torbox_token` preferuje `debridAccessToken`, a w przypadku pustego — `debridApiKey`.
+- `trakt_token` jest przesyłane z `traktAccessToken`, a jeśli ten jest pusty — z `traktClientId`.
 - Wymaga skonfigurowanego i osiągalnego `kodiUrl`.
 
 ## Dodawanie wtyczki (POST `/api/plugin`)

@@ -196,8 +196,9 @@ A dedicated `@Named("trakt")` `OkHttpClient` installs `TraktAuthenticator`. If a
 When you save a Debrid or Trakt token in the admin panel, the app attempts to push it to a configured Kodi instance:
 
 - `Settings.SetSettingValue` is called over JSON-RPC for `plugin.video.fanfilm`.
-- `realdebrid_token` and `trakt_token` settings are updated automatically.
-- When `debridProvider` is `torbox`, the same API key is pushed as both `torbox_token` and `torbox_apikey` for backward compatibility.
+- `realdebrid_token` is pushed when `debridProvider` is `real_debrid`.
+- `torbox_token` and `torbox_apikey` are pushed when `debridProvider` is `torbox`; `torbox_apikey` uses `debridApiKey`, while `torbox_token` prefers `debridAccessToken` and falls back to `debridApiKey`.
+- `trakt_token` is pushed from `traktAccessToken` if available, otherwise from `traktClientId`.
 - This requires `kodiUrl` to be configured and reachable.
 
 ## Adding a plugin (POST `/api/plugin`)

@@ -13,13 +13,14 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - **Interfejs TV-first** oparty na Jetpack Compose Foundation i Material3, obsługa focusu pilotem D-Pad, efekty powiększenia / podświetlenia oraz nowoczesny **panel boczny**.
 - **Sfera źródeł mediów** agregowana przez `FederatedMediaRepository` i `SourceRegistry`:
   - **Kodi** — integracja JSON-RPC ze wsparciem DRM, przeglądaniem katalogów wtyczek (`Files.GetDirectory`), automatycznym wykrywaniem serwera w LAN (`KodiDiscoveryManager`) i zdalnym zapisem ustawień (`Settings.SetSettingValue`).
-  - **Cloudstream** — repozytoria i wtyczki oraz **Aniyomi** rozszerzenia `.apk` ładowane dynamicznie przez `DexClassLoader`.
+  - **Cloudstream** — repozytoria i wtyczki oraz **Aniyomi** rozszerzenia `.apk` ładowane dynamicznie przez `DexClassLoader`. Domyślny polski indeks Aniyomi (`yuzono/anime-repo`) jest pobierany automatycznie z `legal_sources.json`.
   - **Wtyczki QuickJS** (`.js`) z globalnym mostkiem sieciowym `httpFetch`, nagłówkami i asynchroniczną ewaluacją.
   - **Web scraping** przez konfigurację JSON z walidacją i dynamicznym fallbackiem do QuickJS.
   - **Silnik Offloadingu Chmury Cloudflare** (`cloudflare-resolver/`): opcjonalny Worker TypeScript/Wrangler (`https://*.workers.dev/resolve`) wykonuje ciężkie wyciąganie linków web (rozpakowywanie P.A.C.K.E.R, dekoder CDA, regex URL mediów) w chmurze. `WebMediaSource.resolve()` najpierw odpytuje Workera, gdy opcja jest włączona, i transparentnie wraca do lokalnego resolvera Kotlina przy błędach sieci, kodach 5xx lub 403. Zwrócone nagłówki strumienia są scalane do `MediaItem.headers`.
   - **IPTV/M3U** z obsługą XMLTV EPG, lokalnym cache Room, tłem odświeżaniem przez `IptvUpdateWorker` oraz profesjonalną **siatką EPG Timeline Grid**.
   - **Jellyfin, Plex, Emby, Subsonic/Airsonic, Stremio, AniList, TMDB, Trakt, MDBList, podcasty (RSS)**, radio internetowe i proxy Deezer.
   - **Integracja MDBList** (`MdbListMediaSource`): publiczne listy top, listy użytkownika, wyszukiwanie mediów i lookup po identyfikatorach imdb/tmdb/trakt/tvdb; każdy element zawiera `tmdbId`, `imdbId` i `traktId`, co ułatwia dopasowanie do innych źródeł.
+  - **Docchi — polskie anime** (`DocchiMediaSource`, `AnimeRepository`): główne źródło anime dla polskich wydań i odtwarzaczy odcinków z oficjalnego API `https://api.docchi.pl/v1`; w przypadku niedostępności Docchi następuje fallback na AniList i Kitsu.
   - **Reaktywny fallback Kitsu dla anime** (`KitsuMediaSource`, `AnimeRepository`): gdy AniList GraphQL zawiedzie (błąd sieci, timeout, 429), aplikacja automatycznie i cicho przełącza się na Kitsu JSON:API. Z `include=mappings` parsowane są powiązane `malId` oraz `aniListId`, aby zachować zgodność z resolverami strumieni.
   - **Fallback metadanych Filmweb.pl** (`FilmwebMediaSource`, `FederatedMediaRepository`): gdy szczegóły z TMDB nie zawierają opisu, zawierają zbyt krótki opis lub brak polskich znaków diakrytycznych, aplikacja pobiera polski tytuł, fabułę, plakat i społecznościową ocenę z publicznego API Filmweb (`www.filmweb.pl/api/v1`). Wyniki są zapisywane w lokalnej bazie Room v14, dzięki czemu przyszłe wejścia na kartę szczegółów są natychmiastowe, a obok oceny TMDB wyświetlana jest etykieta `Filmweb: X.X`.
 - **Strumieniowanie BitTorrent** przez `jlibtorrent` z pobieraniem sekwencyjnym, lokalnym serwerem HTTP i UI buforowania.
@@ -261,6 +262,7 @@ Ekran przewodnika TV (`EpgScreen` / `EpgViewModel`) renderuje profesjonalną dwu
 
 - Włączone pobieranie sekwencyjne dla wybranego pliku wideo.
 - Priorytetowe kawałki z deadline'ami dla szybkiego startu ExoPlayera.
+- Domyślna lista trackerów (polskie i publiczne: `electro-torrent.pl`, `devil-torrents.pl`, `tracker.opentrackr.org`, `open.stealth.si`, `tracker.coppersurfer.tk`, `tracker.leechers-paradise.org`) jest siana do każdego pliku `.torrent` oraz linku `magnet:`, aby przyspieszyć odnajdowanie polskich wydań.
 - Lokalny serwer proxy `TorrentHttpServer` z obsługą `Range: bytes=`.
 - `TorrentInputStream` blokuje do momentu dostępności żądanych kawałków.
 - `TorrentMediaSource.resolve()` zwraca URL `http://127.0.0.1:<port>/stream?infoHash=...&file=...` dla ExoPlayera.
@@ -285,7 +287,7 @@ To repozytorium zawiera gotowe polskie scrapery w katalogu `plugins/`:
 
 Wtyczki Cloudstream (`.cs3` / `.cs4`) i Aniyomi (`.apk`) mogą być ładowane bez systemowego instalatora:
 
-- `PluginRepository` pobiera plik binarny do `context.cacheDir/plugins/`.
+- `PluginRepository` pobiera plik binarny do `context.cacheDir/plugins/` i automatycznie parsuje domyślny indeks rozszerzeń Aniyomi z `legal_sources.json`.
 - `DynamicPluginLoader` tworzy katalog zoptymalizowanego DEX pod `codeCacheDir/plugins_dex` i tworzy `DexClassLoader` z `context.classLoader` jako rodzicem.
 - Załadowane klasy są adaptowane przez `ReflectiveMediaSource` do kontraktu `MediaSource` aplikacji.
 - Wyniki wtyczek zasilają `PluginMediaSource` i pojawiają się w Wyszukiwarce, na Home i w dashboardzie.
@@ -331,7 +333,8 @@ Projekt utrzymuje zerową liczbę ostrzeżeń lintera:
 
 ## Testowanie
 
-- Testy jednostkowe: `./gradlew :app:testDebugUnitTest` — obejmują m.in. `BlackFrameDetectorTest`, `CloudProfileSyncWorkerTest` (MockK), `SandboxEngineTest`, `HomePreFetchWorkerTest`, `TvLauncherManagerTest`, `CrashReportSanitizerTest`, `WebMediaSourceTest`.
+- Szybkie testy wtyczek QuickJS: `npm install && npm run build && npm test` w `plugins/` (lub z katalogu głównego projektu).
+- Testy jednostkowe: `./gradlew clean test :app:compileDebugKotlin :app:lintDebug` — obejmują m.in. `BlackFrameDetectorTest`, `CloudProfileSyncWorkerTest` (MockK), `SandboxEngineTest`, `HomePreFetchWorkerTest`, `TvLauncherManagerTest`, `CrashReportSanitizerTest`, `WebMediaSourceTest`, `DocchiMediaSourceTest` i `AniyomiRepoParserTest`.
 - Instrumentacyjne testy migracji Room: `./gradlew :app:connectedDebugAndroidTest` — obejmuje `ProfileSyncMigrationTest` weryfikujący przetrwanie danych profili i historii oglądania podczas przywracania bazy.
 - Testy zrzutów ekranu / record: `./gradlew :app:recordPaparazziDebug`
 - Lint: `./gradlew :app:lintDebug`

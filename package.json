@@ -1,0 +1,11 @@
+{
+  "name": "plug",
+  "version": "3.0.0",
+  "description": "Polish Media Hub root orchestration: QuickJS scrapers, cloudflare resolver and Android app",
+  "scripts": {
+    "build": "cd plugins && npm run build",
+    "test": "cd plugins && npm test"
+  },
+  "keywords": ["pmh", "android-tv", "polish-media-hub"],
+  "license": "MIT"
+}

@@ -68,14 +68,18 @@ MDBList (https://mdblist.com) to serwis agregujący metadane, który pozwala uż
 | MDBList | https://mdblist.com | Publiczne listy użytkowników; wymagany klucz API |
 | Przykład publicznej listy MDBList | `https://api.mdblist.com/lists/top?apikey=<twój_klucz>` | Publiczne listy top |
 
-## Metadane anime Kitsu
+## Metadane i źródła anime
 
-Kitsu (https://kitsu.io) to darmowe, publiczne API JSON:API dla metadanych anime i mangi. Aplikacja używa `https://kitsu.io/api/edge` jako reaktywnego fallbacku, gdy AniList jest niedostępny, z parametrem `include=mappings` w celu zachowania cross-linków do identyfikatorów MyAnimeList i AniList. Nie jest wymagany klucz API.
+- **Docchi** (`https://docchi.pl`) — oficjalne publiczne API polskich wydań anime i odtwarzaczy odcinków (`https://api.docchi.pl/v1`). Używane jako główne źródło anime; nie wymaga klucza API.
+- **Kitsu** (`https://kitsu.io`) — darmowe, publiczne API JSON:API dla metadanych anime i mangi. Aplikacja używa `https://kitsu.io/api/edge` jako reaktywnego fallbacku, gdy AniList jest niedostępny, z parametrem `include=mappings` w celu zachowania cross-linków do identyfikatorów MyAnimeList i AniList. Nie jest wymagany klucz API.
+- **Indeks rozszerzeń Aniyomi** (`yuzono/anime-repo`) — kuratorowany przez społeczność otwarty indeks plików `.apk` Aniyomi, zapisany w `legal_sources.json` pod kluczem `aniyomiRepo`. APK są ładowane dynamicznie przez `DexClassLoader`; użytkownik pozostaje odpowiedzialny za legalność włączanych rozszerzeń.
 
 | Źródło | URL | Uwagi |
 |--------|-----|-------|
+| Docchi API | `https://api.docchi.pl/v1` | Polskie metadane anime i odtwarzacze odcinków; darmowe, brak klucza |
 | Kitsu API | https://kitsu.io/api/edge | Publiczne metadane anime/mangi; darmowe, brak klucza |
 | Endpoint mapowań Kitsu | `https://kitsu.io/api/edge/anime/{id}/mappings` | Rekordy mapowań zewnętrznych identyfikatorów |
+| Aniyomi repo (domyślne) | `https://raw.githubusercontent.com/yuzono/anime-repo/repo/index.min.json` | Społecznościowy indeks rozszerzeń; zweryfikuj każde rozszerzenie przed użyciem |
 
 ## Muzyka / Audio / Podcasty
 
@@ -139,6 +143,7 @@ Aplikacja zawiera `app/src/main/assets/legal_sources.json` z wyselekcjonowanymi 
 - **Darmowa Telewizja Internetowa** — publiczne playlisty IPTV M3U i URL XMLTV EPG.
 - **Muzyka i Podcasty** — przykładowe kanały RSS podcastów i placeholder `deezerProxyUrl`.
 - **Katalogi Publiczne Web** — oficjalne dodatki Stremio (YouTube, TED) i pusta lista `webSources` do własnych crawlerów.
+- **Anime** — metadane z API `kitsu` oraz domyślny indeks `aniyomiRepo` rozszerzeń ładowanych dynamicznie.
 - **MDBList** — przykładowy wpis publicznej listy oraz oficjalny URL do wygenerowania własnego klucza API.
 
 Te przykładowe źródła mają charakter wyłącznie punktu wyjścia; Ty jesteś odpowiedzialny za zweryfikowanie legalności każdego źródła w Twoim regionie.
