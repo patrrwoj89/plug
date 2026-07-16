@@ -26,6 +26,7 @@ import com.polishmediahub.app.ui.components.EmptyState
 import com.polishmediahub.app.ui.components.MediaCard
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Spacing
+import com.polishmediahub.app.ui.theme.TvBringIntoViewProvider
 import com.polishmediahub.app.ui.viewmodel.WatchlistViewModel
 
 @Composable
@@ -44,33 +45,35 @@ fun WatchlistScreen(
             modifier = modifier.fillMaxSize()
         )
     } else {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(5),
-            modifier = modifier
-                .fillMaxSize()
-                .padding(Spacing.lg)
-                .focusGroup()
-                .focusRestorer(),
-            contentPadding = PaddingValues(vertical = Spacing.md),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md)
-        ) {
-            item(span = { GridItemSpan(5) }) {
-                Text(
-                    text = stringResource(id = R.string.watchlist),
-                    style = AppTypography.headline,
-                    modifier = Modifier.padding(bottom = Spacing.md)
-                )
-            }
+        TvBringIntoViewProvider {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(5),
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(Spacing.lg)
+                    .focusGroup()
+                    .focusRestorer(),
+                contentPadding = PaddingValues(vertical = Spacing.md),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                verticalArrangement = Arrangement.spacedBy(Spacing.md)
+            ) {
+                item(span = { GridItemSpan(5) }) {
+                    Text(
+                        text = stringResource(id = R.string.watchlist),
+                        style = AppTypography.headline,
+                        modifier = Modifier.padding(bottom = Spacing.md)
+                    )
+                }
 
-            items(savedItems, key = { it.id }) { item ->
-                MediaCard(
-                    item = item,
-                    onClick = { onNavigate(Screen.Detail(item.id)) },
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = animatedVisibilityScope,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                items(savedItems, key = { it.id }) { item ->
+                    MediaCard(
+                        item = item,
+                        onClick = { onNavigate(Screen.Detail(item.id)) },
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
     }

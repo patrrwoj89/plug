@@ -25,6 +25,7 @@ import com.polishmediahub.app.ui.components.FocusableSurface
 import com.polishmediahub.app.ui.components.TvButton
 import com.polishmediahub.app.ui.components.TvOutlinedTextField
 import com.polishmediahub.app.ui.theme.Spacing
+import com.polishmediahub.app.ui.theme.TvBringIntoViewProvider
 import com.polishmediahub.app.ui.viewmodel.CustomListsViewModel
 
 @Composable
@@ -69,20 +70,22 @@ fun CustomListsScreen(
             }
         }
 
-        LazyColumn(
-            contentPadding = PaddingValues(vertical = Spacing.md),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            items(lists, key = { it.listId }) { list ->
-                FocusableSurface(
-                    onClick = { onNavigate(Screen.CustomListDetail(list.listId)) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = list.name,
-                        modifier = Modifier.padding(Spacing.md)
-                    )
+        TvBringIntoViewProvider {
+            LazyColumn(
+                contentPadding = PaddingValues(vertical = Spacing.md),
+                verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(lists, key = { it.listId }) { list ->
+                    FocusableSurface(
+                        onClick = { onNavigate(Screen.CustomListDetail(list.listId)) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = list.name,
+                            modifier = Modifier.padding(Spacing.md)
+                        )
+                    }
                 }
             }
         }

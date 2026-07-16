@@ -30,6 +30,7 @@ import com.polishmediahub.app.ui.components.MediaCard
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Spacing
+import com.polishmediahub.app.ui.theme.TvBringIntoViewProvider
 import com.polishmediahub.app.ui.viewmodel.CustomListDetailViewModel
 
 @Composable
@@ -57,32 +58,34 @@ fun CustomListDetailScreen(
                 )
             }
             else -> {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(5),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .focusGroup()
-                        .focusRestorer(),
-                    contentPadding = PaddingValues(vertical = Spacing.md),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.md)
-                ) {
-                    item(span = { GridItemSpan(5) }) {
-                        Text(
-                            text = uiState.listName.ifBlank { stringResource(id = R.string.custom_lists_title) },
-                            style = AppTypography.headline,
-                            modifier = Modifier.padding(bottom = Spacing.md)
-                        )
-                    }
+                TvBringIntoViewProvider {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(5),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .focusGroup()
+                            .focusRestorer(),
+                        contentPadding = PaddingValues(vertical = Spacing.md),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.md)
+                    ) {
+                        item(span = { GridItemSpan(5) }) {
+                            Text(
+                                text = uiState.listName.ifBlank { stringResource(id = R.string.custom_lists_title) },
+                                style = AppTypography.headline,
+                                modifier = Modifier.padding(bottom = Spacing.md)
+                            )
+                        }
 
-                    items(uiState.items, key = { it.id }) { item ->
-                        MediaCard(
-                            item = item,
-                            onClick = { onNavigate(Screen.Detail(item.id)) },
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        items(uiState.items, key = { it.id }) { item ->
+                            MediaCard(
+                                item = item,
+                                onClick = { onNavigate(Screen.Detail(item.id)) },
+                                sharedTransitionScope = sharedTransitionScope,
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }

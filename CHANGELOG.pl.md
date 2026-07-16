@@ -6,6 +6,22 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 
 ### Dodano
 
+#### Płynne centrowanie focusu, pełne rozmycie spoilerów i szybkie ustawienia playera
+- **Centrowanie focusu D-Pada na Android TV** (`TvBringIntoViewSpec`)
+  - Dodano `TvBringIntoViewSpec` implementujący `BringIntoViewSpec` z wycentrowanym układem i płynną animacją `SpringSpec`.
+  - `LazyRow` w `CategoryRow` oraz `LazyVerticalGrid`/`LazyColumn` w `LibraryScreen`, `WatchlistScreen`, `CustomListDetailScreen` i `CustomListsScreen` zostały owinięte w `TvBringIntoViewProvider`, dzięki czemu focus D-Pada pozostaje na środku ekranu, zamiast uderzać w krawędzie.
+- **Pełne rozmycie spoilerów dla nieobejrzanych odcinków** (`DetailScreen`, `DetailViewModel`)
+  - Gdy `spoilerBlurEnabled` jest aktywne, a odcinek nie znajduje się w `WatchHistoryRepository` dla bieżącego `profileId`, plakat (`AsyncImage` z `Modifier.blur(16.dp)`) i tytuł są ukrywane.
+  - Oryginalny tytuł zastępowany jest `stringResource(R.string.episode_title, ...)` (lub `spoiler_hidden_title`, gdy brak numeru odcinka).
+  - Środkowy przycisk D-Pada na kafelku plakatu/tytułu odsłania tytuł, plakat i opis na czas bieżącego seansu.
+- **Podręczne menu szybkich ustawień playera** (`PlayerQuickSettingsOverlay`, `PlayerControls`, `PlayerScreen`, `UniversalVlcPlayer`, `PlayerViewModel`, `PlayerViewModelTest`)
+  - Dodano przycisk z ikoną zębatki (`Icons.Default.Settings`) w `PlayerControls`.
+  - Otwiera dolny `PlayerQuickSettingsOverlay` z przełącznikami trybu nocnego (`LoudnessEnhancer`), preferencji audio (`Lektor` / `Dubbing`) oraz silnika (`ExoPlayer` / `LibVLC`).
+  - Stan nakładki subskrybowany jest przez `collectAsStateWithLifecycle()`, a zamknięcie zwraca focus na suwak postępu za pomocą `FocusRequester`.
+  - `PlayerViewModel` udostępnia `toggleNightModeEnabled()`, `cyclePreferredAudioType()` i `toggleUseAlternativePlayer()`, które zapisują dane w `SettingsRepository`.
+  - Niezabezpieczone wywołania `Log` w `PlayerViewModel` i `UniversalVlcPlayer` zostały opakowane przez `if (BuildConfig.DEBUG)`, więc parametry sesji audio i URL-e nie trafią do Logcat w buildach release.
+  - Rozszerzono `PlayerViewModelTest` o testy MockK weryfikujące trzy nowe przełączniki szybkich ustawień.
+
 #### Smart Home, wewnętrzny PiP wideo i wygaszacz OLED (zamrożenie kodu)
 - **Webhooki Home Assistant Smart Cinema** (`ApiConfigRepository`, `SettingsScreen`, `AdminHttpServer`, `HomeAssistantWebhookClient`, `PlayerViewModel`, `PlayerViewModelTest`)
   - Zaszyfrowane preferencje DataStore `homeAssistantUrl`, `homeAssistantToken`, `homeAssistantWebhookEnabled` w `ApiConfigRepository`.

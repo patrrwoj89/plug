@@ -102,6 +102,19 @@ private fun DetailContent(
     var spoilerRevealed by remember(item.id) { mutableStateOf(false) }
     val shouldBlur = blurDescription && !spoilerRevealed
 
+    val displayedTitle = if (shouldBlur) {
+        val episode = item.episode
+        if (episode != null) {
+            stringResource(id = R.string.episode_title, episode)
+        } else {
+            stringResource(id = R.string.spoiler_hidden_title)
+        }
+    } else {
+        item.title
+    }
+    val displayedSubtitle = if (shouldBlur) "" else item.subtitle
+    val posterBlurModifier = if (shouldBlur) Modifier.blur(16.dp) else Modifier
+
     val posterModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
         with(sharedTransitionScope) {
             Modifier
@@ -124,6 +137,13 @@ private fun DetailContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(420.dp)
+                .then(
+                    if (shouldBlur) {
+                        Modifier.tvFocusable(scale = 1f, onClick = { spoilerRevealed = true })
+                    } else {
+                        Modifier
+                    }
+                )
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
@@ -133,7 +153,7 @@ private fun DetailContent(
                     .build(),
                 contentDescription = item.title,
                 contentScale = ContentScale.Crop,
-                modifier = posterModifier
+                modifier = posterModifier.then(posterBlurModifier)
             )
             Box(
                 modifier = Modifier
@@ -152,8 +172,10 @@ private fun DetailContent(
                     .padding(Spacing.xl),
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                Text(item.title, style = AppTypography.hero, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(item.subtitle, style = AppTypography.body)
+                Text(displayedTitle, style = AppTypography.hero, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (displayedSubtitle.isNotBlank()) {
+                    Text(displayedSubtitle, style = AppTypography.body)
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                     FocusableSurface(
                         onClick = onPlay,

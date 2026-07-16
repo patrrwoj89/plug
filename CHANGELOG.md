@@ -6,6 +6,22 @@ All notable changes to Polish Media Hub are documented in this file.
 
 ### Added
 
+#### Centered D-Pad focus scrolling, full spoiler blur and player quick settings
+- **Centered TV focus scrolling** (`TvBringIntoViewSpec`)
+  - Added `TvBringIntoViewSpec` implementing `BringIntoViewSpec` with a centered-child layout and a smooth `SpringSpec` animation.
+  - Wrapped `LazyRow` in `CategoryRow` and `LazyVerticalGrid`/`LazyColumn` in `LibraryScreen`, `WatchlistScreen`, `CustomListDetailScreen` and `CustomListsScreen` with `TvBringIntoViewProvider`, so D-Pad focus stays in the center of the screen instead of hitting the edges.
+- **Full spoiler blur for unwatched episodes** (`DetailScreen`, `DetailViewModel`)
+  - When `spoilerBlurEnabled` is on and the episode is not in `WatchHistoryRepository` for the current `profileId`, both the poster (`AsyncImage` with `Modifier.blur(16.dp)`) and the title are hidden.
+  - The original title is replaced by `stringResource(R.string.episode_title, ...)` (or `spoiler_hidden_title` for items without an episode number).
+  - D-Pad Center/SELECT on the poster/title tile reveals title, poster and description for the current session.
+- **Player quick settings overlay** (`PlayerQuickSettingsOverlay`, `PlayerControls`, `PlayerScreen`, `UniversalVlcPlayer`, `PlayerViewModel`, `PlayerViewModelTest`)
+  - Added a dedicated gear icon (`Icons.Default.Settings`) in `PlayerControls`.
+  - Opens a bottom `PlayerQuickSettingsOverlay` with toggles for Night mode (`LoudnessEnhancer`), audio preference (`Lektor` / `Dubbing`) and player engine (`ExoPlayer` / `LibVLC`).
+  - Overlay state is subscribed with `collectAsStateWithLifecycle()` and closing it returns focus to the progress `Slider` via `FocusRequester`.
+  - `PlayerViewModel` exposes `toggleNightModeEnabled()`, `cyclePreferredAudioType()` and `toggleUseAlternativePlayer()` which write to `SettingsRepository`.
+  - Unguarded `Log` calls in `PlayerViewModel` and `UniversalVlcPlayer` are now wrapped with `if (BuildConfig.DEBUG)` so audio session parameters and URLs are never logged in release builds.
+  - Extended `PlayerViewModelTest` with MockK tests verifying the three quick-setting toggles call the correct `SettingsRepository` setters.
+
 #### Smart Home, In-App PiP & OLED protection (final code freeze)
 - **Home Assistant Smart Cinema webhooks** (`ApiConfigRepository`, `SettingsScreen`, `AdminHttpServer`, `HomeAssistantWebhookClient`, `PlayerViewModel`, `PlayerViewModelTest`)
   - Encrypted DataStore preferences `homeAssistantUrl`, `homeAssistantToken`, `homeAssistantWebhookEnabled` in `ApiConfigRepository`.

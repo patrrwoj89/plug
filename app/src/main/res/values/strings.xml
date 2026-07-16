@@ -170,6 +170,16 @@
     <string name="next_episode_cancel">Cancel</string>
     <string name="next_episode_season_episode">Season %1$d • Episode %2$d</string>
     <string name="spoiler_reveal_hint">Press SELECT to reveal</string>
+    <string name="spoiler_hidden_title">Hidden title</string>
+    <string name="episode_title">Episode %1$d</string>
+    <string name="quick_settings_title">Quick settings</string>
+    <string name="quick_settings_night_mode_on">Night mode: ON</string>
+    <string name="quick_settings_night_mode_off">Night mode: OFF</string>
+    <string name="quick_settings_audio_lektor">Audio: Lektor</string>
+    <string name="quick_settings_audio_dubbing">Audio: Dubbing</string>
+    <string name="quick_settings_switch_vlc">Switch to LibVLC</string>
+    <string name="quick_settings_switch_exo">Switch to ExoPlayer</string>
+    <string name="close">Close</string>
     <string name="essential_setup_title">Welcome to Polish Media Hub. Let\'s set up your legal starter sources.</string>
     <string name="essential_setup_subtitle">Pick the free, legal source packages you want to load.</string>
     <string name="essential_setup_iptv_title">Free Internet TV</string>

@@ -196,6 +196,14 @@ Na ekranie głównym możesz nacisnąć **BACK**, gdy panel jest zwinięty. D-Pa
 
 Tak. Poziome `LazyRow` (np. w `CategoryRow` na ekranie głównym) używają `Modifier.focusGroup()` i `focusRestorer()`. Jeśli przewiniesz do 5. kafelka, zjedziesz w dół, a następnie wrócisz w górę, fokus wraca na 5. pozycję zamiast resetować się do pierwszego kafelka.
 
+### Dlaczego zaznaczony kafelek przesuwa się na środek ekranu?
+
+Niestandardowy `TvBringIntoViewSpec` implementuje `BringIntoViewSpec` z płynną animacją `SpringSpec` i jest dostarczany do kontenerów przewijanych przez `TvBringIntoViewProvider`. Centruje on zaznaczony `MediaCard` wewnątrz `LazyRow` oraz `LazyVerticalGrid`/`LazyColumn` na ekranach Home, Biblioteka, Do obejrzenia i Listy własne, dzięki czemu nawigacja D-Padem utrzymuje aktywny kafelek na środku ekranu telewizora, a nie przy krawędzi.
+
+### Co to jest Spoiler Blur?
+
+Włącz **Rozmywanie spoilerów** w **Ustawieniach**. Na `DetailScreen` nieobejrzane odcinki ukrywają oryginalny tytuł (zastępując go lokalizowanym tekstem `Odcinek X` lub `Ukryty tytuł`), rozmywają plakat (`Modifier.blur(16.dp)`) oraz opis. Wciśnij **D-Pad Center/SELECT** na kafelku plakatu/tytułu, aby odsłonić tytuł, plakat i opis na czas bieżącego seansu.
+
 ## BitTorrent
 
 ### Czy mogę streamować torrenty?
@@ -287,6 +295,17 @@ Panel w prawym górnym rogu odtwarzacza pokazujący dane diagnostyczne w czasie 
 ### Czy to wpływa na wydajność?
 
 Statystyki są zbierane przez `AnalyticsListener` ExoPlayera i eksponowane w osobnym `StateFlow`. Rekompozycje dotyczą tylko małego panelu statystyk, więc reszta ekranu `PlayerScreen` nie jest odświeżana.
+
+## Szybkie ustawienia odtwarzacza
+
+### Czy mogę zmienić preferencję audio (Lektor / Dubbing) lub silnik w locie?
+
+Naciśnij **ikonę zębatki** w kontrolkach odtwarzacza, aby otworzyć nakładkę **Szybkich ustawień**. Znajdują się tam przyciski D-Pad:
+- **Tryb nocny** — przełącza `LoudnessEnhancer`, spłaszczając dynamikę i wzmacniając ciche dialogi.
+- **Preferencja audio** — przełącza między `Lektor` a `Dubbing` przy wyborze ścieżki.
+- **Silnik odtwarzacza** — przełącza między `ExoPlayer` a `LibVLC` bez zatrzymywania odtwarzania.
+
+Zamknięcie nakładki zwraca focus na suwak postępu.
 
 ## Smart Home, wewnętrzny PiP wideo i wygaszacz OLED
 

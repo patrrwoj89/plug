@@ -48,7 +48,7 @@ class PlayerViewModelTest {
 
     private fun createViewModel(
         homeAssistantWebhookClient: HomeAssistantWebhookClient = mockk(relaxed = true)
-    ): Pair<PlayerViewModel, HomeAssistantWebhookClient> {
+    ): Triple<PlayerViewModel, HomeAssistantWebhookClient, SettingsRepository> {
         val settingsRepository = mockk<SettingsRepository>(relaxed = true)
         every { settingsRepository.preferredAudioType } returns flowOf("lector")
         every { settingsRepository.nightModeEnabled } returns flowOf(false)
@@ -90,7 +90,7 @@ class PlayerViewModelTest {
             homeAssistantWebhookClient = homeAssistantWebhookClient,
             videoPipManager = VideoPipManager()
         )
-        return viewModel to homeAssistantWebhookClient
+        return Triple(viewModel, homeAssistantWebhookClient, settingsRepository)
     }
 
     @Test
@@ -142,7 +142,7 @@ class PlayerViewModelTest {
 
     @Test
     fun `setIsPlaying true sends play webhook`() = runTest(testDispatcher) {
-        val (viewModel, homeAssistant) = createViewModel()
+        val (viewModel, homeAssistant, _) = createViewModel()
         advanceUntilIdle()
 
         viewModel.setIsPlaying(true)
@@ -153,7 +153,7 @@ class PlayerViewModelTest {
 
     @Test
     fun `setIsPlaying false sends pause webhook`() = runTest(testDispatcher) {
-        val (viewModel, homeAssistant) = createViewModel()
+        val (viewModel, homeAssistant, _) = createViewModel()
         advanceUntilIdle()
 
         viewModel.setIsPlaying(false)
@@ -164,12 +164,45 @@ class PlayerViewModelTest {
 
     @Test
     fun `onPlaybackStopped sends stop webhook`() = runTest(testDispatcher) {
-        val (viewModel, homeAssistant) = createViewModel()
+        val (viewModel, homeAssistant, _) = createViewModel()
         advanceUntilIdle()
 
         viewModel.onPlaybackStopped(0L, 1000L)
         advanceUntilIdle()
 
         coVerify { homeAssistant.send("stop", "Test Movie") }
+    }
+
+    @Test
+    fun `toggleNightModeEnabled sends inverted value to settings repository`() = runTest(testDispatcher) {
+        val (viewModel, _, settingsRepository) = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleNightModeEnabled()
+        advanceUntilIdle()
+
+        coVerify { settingsRepository.setNightModeEnabled(true) }
+    }
+
+    @Test
+    fun `toggleUseAlternativePlayer sends inverted value to settings repository`() = runTest(testDispatcher) {
+        val (viewModel, _, settingsRepository) = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleUseAlternativePlayer()
+        advanceUntilIdle()
+
+        coVerify { settingsRepository.setUseAlternativePlayer(true) }
+    }
+
+    @Test
+    fun `cyclePreferredAudioType switches from lector to dubbing`() = runTest(testDispatcher) {
+        val (viewModel, _, settingsRepository) = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.cyclePreferredAudioType()
+        advanceUntilIdle()
+
+        coVerify { settingsRepository.setPreferredAudioType("dubbing") }
     }
 }

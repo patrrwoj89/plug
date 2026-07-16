@@ -20,6 +20,7 @@ import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Spacing
+import com.polishmediahub.app.ui.theme.TvBringIntoViewProvider
 
 @Composable
 fun CategoryRow(
@@ -38,21 +39,23 @@ fun CategoryRow(
                 .semantics { contentDescription = "Category: ${category.name}" }
         )
 
-        LazyRow(
-            modifier = Modifier
-                .focusGroup()
-                .focusRestorer(),
-            contentPadding = PaddingValues(horizontal = Spacing.lg),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-        ) {
-            items(category.items, key = { it.id }) { item ->
-                MediaCard(
-                    item = item,
-                    onClick = { onItemClick(item) },
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = animatedVisibilityScope,
-                    modifier = Modifier
-                )
+        TvBringIntoViewProvider {
+            LazyRow(
+                modifier = Modifier
+                    .focusGroup()
+                    .focusRestorer(),
+                contentPadding = PaddingValues(horizontal = Spacing.lg),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+            ) {
+                items(category.items, key = { it.id }) { item ->
+                    MediaCard(
+                        item = item,
+                        onClick = { onItemClick(item) },
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        modifier = Modifier
+                    )
+                }
             }
         }
     }

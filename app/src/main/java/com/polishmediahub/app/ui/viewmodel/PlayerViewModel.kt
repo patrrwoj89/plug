@@ -3,6 +3,7 @@
 package com.polishmediahub.app.ui.viewmodel
 
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -139,6 +140,25 @@ class PlayerViewModel @Inject constructor(
     }
     fun setPipMode(inPip: Boolean) { _isInPipMode.value = inPip }
     fun updatePlayerStats(stats: PlayerStats) { _playerStats.value = stats }
+
+    fun toggleNightModeEnabled() {
+        viewModelScope.launch {
+            settingsRepository.setNightModeEnabled(!_nightModeEnabled.value)
+        }
+    }
+
+    fun toggleUseAlternativePlayer() {
+        viewModelScope.launch {
+            settingsRepository.setUseAlternativePlayer(!_useAlternativePlayer.value)
+        }
+    }
+
+    fun cyclePreferredAudioType() {
+        viewModelScope.launch {
+            val next = if (_preferredAudioType.value == "dubbing") "lector" else "dubbing"
+            settingsRepository.setPreferredAudioType(next)
+        }
+    }
 
     private fun notifyHomeAssistant(event: String) {
         viewModelScope.launch {
@@ -360,7 +380,7 @@ class PlayerViewModel @Inject constructor(
             try {
                 reportProgress(current, positionMs, durationMs, state)
             } catch (e: Exception) {
-                Log.w("PlayerViewModel", "reportPlaybackProgress failed: ${e.message}", e)
+                if (BuildConfig.DEBUG) Log.w("PlayerViewModel", "reportPlaybackProgress failed: ${e.message}", e)
             }
         }
     }
@@ -395,7 +415,7 @@ class PlayerViewModel @Inject constructor(
                 _autoPlayCancelled.value = false
                 _forceAutoPlayOverlay.value = false
             } catch (e: Exception) {
-                Log.w("PlayerViewModel", "playNextEpisode failed: ${e.message}")
+                if (BuildConfig.DEBUG) Log.w("PlayerViewModel", "playNextEpisode failed: ${e.message}")
             }
         }
     }
@@ -408,7 +428,7 @@ class PlayerViewModel @Inject constructor(
         }
         analyticsListener?.let { listener ->
             try { currentExoPlayer?.removeAnalyticsListener(listener) } catch (e: Exception) {
-                Log.w("PlayerViewModel", "removeAnalyticsListener failed: ${e.message}", e)
+                if (BuildConfig.DEBUG) Log.w("PlayerViewModel", "removeAnalyticsListener failed: ${e.message}", e)
             }
         }
         analyticsListener = null
@@ -426,7 +446,7 @@ class PlayerViewModel @Inject constructor(
     override fun onCleared() {
         analyticsListener?.let { listener ->
             try { currentExoPlayer?.removeAnalyticsListener(listener) } catch (e: Exception) {
-                Log.w("PlayerViewModel", "removeAnalyticsListener failed: ${e.message}", e)
+                if (BuildConfig.DEBUG) Log.w("PlayerViewModel", "removeAnalyticsListener failed: ${e.message}", e)
             }
         }
         analyticsListener = null
@@ -439,7 +459,7 @@ class PlayerViewModel @Inject constructor(
             val next = findNextEpisode(current)
             _nextEpisode.value = next
         } catch (e: Exception) {
-            Log.w("PlayerViewModel", "loadNextEpisode failed: ${e.message}")
+            if (BuildConfig.DEBUG) Log.w("PlayerViewModel", "loadNextEpisode failed: ${e.message}")
         }
     }
 
@@ -448,7 +468,7 @@ class PlayerViewModel @Inject constructor(
         val results = try {
             mediaRepository.search(query)
         } catch (e: Exception) {
-            Log.w("PlayerViewModel", "findNextEpisode search failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("PlayerViewModel", "findNextEpisode search failed: ${e.message}", e)
             emptyList()
         }
 
@@ -526,7 +546,7 @@ class PlayerViewModel @Inject constructor(
                 cast = cast
             )
         } catch (e: Exception) {
-            Log.w("PlayerViewModel", "loadCinemaInfo failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("PlayerViewModel", "loadCinemaInfo failed: ${e.message}", e)
             _cinemaInfo.value = CinemaInfo(
                 title = mediaItem.title,
                 description = mediaItem.description,
@@ -575,7 +595,7 @@ class PlayerViewModel @Inject constructor(
                 mediaRepository.reportProgress(mediaItem, positionMs, durationMs, state)
             }
         } catch (e: Exception) {
-            Log.w("PlayerViewModel", "reportProgress failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("PlayerViewModel", "reportProgress failed: ${e.message}", e)
         }
     }
 

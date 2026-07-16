@@ -2,6 +2,7 @@ package com.polishmediahub.app.ui.player
 
 import android.app.Activity
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import android.view.KeyEvent
 import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
@@ -43,6 +44,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.polishmediahub.app.R
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.model.PlaybackState
+import com.polishmediahub.app.ui.components.PlayerQuickSettingsOverlay
 import com.polishmediahub.app.ui.components.TvButton
 import com.polishmediahub.app.ui.screens.NextEpisodeOverlay
 import com.polishmediahub.app.ui.screens.PlayerControls
@@ -127,10 +129,15 @@ fun UniversalVlcPlayer(
     var selectedSubtitleIndex by remember { mutableIntStateOf(-1) }
     var subtitleLabel by remember { mutableStateOf("") }
     var sliderFocused by remember { mutableStateOf(false) }
+    var quickSettingsVisible by remember { mutableStateOf(false) }
     var lastInteraction by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var autoPlayTriggered by remember(resolvedItem.id) { mutableStateOf(false) }
     val isLive = resolvedItem.isLive
     val isSeriesLike = resolvedItem.type == MediaItem.Type.SERIES || resolvedItem.type == MediaItem.Type.EPISODE
+    val sliderFocusRequester = remember { FocusRequester() }
+    val quickSettingsNightMode by viewModel.nightModeEnabled.collectAsStateWithLifecycle()
+    val quickSettingsAudioType by viewModel.preferredAudioType.collectAsStateWithLifecycle()
+    val quickSettingsAlternative by viewModel.useAlternativePlayer.collectAsStateWithLifecycle()
 
     val remainingMs = if (duration > currentPosition) duration - currentPosition else 0L
     val overlayVisible = (
@@ -238,7 +245,7 @@ fun UniversalVlcPlayer(
                                 subtitleLabel = subtitleOptions.getOrNull(selectedSubtitleIndex)?.label ?: "Off"
                             }
                         } catch (e: Exception) {
-                            Log.e("UniversalVlcPlayer", "Błąd runtime silnika LibVLC: ${e.message}", e)
+                            if (BuildConfig.DEBUG) Log.e("UniversalVlcPlayer", "Błąd runtime silnika LibVLC: ${e.message}", e)
                         }
                     }
                     MediaPlayer.Event.Paused -> {
@@ -331,14 +338,14 @@ fun UniversalVlcPlayer(
                             )
                         )
                     } catch (e: Exception) {
-                        Log.w("UniversalVlcPlayer", "Stats update failed: ${e.message}")
+                        if (BuildConfig.DEBUG) Log.w("UniversalVlcPlayer", "Stats update failed: ${e.message}")
                     }
                 }
             }
         } catch (e: Exception) {
             errorMessageRes = R.string.player_error
             errorMessageArg = e.message
-            Log.e("UniversalVlcPlayer", "Błąd inicjalizacji LibVLC: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.e("UniversalVlcPlayer", "Błąd inicjalizacji LibVLC: ${e.message}", e)
         }
 
         onDispose {
@@ -357,7 +364,7 @@ fun UniversalVlcPlayer(
                 currentState?.media?.release()
                 currentState?.libVlc?.release()
             } catch (e: Exception) {
-                Log.e("UniversalVlcPlayer", "Błąd runtime silnika LibVLC: ${e.message}", e)
+                if (BuildConfig.DEBUG) Log.e("UniversalVlcPlayer", "Błąd runtime silnika LibVLC: ${e.message}", e)
             }
         }
     }
@@ -384,7 +391,10 @@ fun UniversalVlcPlayer(
     }
 
     BackHandler {
-        if (overlayVisible) {
+        if (quickSettingsVisible) {
+            quickSettingsVisible = false
+            sliderFocusRequester.requestFocus()
+        } else if (overlayVisible) {
             viewModel.cancelAutoPlay()
         } else {
             onBack()
@@ -402,6 +412,17 @@ fun UniversalVlcPlayer(
                 controlsVisible = true
                 lastInteraction = System.currentTimeMillis()
                 if (native.action != KeyEvent.ACTION_DOWN) return@onPreviewKeyEvent false
+                if (quickSettingsVisible) {
+                    when (native.keyCode) {
+                        KeyEvent.KEYCODE_BACK,
+                        KeyEvent.KEYCODE_DPAD_UP,
+                        KeyEvent.KEYCODE_DPAD_DOWN -> {
+                            quickSettingsVisible = false
+                            sliderFocusRequester.requestFocus()
+                            return@onPreviewKeyEvent true
+                        }
+                    }
+                }
                 if (sliderFocused && (
                         native.keyCode == KeyEvent.KEYCODE_DPAD_LEFT ||
                             native.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT
@@ -571,11 +592,28 @@ fun UniversalVlcPlayer(
                         }
                     }
                 },
+                onOpenQuickSettings = { quickSettingsVisible = true },
                 onSliderFocusChanged = { sliderFocused = it },
+                sliderFocusRequester = sliderFocusRequester,
                 cinemaMode = cinemaMode,
                 cinemaInfo = cinemaInfo
             )
         }
+
+        PlayerQuickSettingsOverlay(
+            visible = quickSettingsVisible && !isInPipMode,
+            nightModeEnabled = quickSettingsNightMode,
+            preferredAudioType = quickSettingsAudioType,
+            useAlternativePlayer = quickSettingsAlternative,
+            onToggleNightMode = viewModel::toggleNightModeEnabled,
+            onCycleAudioType = viewModel::cyclePreferredAudioType,
+            onTogglePlayerEngine = viewModel::toggleUseAlternativePlayer,
+            onDismiss = {
+                quickSettingsVisible = false
+                sliderFocusRequester.requestFocus()
+            },
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
 
         if (showLoadingStats && !isInPipMode) {
             PlayerStatsOverlay(playerStats = playerStats)

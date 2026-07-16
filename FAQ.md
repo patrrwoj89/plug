@@ -196,6 +196,14 @@ On the Home screen you can press **BACK** while the sidebar is collapsed. D-Pad 
 
 Yes. Horizontal `LazyRow`s (e.g. in `CategoryRow` on the Home screen) use `Modifier.focusGroup()` and `focusRestorer()`. If you scroll to the 5th item, move down, and then move back up, focus returns to the 5th item instead of resetting to the first tile.
 
+### Why does the focused tile scroll to the center of the screen?
+
+A custom `TvBringIntoViewSpec` implements `BringIntoViewSpec` with a smooth `SpringSpec` and is provided to the scrolling containers through `TvBringIntoViewProvider`. It centers the focused `MediaCard` inside `LazyRow` and `LazyVerticalGrid`/`LazyColumn` on Home, Library, Watchlist and Custom Lists, so D-Pad navigation keeps the active tile in the middle of the TV screen instead of pinned to the edge.
+
+### What is Spoiler Blur?
+
+Enable **Spoiler blur** in **Settings**. On `DetailScreen`, unwatched episodes hide the original title (replaced with a localized `Episode X` or `Hidden title` placeholder), blur the poster with `Modifier.blur(16.dp)` and blur the description. Press **D-Pad Center/SELECT** on the poster/title tile to reveal the title, poster and description for the current session.
+
 ## BitTorrent
 
 ### Can I stream torrents?
@@ -287,6 +295,17 @@ A panel in the top-right corner of the player that shows real-time diagnostic da
 ### Does it affect performance?
 
 The stats are collected through an ExoPlayer `AnalyticsListener` and exposed in a separate `StateFlow`. Only the small stats panel recomposes, so the rest of `PlayerScreen` is not affected.
+
+## Player quick settings
+
+### How do I change audio preference (Lektor / Dubbing) or player engine while watching?
+
+Press the **gear icon** in the player controls to open the **Player quick settings** overlay. It has D-Pad buttons for:
+- **Night mode** — toggles `LoudnessEnhancer` to flatten dynamic range and boost quiet dialogue.
+- **Audio preference** — switches between `Lektor` and `Dubbing` track selection.
+- **Player engine** — switches between `ExoPlayer` and `LibVLC` on the fly.
+
+Closing the overlay returns focus to the progress `Slider`.
 
 ## Smart Home, In-App PiP & OLED Saver
 

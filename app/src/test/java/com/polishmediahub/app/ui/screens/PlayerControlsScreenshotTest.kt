@@ -1,5 +1,7 @@
 package com.polishmediahub.app.ui.screens
 
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import com.polishmediahub.app.ui.theme.TVHubTheme
@@ -31,7 +33,9 @@ class PlayerControlsScreenshotTest {
                     onEnterPip = {},
                     onCycleAudio = {},
                     onCycleSubtitle = {},
+                    onOpenQuickSettings = {},
                     onSliderFocusChanged = {},
+                    sliderFocusRequester = remember { FocusRequester() },
                     cinemaMode = false,
                     cinemaInfo = com.polishmediahub.app.ui.viewmodel.PlayerViewModel.CinemaInfo()
                 )
@@ -57,7 +61,9 @@ class PlayerControlsScreenshotTest {
                     onEnterPip = {},
                     onCycleAudio = {},
                     onCycleSubtitle = {},
+                    onOpenQuickSettings = {},
                     onSliderFocusChanged = {},
+                    sliderFocusRequester = remember { FocusRequester() },
                     cinemaMode = false,
                     cinemaInfo = com.polishmediahub.app.ui.viewmodel.PlayerViewModel.CinemaInfo()
                 )

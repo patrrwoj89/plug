@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -103,6 +104,7 @@ import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.model.PlaybackState
 import com.polishmediahub.app.navigation.LocalPlayerViewModel
 import com.polishmediahub.app.navigation.Screen
+import com.polishmediahub.app.ui.components.PlayerQuickSettingsOverlay
 import com.polishmediahub.app.ui.components.TvButton
 import com.polishmediahub.app.ui.components.TvIconButton
 import com.polishmediahub.app.ui.components.TvTextButton
@@ -155,6 +157,7 @@ fun PlayerScreen(
             videoUrl = resolvedUrl ?: item?.videoUrl,
             onBack = { onNavigate(Screen.Home) },
             preferredAudioType = preferredAudioType,
+            viewModel = viewModel,
             modifier = modifier
         )
         return
@@ -412,9 +415,15 @@ private fun PlayerContent(
     var selectedSubtitleIndex by remember { mutableIntStateOf(-1) }
     var subtitleLabel by remember { mutableStateOf("Off") }
     var sliderFocused by remember { mutableStateOf(false) }
+    var quickSettingsVisible by remember { mutableStateOf(false) }
     var lastInteraction by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var autoPlayTriggered by remember(mediaItem?.id) { mutableStateOf(false) }
     val skipFocusRequester = remember { FocusRequester() }
+    val sliderFocusRequester = remember { FocusRequester() }
+    val viewModel = LocalPlayerViewModel.current
+    val quickSettingsNightMode by viewModel.nightModeEnabled.collectAsStateWithLifecycle()
+    val quickSettingsAudioType by viewModel.preferredAudioType.collectAsStateWithLifecycle()
+    val quickSettingsAlternative by viewModel.useAlternativePlayer.collectAsStateWithLifecycle()
     val isLive = mediaItem?.isLive == true
 
     LaunchedEffect(skipIntroState.showSkipIntro, skipIntroState.showSkipOutro) {
@@ -442,7 +451,10 @@ private fun PlayerContent(
     val density = LocalDensity.current
 
     BackHandler {
-        if (isInPipMode) {
+        if (quickSettingsVisible) {
+            quickSettingsVisible = false
+            sliderFocusRequester.requestFocus()
+        } else if (isInPipMode) {
             onBack()
         } else if (overlayVisible) {
             onCancelAutoPlay()
@@ -608,6 +620,17 @@ private fun PlayerContent(
                 controlsVisible = true
                 lastInteraction = System.currentTimeMillis()
                 if (event.nativeKeyEvent.action != KeyEvent.ACTION_DOWN) return@onPreviewKeyEvent false
+                if (quickSettingsVisible) {
+                    when (event.nativeKeyEvent.keyCode) {
+                        KeyEvent.KEYCODE_BACK,
+                        KeyEvent.KEYCODE_DPAD_UP,
+                        KeyEvent.KEYCODE_DPAD_DOWN -> {
+                            quickSettingsVisible = false
+                            sliderFocusRequester.requestFocus()
+                            return@onPreviewKeyEvent true
+                        }
+                    }
+                }
                 if (sliderFocused && (
                     event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_LEFT ||
                     event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT
@@ -763,11 +786,28 @@ private fun PlayerContent(
                     exoPlayer.applySubtitleOption(selectedSubtitleIndex, subtitleOptions)
                     subtitleLabel = subtitleOptions.getOrNull(selectedSubtitleIndex)?.label ?: "Off"
                 },
+                onOpenQuickSettings = { quickSettingsVisible = true },
                 onSliderFocusChanged = { sliderFocused = it },
+                sliderFocusRequester = sliderFocusRequester,
                 cinemaMode = cinemaMode,
                 cinemaInfo = cinemaInfo
             )
         }
+
+        PlayerQuickSettingsOverlay(
+            visible = quickSettingsVisible && !isInPipMode,
+            nightModeEnabled = quickSettingsNightMode,
+            preferredAudioType = quickSettingsAudioType,
+            useAlternativePlayer = quickSettingsAlternative,
+            onToggleNightMode = viewModel::toggleNightModeEnabled,
+            onCycleAudioType = viewModel::cyclePreferredAudioType,
+            onTogglePlayerEngine = viewModel::toggleUseAlternativePlayer,
+            onDismiss = {
+                quickSettingsVisible = false
+                sliderFocusRequester.requestFocus()
+            },
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
 
         if (torrentBuffering != null && torrentBuffering < 100 && torrentStatus != null && !isInPipMode) {
             Column(
@@ -1003,7 +1043,9 @@ internal fun PlayerControls(
     onEnterPip: () -> Unit,
     onCycleAudio: () -> Unit,
     onCycleSubtitle: () -> Unit,
+    onOpenQuickSettings: () -> Unit,
     onSliderFocusChanged: (Boolean) -> Unit,
+    sliderFocusRequester: FocusRequester,
     cinemaMode: Boolean,
     cinemaInfo: com.polishmediahub.app.ui.viewmodel.PlayerViewModel.CinemaInfo
 ) {
@@ -1066,6 +1108,12 @@ internal fun PlayerControls(
                     Text(subtitleLabel, style = AppTypography.caption, modifier = Modifier.padding(start = Spacing.xs))
                 }
 
+                TvIconButton(
+                    onClick = onOpenQuickSettings,
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = stringResource(id = R.string.quick_settings_title)
+                )
+
                 if (isLive) {
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
@@ -1084,6 +1132,7 @@ internal fun PlayerControls(
                         },
                         modifier = Modifier
                             .weight(1f)
+                            .focusRequester(sliderFocusRequester)
                             .focusProperties { canFocus = true }
                             .focusable()
                             .onFocusChanged { onSliderFocusChanged(it.isFocused) }
