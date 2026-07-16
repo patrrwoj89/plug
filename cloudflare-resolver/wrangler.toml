@@ -4,5 +4,4 @@ compatibility_date = "2024-12-30"
 
 [[kv_namespaces]]
 binding = "PROFILE_BACKUPS"
-id = "replace-with-your-kv-namespace-id"
-preview_id = "replace-with-your-preview-kv-namespace-id"
+id = "dd9b1544f20845c4bca524d5e8961f2b"
