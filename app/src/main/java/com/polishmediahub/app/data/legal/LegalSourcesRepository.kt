@@ -2,6 +2,7 @@ package com.polishmediahub.app.data.legal
 
 import android.content.Context
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.source.WebSourceConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.serialization.SerialName
@@ -23,7 +24,7 @@ class LegalSourcesRepository @Inject constructor(
                 json.decodeFromString(LegalSources.serializer(), it.readText())
             }
         } catch (e: Exception) {
-            Log.w("LegalSourcesRepository", "Failed to load legal_sources.json: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("LegalSourcesRepository", "Failed to load legal_sources.json: ${e.message}", e)
             null
         }
     }

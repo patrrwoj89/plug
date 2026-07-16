@@ -1,6 +1,7 @@
 package com.polishmediahub.app.data.remote.trakt
 
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.MediaRepository
 import com.polishmediahub.app.model.Category
@@ -100,7 +101,7 @@ class TraktMediaRepository @Inject constructor(
         }
         movies + shows
     } catch (e: Exception) {
-        Log.w(TAG, "watchedItemsWithTimestamps failed: ${e.message}", e)
+        if (BuildConfig.DEBUG) Log.w(TAG, "watchedItemsWithTimestamps failed: ${e.message}", e)
         emptyList()
     }
 
@@ -119,7 +120,7 @@ class TraktMediaRepository @Inject constructor(
             media to parseIsoTimestamp(item.listedAt)
         }
     } catch (e: Exception) {
-        Log.w(TAG, "watchlistWithTimestamps failed: ${e.message}", e)
+        if (BuildConfig.DEBUG) Log.w(TAG, "watchlistWithTimestamps failed: ${e.message}", e)
         emptyList()
     }
 

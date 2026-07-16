@@ -592,8 +592,19 @@ class PlayerViewModel @Inject constructor(
 
     private fun updateBingeProfile(mediaItem: MediaItem) {
         if (isSeriesLike(mediaItem)) {
-            bingeProfile = extractBingeProfile(mediaItem)
+            val profile = extractBingeProfile(mediaItem)
+            bingeProfile = profile
+            applyBingeProfile(profile)
         }
+    }
+
+    private fun applyBingeProfile(profile: BingeProfile) {
+        profile.audioTag?.let { tag ->
+            when (tag) {
+                "lector", "dubbing" -> _preferredAudioType.value = tag
+            }
+        }
+        profile.resolution?.let { _preferredQuality.value = it }
     }
 
     private fun extractBingeProfile(mediaItem: MediaItem): BingeProfile {

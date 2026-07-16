@@ -120,6 +120,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **Download support** for audio and video via `WorkManager`.
 - **Encrypted sensitive settings** (`EncryptedSettingsManager`): API keys, OAuth tokens and passwords (TMDB, AniList, Trakt, Debrid, Jellyfin/Plex/Emby tokens, Subsonic password, MDBList key) are encrypted with AES-256-GCM using a hardware-backed key from the Android Keystore before being stored in DataStore. Plain preferences (dark theme, quality, EPG status, etc.) remain unencrypted.
 - **Global Crash Report Center**: uncaught exceptions are caught by `GlobalExceptionHandler`, a stack trace is saved and `CrashReportActivity` (in a separate `:crashreport` process) offers restart, "clear cache & restart" or an offline-sanitized **send report to cloud** button (Cloudflare Worker `POST /report-error` with `X-Hub-Token` auth).
+- **Production hardening / final code freeze**: all `Log` calls are guarded with `BuildConfig.DEBUG`; no API keys, webhook tokens, URLs, source links, filter parameters or user search queries are written to Logcat in release builds. `LevenshteinEngine` normalizes Polish diacritics with NFD, `HomeAssistantWebhookClient` uses defensive 3-second timeouts and explicitly closes response bodies, and `UniversalVlcPlayer` applies Binge Grouping audio/quality profiles in parity with ExoPlayer.
 - **Screenshot / Compose Preview tests** with Paparazzi and instrumented D-Pad tests.
 
 ## Documentation

@@ -1,30 +1,31 @@
 package com.polishmediahub.app.data.source
 
+import java.text.Normalizer
 import kotlin.math.min
 
 object LevenshteinEngine {
 
     const val MAX_DISTANCE_THRESHOLD = 2
 
+    private val combiningDiacritics = Regex("\\p{InCombiningDiacriticalMarks}+")
     private val nonAlphanumeric = Regex("[^\\p{L}\\p{N}\\s]")
     private val whitespace = Regex("\\s+")
 
     fun calculateDistance(s1: String, s2: String): Int {
-        val a = s1.lowercase().trim()
-        val b = s2.lowercase().trim()
+        val a = normalize(s1)
+        val b = normalize(s2)
         if (a == b) return 0
         if (a.isEmpty()) return b.length
         if (b.isEmpty()) return a.length
 
-        val (shorter, longer) = if (a.length < b.length) a to b else b to a
-        var previous = IntArray(longer.length + 1) { it }
-        var current = IntArray(longer.length + 1)
+        var previous = IntArray(b.length + 1) { it }
+        var current = IntArray(b.length + 1)
 
-        for (i in 1..shorter.length) {
+        for (i in 1..a.length) {
             current[0] = i
-            val c1 = shorter[i - 1]
-            for (j in 1..longer.length) {
-                val cost = if (c1 == longer[j - 1]) 0 else 1
+            val c1 = a[i - 1]
+            for (j in 1..b.length) {
+                val cost = if (c1 == b[j - 1]) 0 else 1
                 current[j] = min(
                     current[j - 1] + 1,
                     min(previous[j] + 1, previous[j - 1] + cost)
@@ -34,7 +35,7 @@ object LevenshteinEngine {
             previous = current
             current = swap
         }
-        return previous[longer.length]
+        return previous[b.length]
     }
 
     fun score(query: String, candidate: String): Int {
@@ -77,6 +78,8 @@ object LevenshteinEngine {
     }
 
     private fun normalize(input: String): String {
-        return input.replace(nonAlphanumeric, " ").replace(whitespace, " ").lowercase().trim()
+        val decomposed = Normalizer.normalize(input, Normalizer.Form.NFD)
+            .replace(combiningDiacritics, "")
+        return decomposed.replace(nonAlphanumeric, " ").replace(whitespace, " ").lowercase().trim()
     }
 }

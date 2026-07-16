@@ -1,6 +1,7 @@
 package com.polishmediahub.app.data.remote.emby
 
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.source.MediaSource
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
@@ -120,7 +121,7 @@ class EmbyMediaSource @Inject constructor(
                 )
             )
         } catch (e: Exception) {
-            Log.w("EmbyMediaSource", "report progress failed: ${e.message}")
+            if (BuildConfig.DEBUG) Log.w("EmbyMediaSource", "report progress failed: ${e.message}")
         }
     }
 

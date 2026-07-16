@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Process
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.CrashReportActivity
 import com.polishmediahub.app.data.ApiConfigRepository
 import dagger.hilt.EntryPoint
@@ -33,7 +34,7 @@ class GlobalExceptionHandler(
 
     override fun uncaughtException(thread: Thread, throwable: Throwable) {
         try {
-            Log.e("GlobalExceptionHandler", "Uncaught exception on ${thread.name}", throwable)
+            if (BuildConfig.DEBUG) Log.e("GlobalExceptionHandler", "Uncaught exception on ${thread.name}", throwable)
             val crashLog = buildCrashLog(thread, throwable)
             val file = File(application.filesDir, CRASH_LOG_FILE)
             file.writeText(crashLog)
@@ -54,12 +55,12 @@ class GlobalExceptionHandler(
             try {
                 Thread.sleep(HANDOFF_DELAY_MS)
             } catch (e: InterruptedException) {
-                Log.w("GlobalExceptionHandler", "Hand-off sleep interrupted: ${e.message}")
+                if (BuildConfig.DEBUG) Log.w("GlobalExceptionHandler", "Hand-off sleep interrupted: ${e.message}")
             }
 
             previousHandler?.uncaughtException(thread, throwable)
         } catch (e: Exception) {
-            Log.e("GlobalExceptionHandler", "Failed to launch crash reporter", e)
+            if (BuildConfig.DEBUG) Log.e("GlobalExceptionHandler", "Failed to launch crash reporter", e)
         } finally {
             Process.killProcess(Process.myPid())
             System.exit(10)

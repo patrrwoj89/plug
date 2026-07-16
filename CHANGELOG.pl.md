@@ -55,6 +55,24 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 - **Testy**
   - `ExampleUnitTest` został usunięty; dodano `LevenshteinEngineTest` weryfikujący odległości dla polskich literówek (`Widźmin` vs `Wiedźmin`, `Filman` vs `Flman`) i kolejność sortowania.
 
+#### Hartowanie produkcyjne i ostateczne zamrożenie kodu
+- **Hartowanie silnika Levenshteina** (`LevenshteinEngine`)
+  - Dodano normalizację Unicode NFD i usuwanie znaków diakrytycznych, dzięki czemu polskie znaki (`ą`, `ć`, `ę`, `ł` itp.) nie powodują `ArrayIndexOutOfBoundsException`.
+  - Poprawiono alokację dwóch tablic `IntArray` na `IntArray(s2.length + 1)`.
+- **Hartowanie webhooków Home Assistant** (`HomeAssistantWebhookClient`)
+  - Zastąpiono wstrzykiwany globalny `OkHttpClient` dedykowanym klientem z timeoutami connect/write/read ustawionymi na 3 sekundy.
+  - Owinięto `.execute()` w `try-catch-finally` i w sekcji `finally` jawne zamknięcie `response.body`, eliminując zawieszone wątki I/O i wycieki zasobów.
+  - Adres URL i token webhooka pozostają zamaskowane / nielogowane w buildach release.
+- **Parytet Binge Grouping dla LibVLC** (`UniversalVlcPlayer`, `PlayerViewModel`)
+  - `PlayerViewModel` aplikuje wyekstrahowany `BingeProfile` do `_preferredAudioType` i `_preferredQuality`, więc zarówno ExoPlayer, jak i LibVLC automatycznie wybierają zapisany profil (`lector`/`dubbing`) i rozdzielczość dla następnego odcinka.
+  - `UniversalVlcPlayer` używa `rememberUpdatedState(preferredAudioType)` i `LaunchedEffect`, aby przeładować ścieżkę audio przy zmianie preferencji Binge / Quick-Settings, na równi z reaktywnym wyborem audio ExoPlayera.
+- **Audyt logów i hartowanie release**
+  - Usunięto tymczasowe `println`, znaczniki `TODO` i osierocone bloki komentarzy.
+  - Wszystkie pozostałe wywołania `android.util.Log` / `Log` zostały opakowane przez `if (BuildConfig.DEBUG)`, więc w buildach release do Logcat nie trafiają klucze API, URL-e, tokeny, parametry filtrów ani zapytania użytkownika.
+  - Potwierdzono, że wszystkie subskrypcje Flow dla nowych preferencji premium używają `collectAsStateWithLifecycle()`.
+- **Weryfikacja końcowa**
+  - `./gradlew clean test :app:compileDebugKotlin :app:lintDebug` zwraca `BUILD SUCCESSFUL` i status lintera `No issues found`.
+
 #### Smart Home, wewnętrzny PiP wideo i wygaszacz OLED (zamrożenie kodu)
 - **Webhooki Home Assistant Smart Cinema** (`ApiConfigRepository`, `SettingsScreen`, `AdminHttpServer`, `HomeAssistantWebhookClient`, `PlayerViewModel`, `PlayerViewModelTest`)
   - Zaszyfrowane preferencje DataStore `homeAssistantUrl`, `homeAssistantToken`, `homeAssistantWebhookEnabled` w `ApiConfigRepository`.

@@ -1,6 +1,7 @@
 package com.polishmediahub.app.data.torrent
 
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.frostwire.jlibtorrent.Priority
 import com.frostwire.jlibtorrent.TorrentHandle
 import kotlinx.coroutines.CoroutineScope
@@ -44,7 +45,7 @@ class TorrentHttpServer @Inject constructor(
                     activeClients.incrementAndGet()
                     scope.launch { handleClient(client) }
                 } catch (e: Exception) {
-                    if (!socket.isClosed) Log.w("TorrentHttpServer", "accept error: ${e.message}")
+                    if (!socket.isClosed && BuildConfig.DEBUG) Log.w("TorrentHttpServer", "accept error: ${e.message}")
                 }
             }
         }
@@ -56,7 +57,7 @@ class TorrentHttpServer @Inject constructor(
             serverSocket?.close()
             scope.cancel()
         } catch (e: Exception) {
-            Log.w("TorrentHttpServer", "stop failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("TorrentHttpServer", "stop failed: ${e.message}", e)
         }
         serverSocket = null
         port = 0
@@ -169,7 +170,7 @@ class TorrentHttpServer @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.w("TorrentHttpServer", "client error: ${e.message}")
+            if (BuildConfig.DEBUG) Log.w("TorrentHttpServer", "client error: ${e.message}")
         } finally {
             activeClients.decrementAndGet()
         }
@@ -255,7 +256,7 @@ private class TorrentInputStream(
         try {
             raf.close()
         } catch (e: Exception) {
-            Log.w("TorrentHttpServer", "close failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("TorrentHttpServer", "close failed: ${e.message}", e)
         }
     }
 

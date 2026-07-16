@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.ApiConfigRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -26,32 +27,32 @@ class KodiDiscoveryManager @Inject constructor(
 
     fun startDiscovery() {
         if (nsdManager == null) {
-            Log.w("KodiDiscoveryManager", "NsdManager not available")
+            if (BuildConfig.DEBUG) Log.w("KodiDiscoveryManager", "NsdManager not available")
             return
         }
         stopDiscovery()
         val listener = object : NsdManager.DiscoveryListener {
             override fun onDiscoveryStarted(regType: String) {
-                Log.d("KodiDiscoveryManager", "Discovery started: $regType")
+                if (BuildConfig.DEBUG) Log.d("KodiDiscoveryManager", "Discovery started: $regType")
             }
 
             override fun onServiceFound(serviceInfo: NsdServiceInfo) {
                 nsdManager.resolveService(serviceInfo, object : NsdManager.ResolveListener {
                     override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-                        Log.w("KodiDiscoveryManager", "Resolve failed: $errorCode")
+                        if (BuildConfig.DEBUG) Log.w("KodiDiscoveryManager", "Resolve failed: $errorCode")
                     }
 
                     override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
                         val host = serviceInfo.host?.hostAddress ?: return
                         val port = serviceInfo.port
                         val url = "http://$host:${port}"
-                        Log.i("KodiDiscoveryManager", "Kodi resolved at $url")
+                        if (BuildConfig.DEBUG) Log.i("KodiDiscoveryManager", "Kodi resolved at $url")
                         scope.launch(Dispatchers.IO) {
                             try {
                                 apiConfigRepository.setKodiUrl(url)
                                 kodiMediaSource.configure(url)
                             } catch (e: Exception) {
-                                Log.w("KodiDiscoveryManager", "Failed to store Kodi URL: ${e.message}")
+                                if (BuildConfig.DEBUG) Log.w("KodiDiscoveryManager", "Failed to store Kodi URL: ${e.message}")
                             }
                         }
                     }
@@ -61,18 +62,18 @@ class KodiDiscoveryManager @Inject constructor(
             override fun onServiceLost(serviceInfo: NsdServiceInfo) {}
             override fun onDiscoveryStopped(serviceType: String) {}
             override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
-                Log.w("KodiDiscoveryManager", "Discovery start failed: $errorCode")
+                if (BuildConfig.DEBUG) Log.w("KodiDiscoveryManager", "Discovery start failed: $errorCode")
             }
 
             override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
-                Log.w("KodiDiscoveryManager", "Discovery stop failed: $errorCode")
+                if (BuildConfig.DEBUG) Log.w("KodiDiscoveryManager", "Discovery stop failed: $errorCode")
             }
         }
         discoveryListener = listener
         try {
             nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, listener)
         } catch (e: Exception) {
-            Log.w("KodiDiscoveryManager", "discoverServices failed: ${e.message}")
+            if (BuildConfig.DEBUG) Log.w("KodiDiscoveryManager", "discoverServices failed: ${e.message}")
         }
     }
 

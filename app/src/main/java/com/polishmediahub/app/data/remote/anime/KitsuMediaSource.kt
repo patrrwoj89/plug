@@ -1,6 +1,7 @@
 package com.polishmediahub.app.data.remote.anime
 
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
 import com.polishmediahub.app.data.source.MediaSource
@@ -40,7 +41,7 @@ class KitsuMediaSource @Inject constructor(
             val response = getList("/anime?sort=popularityRank&page[limit]=20&include=mappings")
             response?.data?.map { it.toMediaItem(response.included) } ?: emptyList()
         } catch (e: Exception) {
-            Log.w("KitsuMediaSource", "featured failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("KitsuMediaSource", "featured failed: ${e.message}", e)
             emptyList()
         }
     }
@@ -68,7 +69,7 @@ class KitsuMediaSource @Inject constructor(
                 )
             )
         } catch (e: Exception) {
-            Log.w("KitsuMediaSource", "categories failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("KitsuMediaSource", "categories failed: ${e.message}", e)
             emptyList()
         }
     }
@@ -80,7 +81,7 @@ class KitsuMediaSource @Inject constructor(
             val response = getList("/anime?filter[text]=$encoded&page[limit]=20&include=mappings")
             response?.data?.map { it.toMediaItem(response.included) } ?: emptyList()
         } catch (e: Exception) {
-            Log.w("KitsuMediaSource", "search failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("KitsuMediaSource", "search failed: ${e.message}", e)
             emptyList()
         }
     }
@@ -92,7 +93,7 @@ class KitsuMediaSource @Inject constructor(
             val response = getSingle("/anime/$numericId?include=mappings") ?: return@withContext null
             response.data.toMediaItem(response.included)
         } catch (e: Exception) {
-            Log.w("KitsuMediaSource", "byId failed for $id: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("KitsuMediaSource", "byId failed for $id: ${e.message}", e)
             null
         }
     }
@@ -108,7 +109,7 @@ class KitsuMediaSource @Inject constructor(
         val request = Request.Builder().url(url).get().build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                Log.w("KitsuMediaSource", "HTTP ${response.code} for $path")
+                if (BuildConfig.DEBUG) Log.w("KitsuMediaSource", "HTTP ${response.code} for $path")
                 return@use null
             }
             val body = response.body?.string()
@@ -116,12 +117,12 @@ class KitsuMediaSource @Inject constructor(
             try {
                 json.decodeFromString<T>(body)
             } catch (e: SerializationException) {
-                Log.w("KitsuMediaSource", "parse error for $path: ${e.message}")
+                if (BuildConfig.DEBUG) Log.w("KitsuMediaSource", "parse error for $path: ${e.message}")
                 null
             }
         }
     } catch (e: Exception) {
-        Log.w("KitsuMediaSource", "request error for $path: ${e.message}", e)
+        if (BuildConfig.DEBUG) Log.w("KitsuMediaSource", "request error for $path: ${e.message}", e)
         null
     }
 

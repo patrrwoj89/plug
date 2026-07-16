@@ -55,6 +55,24 @@ All notable changes to Polish Media Hub are documented in this file.
 - **Tests**
   - `ExampleUnitTest` is removed; added `LevenshteinEngineTest` verifying distances for Polish TV typos (`Widźmin` vs `Wiedźmin`, `Filman` vs `Flman`) and sorted result ordering.
 
+#### Production hardening & final code freeze
+- **Levenshtein engine hardening** (`LevenshteinEngine`)
+  - Added NFD Unicode normalization and removal of combining diacritical marks so Polish characters (`ą`, `ć`, `ę`, `ł`, etc.) are handled without `ArrayIndexOutOfBoundsException`.
+  - Re-rigged the two-row `IntArray` allocation to `IntArray(s2.length + 1)`.
+- **Home Assistant webhook hardening** (`HomeAssistantWebhookClient`)
+  - Replaced the injected global `OkHttpClient` with a dedicated `OkHttpClient` configured with 3-second connect/write/read timeouts.
+  - Wrapped `execute()` in a `try-catch-finally` block and explicitly closed `response.body` in `finally` to prevent stuck I/O threads and resource leaks.
+  - Webhook URL and token remain masked / unlogged in release builds.
+- **Binge Grouping parity for LibVLC** (`UniversalVlcPlayer`, `PlayerViewModel`)
+  - `PlayerViewModel` now applies the extracted `BingeProfile` to `_preferredAudioType` and `_preferredQuality` so both ExoPlayer and LibVLC automatically pick the saved `lector`/`dubbing` and resolution profile for the next episode.
+  - `UniversalVlcPlayer` uses `rememberUpdatedState(preferredAudioType)` and a `LaunchedEffect` to reselect the audio track when the Binge/Quick-Settings audio preference changes, matching ExoPlayer's reactive audio selection.
+- **Repository-wide log audit and release hardening**
+  - Removed temporary `println`, `TODO` markers and dead comment blocks.
+  - Wrapped all remaining `android.util.Log` / `Log` debug/warning calls with `if (BuildConfig.DEBUG)` so no API keys, URLs, tokens, filter parameters or user queries reach Logcat in release builds.
+  - Confirmed every Compose Flow subscription for the new premium preferences uses `collectAsStateWithLifecycle()`.
+- **Final verification**
+  - `./gradlew clean test :app:compileDebugKotlin :app:lintDebug` reports `BUILD SUCCESSFUL` and linter status `No issues found`.
+
 #### Smart Home, In-App PiP & OLED protection (final code freeze)
 - **Home Assistant Smart Cinema webhooks** (`ApiConfigRepository`, `SettingsScreen`, `AdminHttpServer`, `HomeAssistantWebhookClient`, `PlayerViewModel`, `PlayerViewModelTest`)
   - Encrypted DataStore preferences `homeAssistantUrl`, `homeAssistantToken`, `homeAssistantWebhookEnabled` in `ApiConfigRepository`.

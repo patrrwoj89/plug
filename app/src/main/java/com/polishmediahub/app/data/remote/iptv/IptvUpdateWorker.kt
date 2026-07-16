@@ -2,6 +2,7 @@ package com.polishmediahub.app.data.remote.iptv
 
 import android.content.Context
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import androidx.hilt.work.HiltWorker
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -45,12 +46,12 @@ class IptvUpdateWorker @AssistedInject constructor(
                 val items = iptvRepository.loadChannels().distinctBy { it.id }
                 channelDao.upsertAll(items.map { it.toChannelEntity() })
                 m3uSuccess = true
-                Log.d(TAG, "Cached ${items.size} IPTV channels")
+                if (BuildConfig.DEBUG) Log.d(TAG, "Cached ${items.size} IPTV channels")
             } else {
                 m3uSuccess = true
             }
         } catch (e: Exception) {
-            Log.w(TAG, "M3U update failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w(TAG, "M3U update failed: ${e.message}", e)
             errorMessage = e.message
         }
 
@@ -63,7 +64,7 @@ class IptvUpdateWorker @AssistedInject constructor(
                 epgSuccess = true
             }
         } catch (e: Exception) {
-            Log.w(TAG, "EPG update failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w(TAG, "EPG update failed: ${e.message}", e)
             errorMessage = e.message
         }
 

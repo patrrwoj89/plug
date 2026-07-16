@@ -1,6 +1,7 @@
 package com.polishmediahub.app.data.plugin
 
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.source.MediaSource
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
@@ -181,7 +182,7 @@ class ReflectiveMediaSource(
                 }
             JsonObject(map)
         } catch (e: Exception) {
-            Log.w("ReflectiveMediaSource", "Reflection failed: ${e.message}")
+            if (BuildConfig.DEBUG) Log.w("ReflectiveMediaSource", "Reflection failed: ${e.message}")
             null
         }
     }

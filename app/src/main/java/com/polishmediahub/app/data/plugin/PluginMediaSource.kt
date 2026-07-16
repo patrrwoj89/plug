@@ -1,4 +1,5 @@
 package com.polishmediahub.app.data.plugin
+import com.polishmediahub.app.BuildConfig
 
 import com.polishmediahub.app.data.ContentFilter
 import com.polishmediahub.app.data.ProfileRepository
@@ -44,7 +45,7 @@ class PluginMediaSource @Inject constructor(
                     ?.takeIf { ContentFilter.isAllowed(it, profile()) }
                     ?.let { return it }
             } catch (e: Exception) {
-                android.util.Log.w("PluginMediaSource", "byId failed for ${source.id}: ${e.message}")
+                if (BuildConfig.DEBUG) android.util.Log.w("PluginMediaSource", "byId failed for ${source.id}: ${e.message}")
             }
         }
         return null
@@ -55,7 +56,7 @@ class PluginMediaSource @Inject constructor(
             try {
                 source.resolve(mediaItem)?.let { return it }
             } catch (e: Exception) {
-                android.util.Log.w("PluginMediaSource", "resolve failed for ${source.id}: ${e.message}")
+                if (BuildConfig.DEBUG) android.util.Log.w("PluginMediaSource", "resolve failed for ${source.id}: ${e.message}")
             }
         }
         return null
@@ -72,7 +73,7 @@ class PluginMediaSource @Inject constructor(
                     try {
                         block(source)
                     } catch (e: Exception) {
-                        android.util.Log.w("PluginMediaSource", "call failed for ${source.id}: ${e.message}")
+                        if (BuildConfig.DEBUG) android.util.Log.w("PluginMediaSource", "call failed for ${source.id}: ${e.message}")
                         emptyList()
                     }
                 }

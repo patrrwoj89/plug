@@ -10,6 +10,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,10 +20,15 @@ interface HomeAssistantWebhookClient {
 
 @Singleton
 class OkHttpHomeAssistantWebhookClient @Inject constructor(
-    private val client: OkHttpClient,
     private val apiConfigRepository: ApiConfigRepository,
     private val profileRepository: ProfileRepository
 ) : HomeAssistantWebhookClient {
+
+    private val webhookClient = OkHttpClient.Builder()
+        .connectTimeout(3, TimeUnit.SECONDS)
+        .writeTimeout(3, TimeUnit.SECONDS)
+        .readTimeout(3, TimeUnit.SECONDS)
+        .build()
 
     override suspend fun send(event: String, mediaTitle: String?): Result<Unit> = withContext(Dispatchers.IO) {
         try {
@@ -51,7 +57,8 @@ class OkHttpHomeAssistantWebhookClient @Inject constructor(
                 .header("Content-Type", "application/json")
                 .build()
 
-            client.newCall(request).execute().use { response ->
+            val response = webhookClient.newCall(request).execute()
+            try {
                 if (BuildConfig.DEBUG) {
                     android.util.Log.d(
                         TAG,
@@ -64,6 +71,8 @@ class OkHttpHomeAssistantWebhookClient @Inject constructor(
                     )
                 }
                 Result.success(Unit)
+            } finally {
+                response.body?.close()
             }
         } catch (e: Exception) {
             if (BuildConfig.DEBUG) android.util.Log.w(TAG, "Home Assistant webhook failed", e)

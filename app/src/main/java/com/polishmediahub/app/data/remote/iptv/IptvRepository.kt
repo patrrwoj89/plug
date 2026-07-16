@@ -1,6 +1,7 @@
 package com.polishmediahub.app.data.remote.iptv
 
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.MediaRepository
 import com.polishmediahub.app.data.local.ChannelDao
@@ -30,7 +31,7 @@ class IptvRepository @Inject constructor(
     override suspend fun featured(): List<MediaItem> = try {
         loadChannels().take(10)
     } catch (e: Exception) {
-        Log.w(TAG, "featured() failed: ${e.message}", e)
+        if (BuildConfig.DEBUG) Log.w(TAG, "featured() failed: ${e.message}", e)
         emptyList()
     }
 
@@ -39,7 +40,7 @@ class IptvRepository @Inject constructor(
         channels.groupBy { it.genres.firstOrNull() ?: "Uncategorized" }
             .map { (group, items) -> Category(id = "iptv_$group", name = group, items = items) }
     } catch (e: Exception) {
-        Log.w(TAG, "categories() failed: ${e.message}", e)
+        if (BuildConfig.DEBUG) Log.w(TAG, "categories() failed: ${e.message}", e)
         emptyList()
     }
 
@@ -57,14 +58,14 @@ class IptvRepository @Inject constructor(
         val all = (localChannels + epgPrograms + remoteChannels).distinctBy { it.id }
         LevenshteinEngine.sort(query, all, LevenshteinEngine.MAX_DISTANCE_THRESHOLD) { it.title }
     } catch (e: Exception) {
-        Log.w(TAG, "search($query) failed: ${e.message}", e)
+        if (BuildConfig.DEBUG) Log.w(TAG, "search($query) failed: ${e.message}", e)
         emptyList()
     }
 
     override suspend fun byId(id: String): MediaItem? = try {
         loadChannels().find { it.id == id }
     } catch (e: Exception) {
-        Log.w(TAG, "byId($id) failed: ${e.message}", e)
+        if (BuildConfig.DEBUG) Log.w(TAG, "byId($id) failed: ${e.message}", e)
         null
     }
 

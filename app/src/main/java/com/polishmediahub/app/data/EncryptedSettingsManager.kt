@@ -5,6 +5,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -47,7 +48,7 @@ class EncryptedSettingsManager @Inject constructor(
         System.arraycopy(ciphertext, 0, combined, iv.size, ciphertext.size)
         Base64.encodeToString(combined, Base64.NO_WRAP or Base64.NO_PADDING)
     } catch (e: Exception) {
-        Log.w("EncryptedSettingsManager", "Encryption failed: ${e.message}", e)
+        if (BuildConfig.DEBUG) Log.w("EncryptedSettingsManager", "Encryption failed: ${e.message}", e)
         null
     }
 
@@ -61,7 +62,7 @@ class EncryptedSettingsManager @Inject constructor(
         }
         String(cipher.doFinal(encrypted), Charsets.UTF_8)
     } catch (e: Exception) {
-        Log.w("EncryptedSettingsManager", "Decryption failed: ${e.message}", e)
+        if (BuildConfig.DEBUG) Log.w("EncryptedSettingsManager", "Decryption failed: ${e.message}", e)
         null
     }
 

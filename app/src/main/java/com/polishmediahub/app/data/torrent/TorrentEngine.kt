@@ -2,6 +2,7 @@ package com.polishmediahub.app.data.torrent
 
 import android.content.Context
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.frostwire.jlibtorrent.AlertListener
 import com.frostwire.jlibtorrent.Priority
 import com.frostwire.jlibtorrent.SessionManager
@@ -74,7 +75,7 @@ class TorrentEngine @Inject constructor(
                     else -> {}
                 }
             } catch (e: Exception) {
-                Log.w("TorrentEngine", "alert error: ${e.message}")
+                if (BuildConfig.DEBUG) Log.w("TorrentEngine", "alert error: ${e.message}")
             }
         }
     }

@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Alignment
@@ -139,6 +140,8 @@ fun UniversalVlcPlayer(
     val quickSettingsAudioType by viewModel.preferredAudioType.collectAsStateWithLifecycle()
     val quickSettingsAlternative by viewModel.useAlternativePlayer.collectAsStateWithLifecycle()
 
+    val currentPreferredAudioType by rememberUpdatedState(preferredAudioType)
+
     val remainingMs = if (duration > currentPosition) duration - currentPosition else 0L
     val overlayVisible = (
         nextEpisode != null && !autoPlayCancelled && isSeriesLike && !isLive &&
@@ -222,7 +225,7 @@ fun UniversalVlcPlayer(
                                     mediaPlayer.getTracks(IMedia.Track.Type.Audio)
                                 )
                                 if (audioOptions.isNotEmpty()) {
-                                    selectedAudioIndex = preferredAudioIndex(audioOptions, preferredAudioType)
+                                    selectedAudioIndex = preferredAudioIndex(audioOptions, currentPreferredAudioType)
                                     mediaPlayer.selectTrack(audioOptions[selectedAudioIndex].id)
                                     audioLabel = audioOptions[selectedAudioIndex].label
                                 }
@@ -388,6 +391,18 @@ fun UniversalVlcPlayer(
     LaunchedEffect(lastInteraction, isPlaying, cinemaMode) {
         delay(5_000)
         if (controlsVisible && isPlaying && cinemaMode) controlsVisible = false
+    }
+
+    LaunchedEffect(currentPreferredAudioType, mediaPlayer) {
+        val mp = mediaPlayer ?: return@LaunchedEffect
+        if (audioOptions.isNotEmpty()) {
+            val index = preferredAudioIndex(audioOptions, currentPreferredAudioType)
+            if (index != selectedAudioIndex && index in audioOptions.indices) {
+                selectedAudioIndex = index
+                mp.selectTrack(audioOptions[index].id)
+                audioLabel = audioOptions[index].label
+            }
+        }
     }
 
     BackHandler {

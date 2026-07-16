@@ -1,4 +1,5 @@
 package com.polishmediahub.app.data.source
+import com.polishmediahub.app.BuildConfig
 
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
@@ -49,7 +50,7 @@ class CloudstreamSource @Inject constructor(
                         items = plugins ?: emptyList()
                     )
                 } catch (e: Exception) {
-                    android.util.Log.w("CloudstreamSource", "categories failed for $repoUrl: ${e.message}")
+                    if (BuildConfig.DEBUG) android.util.Log.w("CloudstreamSource", "categories failed for $repoUrl: ${e.message}")
                     Category(id = "cloudstream:$repoUrl", name = "Cloudstream: $repoUrl", items = emptyList())
                 }
             }
@@ -94,13 +95,13 @@ class CloudstreamSource @Inject constructor(
                         val plugins = json.decodeFromString(ListSerializer(CloudstreamPlugin.serializer()), pluginsBody)
                         plugins.map { it.toMediaItem(repoUrl) }
                     } catch (e: Exception) {
-                        android.util.Log.w("CloudstreamSource", "plugin list failed $listUrl: ${e.message}")
+                        if (BuildConfig.DEBUG) android.util.Log.w("CloudstreamSource", "plugin list failed $listUrl: ${e.message}")
                         emptyList()
                     }
                 }
             }?.awaitAll()?.flatten()
         } catch (e: Exception) {
-            android.util.Log.w("CloudstreamSource", "repo failed $repoUrl: ${e.message}")
+            if (BuildConfig.DEBUG) android.util.Log.w("CloudstreamSource", "repo failed $repoUrl: ${e.message}")
             null
         }
     }
@@ -109,7 +110,7 @@ class CloudstreamSource @Inject constructor(
         return try {
             client.newCall(Request.Builder().url(url).build()).execute().use { it.body?.string() }
         } catch (e: Exception) {
-            android.util.Log.w("CloudstreamSource", "fetch failed $url: ${e.message}")
+            if (BuildConfig.DEBUG) android.util.Log.w("CloudstreamSource", "fetch failed $url: ${e.message}")
             null
         }
     }

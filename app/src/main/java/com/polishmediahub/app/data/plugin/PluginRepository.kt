@@ -2,6 +2,7 @@ package com.polishmediahub.app.data.plugin
 
 import android.content.Context
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.local.PluginDao
 import com.polishmediahub.app.data.local.PluginEntity
 import com.polishmediahub.app.data.plugin.models.AniyomiExtension
@@ -125,7 +126,7 @@ class PluginRepository @Inject constructor(
                     )
                     updated++
                 } catch (e: Exception) {
-                    Log.w(TAG, "checkUpdates failed for ${entity.pluginId}: ${e.message}", e)
+                    if (BuildConfig.DEBUG) Log.w(TAG, "checkUpdates failed for ${entity.pluginId}: ${e.message}", e)
                 }
             }
         }
@@ -156,7 +157,7 @@ class PluginRepository @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "syncIndexes failed for ${entity.pluginId}: ${e.message}")
+                if (BuildConfig.DEBUG) Log.w(TAG, "syncIndexes failed for ${entity.pluginId}: ${e.message}")
             }
         }
         _availablePlugins.value = all.distinctBy { it.id }
@@ -171,12 +172,12 @@ class PluginRepository @Inject constructor(
                     val pluginsBody = fetch(listUrl) ?: return@flatMap emptyList()
                     json.decodeFromString(ListSerializer(CloudstreamPluginMetadata.serializer()), pluginsBody)
                 } catch (e: Exception) {
-                    Log.w(TAG, "Failed to fetch plugin list $listUrl: ${e.message}")
+                    if (BuildConfig.DEBUG) Log.w(TAG, "Failed to fetch plugin list $listUrl: ${e.message}")
                     emptyList()
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to fetch Cloudstream repo $repoUrl: ${e.message}")
+            if (BuildConfig.DEBUG) Log.w(TAG, "Failed to fetch Cloudstream repo $repoUrl: ${e.message}")
             emptyList()
         }
     }
@@ -187,7 +188,7 @@ class PluginRepository @Inject constructor(
             val body = fetch(indexUrl) ?: return@withContext emptyList()
             json.decodeFromString(ListSerializer(AniyomiExtension.serializer()), body)
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to fetch Aniyomi repo $repoUrl: ${e.message}")
+            if (BuildConfig.DEBUG) Log.w(TAG, "Failed to fetch Aniyomi repo $repoUrl: ${e.message}")
             emptyList()
         }
     }
@@ -245,7 +246,7 @@ class PluginRepository @Inject constructor(
                 val manifest = json.decodeFromString(PluginManifest.serializer(), entity.manifestJson)
                 sources += applyPlugin(manifest, newDynamicKeys)
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to apply plugin ${entity.pluginId}: ${e.message}")
+                if (BuildConfig.DEBUG) Log.w(TAG, "Failed to apply plugin ${entity.pluginId}: ${e.message}")
             }
         }
         val uniqueSources = sources.distinct()
@@ -346,7 +347,7 @@ class PluginRepository @Inject constructor(
         return try {
             client.newCall(Request.Builder().url(url).build()).execute().body?.string()
         } catch (e: Exception) {
-            Log.w(TAG, "fetch failed for $url: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w(TAG, "fetch failed for $url: ${e.message}", e)
             null
         }
     }

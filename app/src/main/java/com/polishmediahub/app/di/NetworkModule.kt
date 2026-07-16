@@ -94,11 +94,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideHomeAssistantWebhookClient(
-        client: OkHttpClient,
         apiConfigRepository: ApiConfigRepository,
         profileRepository: ProfileRepository
     ): HomeAssistantWebhookClient =
-        OkHttpHomeAssistantWebhookClient(client, apiConfigRepository, profileRepository)
+        OkHttpHomeAssistantWebhookClient(apiConfigRepository, profileRepository)
 
     @Provides
     @Singleton

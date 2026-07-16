@@ -2,6 +2,7 @@ package com.polishmediahub.app.data.admin
 
 import android.content.Context
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.SettingsRepository
 import com.polishmediahub.app.data.plugin.PluginRepository
@@ -68,7 +69,7 @@ class AdminHttpServer @Inject constructor(
                     val client = socket.accept()
                     scope.launch { handleClient(client) }
                 } catch (e: Exception) {
-                    if (!socket.isClosed) Log.w("AdminHttpServer", "accept error: ${e.message}")
+                    if (!socket.isClosed && BuildConfig.DEBUG) Log.w("AdminHttpServer", "accept error: ${e.message}")
                 }
             }
         }
@@ -80,7 +81,7 @@ class AdminHttpServer @Inject constructor(
             serverSocket?.close()
             scope.cancel()
         } catch (e: Exception) {
-            Log.w("AdminHttpServer", "stop failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("AdminHttpServer", "stop failed: ${e.message}", e)
         }
         serverSocket = null
         port = 0
@@ -154,7 +155,7 @@ class AdminHttpServer @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.w("AdminHttpServer", "client error: ${e.message}")
+            if (BuildConfig.DEBUG) Log.w("AdminHttpServer", "client error: ${e.message}")
         }
     }
 
@@ -341,7 +342,7 @@ class AdminHttpServer @Inject constructor(
                 kodiMediaSource.setAddonSetting("plugin.video.fanfilm", "trakt_token", traktId)
             }
         } catch (e: Exception) {
-            Log.w("AdminHttpServer", "pushAddonSettingsIfKodiConfigured failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("AdminHttpServer", "pushAddonSettingsIfKodiConfigured failed: ${e.message}", e)
         }
     }
 

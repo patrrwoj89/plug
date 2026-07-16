@@ -1,6 +1,7 @@
 package com.polishmediahub.app.data.remote.filmweb
 
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.local.FilmwebCacheRepository
 import com.polishmediahub.app.data.source.MediaSource
 import com.polishmediahub.app.model.Category
@@ -81,7 +82,7 @@ class FilmwebMediaSource @Inject constructor(
             cacheRepository.save(item)
             item
         } catch (e: Exception) {
-            Log.w("FilmwebMediaSource", "fetchPolishMetadata failed for '$title' ($year): ${e.message}")
+            if (BuildConfig.DEBUG) Log.w("FilmwebMediaSource", "fetchPolishMetadata failed for '$title' ($year): ${e.message}")
             null
         }
     }
@@ -110,7 +111,7 @@ class FilmwebMediaSource @Inject constructor(
                 ?: hits.firstOrNull()?.id
         }
     } catch (e: Exception) {
-        Log.w("FilmwebMediaSource", "searchFilmId failed: ${e.message}")
+        if (BuildConfig.DEBUG) Log.w("FilmwebMediaSource", "searchFilmId failed: ${e.message}")
         null
     }
 
@@ -138,14 +139,14 @@ class FilmwebMediaSource @Inject constructor(
         return try {
             filmwebClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    Log.w("FilmwebMediaSource", "HTTP ${response.code} for $url")
+                    if (BuildConfig.DEBUG) Log.w("FilmwebMediaSource", "HTTP ${response.code} for $url")
                     null
                 } else {
                     response.body?.string()
                 }
             }
         } catch (e: Exception) {
-            Log.w("FilmwebMediaSource", "fetchBody failed for $url: ${e.message}")
+            if (BuildConfig.DEBUG) Log.w("FilmwebMediaSource", "fetchBody failed for $url: ${e.message}")
             null
         }
     }
@@ -153,7 +154,7 @@ class FilmwebMediaSource @Inject constructor(
     private inline fun <reified T> parseJson(body: String?): T? = try {
         if (body.isNullOrBlank()) null else json.decodeFromString<T>(body)
     } catch (e: Exception) {
-        Log.w("FilmwebMediaSource", "parseJson failed: ${e.message}")
+        if (BuildConfig.DEBUG) Log.w("FilmwebMediaSource", "parseJson failed: ${e.message}")
         null
     }
 

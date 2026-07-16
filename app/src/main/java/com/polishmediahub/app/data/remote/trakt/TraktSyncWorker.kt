@@ -2,6 +2,7 @@ package com.polishmediahub.app.data.remote.trakt
 
 import android.content.Context
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import androidx.hilt.work.HiltWorker
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -125,11 +126,13 @@ class TraktSyncWorker @AssistedInject constructor(
             }
 
             apiConfigRepository.setLastTraktSync(System.currentTimeMillis(), "success")
-            Log.d(TAG, "Trakt sync success. Watched: ${toDownloadWatched.size} down, ${watchedUploadItems.size} up. Watchlist: ${toDownloadWatchlist.size} down, ${toUploadWatchlist.size} up.")
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "Trakt sync success. Watched: ${toDownloadWatched.size} down, ${watchedUploadItems.size} up. Watchlist: ${toDownloadWatchlist.size} down, ${toUploadWatchlist.size} up.")
+            }
             HomePreFetchWorker.startImmediate(applicationContext)
             Result.success()
         } catch (e: Exception) {
-            Log.w(TAG, "Trakt sync failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w(TAG, "Trakt sync failed: ${e.message}", e)
             errorMessage = e.message
             apiConfigRepository.setLastTraktSync(System.currentTimeMillis(), "error", errorMessage)
             Result.retry()

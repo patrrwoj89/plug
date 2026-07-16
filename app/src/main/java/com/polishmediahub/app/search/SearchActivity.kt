@@ -6,6 +6,7 @@ import androidx.core.net.toUri
 import android.os.Bundle
 import android.provider.SearchRecentSuggestions
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -86,7 +87,7 @@ class SearchActivity : ComponentActivity() {
                             ).saveRecentQuery(query, null)
                         }
                     } catch (e: Exception) {
-                        Log.w(TAG, "Failed to save search query: ${e.message}")
+                        if (BuildConfig.DEBUG) Log.w(TAG, "Failed to save search query: ${e.message}")
                     }
                 }
             }

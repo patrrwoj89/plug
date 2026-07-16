@@ -1,6 +1,7 @@
 package com.polishmediahub.app.data.source
 
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.ContentFilter
 import com.polishmediahub.app.data.MediaRepository
@@ -61,7 +62,7 @@ class FederatedMediaRepository @Inject constructor(
 
             mutex.withLock { configured = true }
         } catch (e: Exception) {
-            android.util.Log.w("FederatedMediaRepository", "applyConfigs failed: ${e.message}")
+            if (BuildConfig.DEBUG) android.util.Log.w("FederatedMediaRepository", "applyConfigs failed: ${e.message}")
         }
     }
 
@@ -96,7 +97,7 @@ class FederatedMediaRepository @Inject constructor(
                     ?.takeIf { ContentFilter.isAllowed(it, profile()) }
                     ?.let { return it }
             } catch (e: Exception) {
-                android.util.Log.w("FederatedMediaRepository", "byId failed for ${source.id}: ${e.message}")
+                if (BuildConfig.DEBUG) android.util.Log.w("FederatedMediaRepository", "byId failed for ${source.id}: ${e.message}")
             }
         }
         return null
@@ -110,7 +111,7 @@ class FederatedMediaRepository @Inject constructor(
         return try {
             source.resolve(mediaItem)
         } catch (e: Exception) {
-            android.util.Log.w("FederatedMediaRepository", "resolve failed for ${source.id}: ${e.message}")
+            if (BuildConfig.DEBUG) android.util.Log.w("FederatedMediaRepository", "resolve failed for ${source.id}: ${e.message}")
             null
         }
     }
@@ -124,7 +125,7 @@ class FederatedMediaRepository @Inject constructor(
             val resolved = source.resolveItem(mediaItem)
             if (ContentFilter.isAllowed(resolved, profile())) resolved else mediaItem
         } catch (e: Exception) {
-            android.util.Log.w("FederatedMediaRepository", "resolveItem failed for ${source.id}: ${e.message}")
+            if (BuildConfig.DEBUG) android.util.Log.w("FederatedMediaRepository", "resolveItem failed for ${source.id}: ${e.message}")
             mediaItem
         }
     }
@@ -149,7 +150,7 @@ class FederatedMediaRepository @Inject constructor(
                 )
             }
         } catch (e: Exception) {
-            android.util.Log.w("FederatedMediaRepository", "enrichWithFilmweb failed: ${e.message}")
+            if (BuildConfig.DEBUG) android.util.Log.w("FederatedMediaRepository", "enrichWithFilmweb failed: ${e.message}")
             item
         }
     }
@@ -175,7 +176,7 @@ class FederatedMediaRepository @Inject constructor(
         try {
             source.reportProgress(mediaItem, positionMs, durationMs, state)
         } catch (e: Exception) {
-            Log.w("FederatedMediaRepository", "reportProgress failed for ${source.id}: ${e.message}")
+            if (BuildConfig.DEBUG) Log.w("FederatedMediaRepository", "reportProgress failed for ${source.id}: ${e.message}")
         }
     }
 }

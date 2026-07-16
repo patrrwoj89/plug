@@ -2,6 +2,7 @@ package com.polishmediahub.app.data.plugin
 
 import android.content.Context
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.source.MediaSource
 import dalvik.system.DexClassLoader
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -33,7 +34,7 @@ class DynamicPluginLoader @Inject constructor(
         loadedPlugins[cacheKey]?.first?.let { return it }
 
         if (!pluginFile.exists()) {
-            Log.w(TAG, "Plugin file does not exist: ${pluginFile.absolutePath}")
+            if (BuildConfig.DEBUG) Log.w(TAG, "Plugin file does not exist: ${pluginFile.absolutePath}")
             return null
         }
 
@@ -67,11 +68,11 @@ class DynamicPluginLoader @Inject constructor(
             if (source != null) {
                 loadedPlugins[cacheKey] = source to classLoader
             } else {
-                Log.w(TAG, "Could not cast ${clazz.name} to MediaSource; class must implement ${MediaSource::class.java.name}")
+                if (BuildConfig.DEBUG) Log.w(TAG, "Could not cast ${clazz.name} to MediaSource; class must implement ${MediaSource::class.java.name}")
             }
             source
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to load plugin ${pluginFile.name}: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w(TAG, "Failed to load plugin ${pluginFile.name}: ${e.message}", e)
             null
         }
     }
@@ -127,7 +128,7 @@ class DynamicPluginLoader @Inject constructor(
                 injectDependencies(instance)
                 return instance
             } catch (e: Exception) {
-                Log.w(TAG, "constructor fallback failed: ${e.message}", e)
+                if (BuildConfig.DEBUG) Log.w(TAG, "constructor fallback failed: ${e.message}", e)
             }
         }
 
@@ -147,7 +148,7 @@ class DynamicPluginLoader @Inject constructor(
             isAccessible = true
             invoke(instance, value)
         } catch (e: Exception) {
-            Log.w(TAG, "invokeSafe failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w(TAG, "invokeSafe failed: ${e.message}", e)
         }
     }
 

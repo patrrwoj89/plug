@@ -1,4 +1,5 @@
 package com.polishmediahub.app.data.source
+import com.polishmediahub.app.BuildConfig
 
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
@@ -34,7 +35,7 @@ class SourceRegistry @Inject constructor(
                     try {
                         source.id to source.search(query)
                     } catch (e: Exception) {
-                        android.util.Log.w("SourceRegistry", "search failed for ${source.id}: ${e.message}")
+                        if (BuildConfig.DEBUG) android.util.Log.w("SourceRegistry", "search failed for ${source.id}: ${e.message}")
                         source.id to emptyList()
                     }
                 }
@@ -51,7 +52,7 @@ class SourceRegistry @Inject constructor(
                     try {
                         source.categories()
                     } catch (e: Exception) {
-                        android.util.Log.w("SourceRegistry", "categories failed for ${source.id}: ${e.message}")
+                        if (BuildConfig.DEBUG) android.util.Log.w("SourceRegistry", "categories failed for ${source.id}: ${e.message}")
                         emptyList()
                     }
                 }
@@ -68,7 +69,7 @@ class SourceRegistry @Inject constructor(
                     try {
                         source.featured()
                     } catch (e: Exception) {
-                        android.util.Log.w("SourceRegistry", "featured failed for ${source.id}: ${e.message}")
+                        if (BuildConfig.DEBUG) android.util.Log.w("SourceRegistry", "featured failed for ${source.id}: ${e.message}")
                         emptyList()
                     }
                 }

@@ -9,6 +9,7 @@ import android.database.MatrixCursor
 import android.net.Uri
 import android.provider.BaseColumns
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.CompositeMediaRepository
 import com.polishmediahub.app.data.SearchHistoryRepository
 import com.polishmediahub.app.data.SettingsRepository
@@ -61,7 +62,7 @@ class TVHubSearchSuggestionProvider : ContentProvider() {
                 val results = compositeMediaRepository.search(query).take(SUGGESTION_LIMIT)
                 buildSuggestionCursor(results)
             } catch (e: Exception) {
-                Log.e(TAG, "Search failed for '$query': ${e.message}", e)
+                if (BuildConfig.DEBUG) Log.e(TAG, "Search failed for '$query': ${e.message}", e)
                 null
             }
         }
@@ -75,7 +76,7 @@ class TVHubSearchSuggestionProvider : ContentProvider() {
                     searchHistoryRepository.add(query)
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to save search history: ${e.message}", e)
+                if (BuildConfig.DEBUG) Log.e(TAG, "Failed to save search history: ${e.message}", e)
             }
         }
         return null

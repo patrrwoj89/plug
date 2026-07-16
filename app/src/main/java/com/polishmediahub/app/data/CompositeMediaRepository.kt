@@ -80,7 +80,7 @@ class CompositeMediaRepository @Inject constructor(
                 val resolved = repo.resolveItem(mediaItem)
                 if (resolved != mediaItem && ContentFilter.isAllowed(resolved, profile())) return resolved
             } catch (e: Exception) {
-                Log.w("CompositeRepo", "resolveItem failed for ${repo::class.java.simpleName}: ${e.message}")
+                if (BuildConfig.DEBUG) Log.w("CompositeRepo", "resolveItem failed for ${repo::class.java.simpleName}: ${e.message}")
             }
         }
         return mediaItem
@@ -96,7 +96,7 @@ class CompositeMediaRepository @Inject constructor(
             try {
                 repo.reportProgress(mediaItem, positionMs, durationMs, state)
             } catch (e: Exception) {
-                Log.w("CompositeRepo", "reportProgress failed for ${repo::class.java.simpleName}: ${e.message}")
+                if (BuildConfig.DEBUG) Log.w("CompositeRepo", "reportProgress failed for ${repo::class.java.simpleName}: ${e.message}")
             }
         }
     }
@@ -120,7 +120,7 @@ class CompositeMediaRepository @Inject constructor(
         return try {
             block()
         } catch (e: Exception) {
-            Log.w("CompositeRepo", "${this::class.java.simpleName} failed: ${e.message}")
+            if (BuildConfig.DEBUG) Log.w("CompositeRepo", "${this::class.java.simpleName} failed: ${e.message}")
             null
         }
     }

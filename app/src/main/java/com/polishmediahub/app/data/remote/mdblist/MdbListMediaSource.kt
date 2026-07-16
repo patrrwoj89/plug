@@ -1,6 +1,7 @@
 package com.polishmediahub.app.data.remote.mdblist
 
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.legal.LegalSourcesRepository
 import com.polishmediahub.app.model.Category
@@ -70,7 +71,7 @@ class MdbListMediaSource @Inject constructor(
                 }
             }.awaitAll().flatten().take(30)
         } catch (e: Exception) {
-            Log.w("MdbListMediaSource", "featured failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("MdbListMediaSource", "featured failed: ${e.message}", e)
             emptyList()
         }
     }
@@ -108,7 +109,7 @@ class MdbListMediaSource @Inject constructor(
             }
             (topAndUserCategories + starterCategories).awaitAll()
         } catch (e: Exception) {
-            Log.w("MdbListMediaSource", "categories failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("MdbListMediaSource", "categories failed: ${e.message}", e)
             emptyList()
         }
     }
@@ -120,7 +121,7 @@ class MdbListMediaSource @Inject constructor(
             val result = get<MdbListSearchResult>("/search/any", mapOf("query" to query, "apikey" to key))
             result?.search?.map { it.toMediaItem() } ?: emptyList()
         } catch (e: Exception) {
-            Log.w("MdbListMediaSource", "search failed: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("MdbListMediaSource", "search failed: ${e.message}", e)
             emptyList()
         }
     }
@@ -138,7 +139,7 @@ class MdbListMediaSource @Inject constructor(
             val info = get<MdbListMediaInfo>("/${provider}/${mediaType}/${mediaId}", mapOf("apikey" to key))
             info?.toMediaItem(id)
         } catch (e: Exception) {
-            Log.w("MdbListMediaSource", "byId failed for $id: ${e.message}", e)
+            if (BuildConfig.DEBUG) Log.w("MdbListMediaSource", "byId failed for $id: ${e.message}", e)
             null
         }
     }
@@ -163,7 +164,7 @@ class MdbListMediaSource @Inject constructor(
         val request = Request.Builder().url(urlBuilder.build()).get().build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                Log.w("MdbListMediaSource", "HTTP ${response.code} for $path")
+                if (BuildConfig.DEBUG) Log.w("MdbListMediaSource", "HTTP ${response.code} for $path")
                 return@use null
             }
             val body = response.body?.string()
@@ -171,12 +172,12 @@ class MdbListMediaSource @Inject constructor(
             try {
                 json.decodeFromString<T>(body)
             } catch (e: SerializationException) {
-                Log.w("MdbListMediaSource", "parse error for $path: ${e.message}")
+                if (BuildConfig.DEBUG) Log.w("MdbListMediaSource", "parse error for $path: ${e.message}")
                 null
             }
         }
     } catch (e: Exception) {
-        Log.w("MdbListMediaSource", "request error for $path: ${e.message}", e)
+        if (BuildConfig.DEBUG) Log.w("MdbListMediaSource", "request error for $path: ${e.message}", e)
         null
     }
 

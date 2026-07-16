@@ -214,7 +214,7 @@ class WebMediaSource @Inject constructor(
         val doc = Jsoup.parse(html, url)
         val elements = doc.select(config.itemSelector)
         if (elements.isEmpty()) {
-            Log.w("WebMediaSource", "Selektor ${config.itemSelector} zwrócił 0 wyników. Możliwa zmiana struktury HTML strony.")
+            if (BuildConfig.DEBUG) Log.w("WebMediaSource", "Selektor ${config.itemSelector} zwrócił 0 wyników. Możliwa zmiana struktury HTML strony.")
         }
         return elements.mapNotNull { element ->
             try {

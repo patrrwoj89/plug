@@ -1,6 +1,7 @@
 package com.polishmediahub.app.data.remote.jellyfin
 
 import android.util.Log
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.data.source.MediaSource
 import com.polishmediahub.app.model.Category
 import com.polishmediahub.app.model.MediaItem
@@ -131,7 +132,7 @@ class JellyfinMediaSource @Inject constructor(
                 )
             )
         } catch (e: Exception) {
-            Log.w("JellyfinMediaSource", "report progress failed: ${e.message}")
+            if (BuildConfig.DEBUG) Log.w("JellyfinMediaSource", "report progress failed: ${e.message}")
         }
     }
 
