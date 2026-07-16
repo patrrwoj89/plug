@@ -13,6 +13,7 @@ import com.polishmediahub.app.data.remote.iptv.IptvUpdateWorker
 import com.polishmediahub.app.data.remote.trakt.TraktSyncWorker
 import com.polishmediahub.app.data.source.GlobalExceptionHandler
 import com.polishmediahub.app.data.tv.RecommendationsWorker
+import com.polishmediahub.app.data.tv.TvLauncherManager
 import com.polishmediahub.app.data.torrent.TorrentMediaSource
 import dagger.hilt.android.HiltAndroidApp
 import java.io.File
@@ -27,6 +28,9 @@ class TVHubApplication : Application(), Configuration.Provider, ImageLoaderFacto
     @Inject
     lateinit var torrentMediaSource: TorrentMediaSource
 
+    @Inject
+    lateinit var tvLauncherManager: TvLauncherManager
+
     override fun onCreate() {
         super.onCreate()
 
@@ -38,6 +42,7 @@ class TVHubApplication : Application(), Configuration.Provider, ImageLoaderFacto
             File(filesDir, "torrents").apply { mkdirs() }
             torrentMediaSource.configure()
             RecommendationsWorker.schedule(this)
+            tvLauncherManager.start()
             IptvUpdateWorker.schedule(this)
             IptvUpdateWorker.startImmediate(this)
             TraktSyncWorker.schedule(this)

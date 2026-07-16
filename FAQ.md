@@ -172,7 +172,11 @@ No. Each profile has its own `WatchedEntity`, `SavedMediaEntity`, `CustomListEnt
 
 ### Does the Android TV home screen update when I switch profiles?
 
-Yes. `TvLauncherManager` listens to `ProfileRepository.currentProfile`, clears `WatchNextPrograms`, and re-publishes the new profile's unfinished content.
+Yes. `TvLauncherManager` listens to `ProfileRepository.currentProfile`. On every profile switch it clears the existing `WatchNextPrograms` and `PreviewPrograms` on `Dispatchers.IO`, then re-publishes:
+- unfinished resume positions from the active profile's `WatchHistoryRepository`,
+- watchlist items from the active profile's `SavedMediaRepository`,
+- a fresh recommendations/preview channel built from `FederatedMediaRepository.featured()` (MDBList, Kitsu and home-cloud sources) and filtered to movies/series/episodes.
+All candidates pass through `ContentFilter` with the active profile's `maxAgeRating` and `allowNsfw`; items without a declared age rating are hidden for age-capped profiles (fail-closed).
 
 ## Modern Sidebar
 
@@ -244,11 +248,11 @@ Open **Custom Lists** in the sidebar, highlight the list you want and press **SE
 
 ### Why do I not see Polish Media Hub on the home screen?
 
-On supported Android TV / Google TV launchers the app publishes a **Watch Next** channel and a **Preview** recommendations channel. The system launcher decides whether and how to display channels. Make sure the app has been opened at least once and `RecommendationsWorker` has run.
+On supported Android TV / Google TV launchers the app publishes a **Watch Next** channel and a **Preview** recommendations channel. The system launcher decides whether and how to display channels. Make sure the app has been opened at least once and `RecommendationsWorker` has run. The worker refreshes every 12 hours when the device is connected to a network and battery is not low.
 
 ### Does the Watch Next channel respect profiles?
 
-Yes. It is tied to the active profile's `WatchHistoryRepository`. Switching a profile clears the old tiles and publishes the new profile's unfinished items.
+Yes. The Watch Next row is per-profile. When you switch profiles, `TvLauncherManager` clears the system `WatchNextPrograms` and republishes only the active profile's unfinished resume sessions and watchlist items. Everything is filtered through `ContentFilter` using the active profile's `maxAgeRating` and `allowNsfw` settings, so a child's profile never shows age-inappropriate tiles.
 
 ## Audio / Subtitles / Music
 

@@ -33,6 +33,19 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
   - Opisy nieobejrzanych odcinków są rozmywane `Modifier.blur(16.dp)`.
   - D-Pad Center/SELECT odsłania opis na czas seansu.
 
+#### Integracja z Android TV / Google TV
+- **Per-Profile Watch Next i Dynamiczne Kanały Rekomendacji** (`TvLauncherManager`, `RecommendationsWorker`, `WatchNextHelper`, `TvLauncherManagerTest`)
+  - `TvLauncherManager` obserwuje `ProfileRepository.currentProfile` i przy każdej zmianie profilu asynchronicznie (na `Dispatchers.IO`) czyści wszystkie kafelki systemowego pulpitu, a następnie ponownie wypełnia je danymi bieżącego użytkownika.
+  - Niedokończone seanse pobierane są z `WatchHistoryRepository`, a pozycje z listy do obejrzenia z `SavedMediaRepository` — wyłącznie dla aktualnego `profileId`.
+  - Wszystkie pozycje przepuszczane są przez `ContentFilter` z limitami `maxAgeRating` i `allowNsfw` aktywnego profilu; pozycje bez deklaracji wieku są odrzucane dla profili dziecięcych (tryb fail-closed).
+  - Wiersz Watch Next publikuje `WatchNextProgram` z typem `CONTINUE` dla pozycji wznowienia i `WATCHLIST` dla zapisanych pozycji.
+  - Kanał rekomendacji/preview budowany jest z `FederatedMediaRepository.featured()` (MDBList, Kitsu, chmury domowe), filtrowany do filmów/seriali/odcinków i ponownie filtrowany przez `ContentFilter`.
+  - `RecommendationsWorker` zmienił interwał z 24 h na 12 h, ma ograniczenia `NetworkType.CONNECTED` + `requiresBatteryNotLow` i używa `ExistingPeriodicWorkPolicy.UPDATE`, aby nowy interwał zastąpił stare zaplanowania.
+  - `TVHubApplication` wywołuje teraz `tvLauncherManager.start()` po zaplanowaniu workerów; manager nie uruchamia się już automatycznie w `init`, co poprawia testowalność.
+  - Wszystkie operacje `ContentResolver` używają `.use`, wywołania helperów delete/insert wykonują się na `Dispatchers.IO`, a `ContentFilter` odrzuca niedozwolone pozycje przed jakimkolwiek IPC.
+  - W wersjach produkcyjnych (`BuildConfig.DEBUG == false`) nie logowane są `profileId` ani prywatne metadane filmów.
+  - Dodano test `TvLauncherManagerTest` (JUnit) weryfikujący `isUnfinished`, `buildWatchNextItems`, `buildWatchlistItems` oraz `buildPreviewItems` dla profili dziecięcych i dorosłych.
+
 #### Wyszukiwanie i TV na żywo
 - **Wyszukiwanie głosowe** (`SearchScreen`, `SearchViewModel`)
   - D-Pad przycisk `TvIconButton` z ikoną mikrofonu obok pola wyszukiwania.

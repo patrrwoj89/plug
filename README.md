@@ -85,8 +85,14 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 
 ### Android TV integration
 
-- **Watch Next** channel for resume playback.
-- **Preview/recommendations channel** updated daily by `WorkManager`.
+- **Per-Profile Watch Next row** (`TvLauncherManager`, `WatchNextHelper`)
+  - The launcher row is tied to `ProfileRepository.currentProfile`; every profile switch clears the existing system `WatchNextPrograms` and republishes only the current profile's unfinished resume sessions and watchlist items.
+  - All items are filtered through `ContentFilter` with the active profile's `maxAgeRating` and `allowNsfw`; unknown ratings are rejected for age-capped profiles (fail-closed).
+  - Resume entries use `WATCH_NEXT_TYPE_CONTINUE`; queued watchlist entries use `WATCH_NEXT_TYPE_WATCHLIST`.
+- **Per-Profile Preview / recommendations channel** (`TvLauncherManager`, `RecommendationsWorker`)
+  - Rebuilt from `FederatedMediaRepository.featured()` (MDBList, Kitsu and home-cloud sources), filtered to movies/series/episodes and re-filtered by the active profile's parental controls.
+  - `RecommendationsWorker` refreshes the channel every 12 hours on `NetworkType.CONNECTED` with `requiresBatteryNotLow`.
+  - All `ContentResolver` operations run on `Dispatchers.IO`, cursors use `.use`, and `ContentFilter` rejects disallowed items before any system launcher IPC.
 - **Global search** with a dedicated `SearchActivity` and `SearchRecentSuggestionsProvider`.
 
 ### Security, stability & profiles

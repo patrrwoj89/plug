@@ -8,6 +8,7 @@ import androidx.core.net.toUri
 import androidx.tvprovider.media.tv.PreviewChannelHelper
 import androidx.tvprovider.media.tv.TvContractCompat
 import androidx.tvprovider.media.tv.WatchNextProgram
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.model.MediaItem
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -22,7 +23,12 @@ class WatchNextHelper @Inject constructor(
 
     private val helper = PreviewChannelHelper(context)
 
-    suspend fun addToWatchNext(mediaItem: MediaItem, resumePositionMs: Long, durationMs: Long) {
+    internal suspend fun addToWatchNext(
+        mediaItem: MediaItem,
+        resumePositionMs: Long,
+        durationMs: Long,
+        kind: WatchNextKind = WatchNextKind.CONTINUE
+    ) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
 
         withContext(Dispatchers.IO) {
@@ -44,7 +50,7 @@ class WatchNextHelper @Inject constructor(
                             TvContractCompat.PreviewProgramColumns.TYPE_MOVIE
                         }
                     )
-                    .setWatchNextType(TvContractCompat.WatchNextPrograms.WATCH_NEXT_TYPE_CONTINUE)
+                    .setWatchNextType(kind.value)
                     .setLastEngagementTimeUtcMillis(System.currentTimeMillis())
                     .setLastPlaybackPositionMillis(resumePositionMs.toInt())
                     .setDurationMillis(durationMs.toInt())
@@ -55,7 +61,7 @@ class WatchNextHelper @Inject constructor(
                     helper.publishWatchNextProgram(builder.build())
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "publishWatchNext failed: ${e.message}", e)
+                if (BuildConfig.DEBUG) Log.w(TAG, "publishWatchNext failed: ${e.message}", e)
             }
         }
     }
@@ -70,7 +76,7 @@ class WatchNextHelper @Inject constructor(
                     context.contentResolver.delete(TvContractCompat.buildWatchNextProgramUri(id), null, null)
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "removeFromWatchNext failed: ${e.message}", e)
+                if (BuildConfig.DEBUG) Log.w(TAG, "removeFromWatchNext failed: ${e.message}", e)
             }
         }
     }
@@ -81,7 +87,7 @@ class WatchNextHelper @Inject constructor(
             try {
                 context.contentResolver.delete(TvContractCompat.WatchNextPrograms.CONTENT_URI, null, null)
             } catch (e: Exception) {
-                Log.w(TAG, "clearAll failed: ${e.message}", e)
+                if (BuildConfig.DEBUG) Log.w(TAG, "clearAll failed: ${e.message}", e)
             }
         }
     }
@@ -103,7 +109,8 @@ class WatchNextHelper @Inject constructor(
                     null
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            if (BuildConfig.DEBUG) Log.w(TAG, "findExistingWatchNextId failed: ${e.message}", e)
             null
         }
     }

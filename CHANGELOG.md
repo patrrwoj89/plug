@@ -33,6 +33,19 @@ All notable changes to Polish Media Hub are documented in this file.
   - Unwatched episode descriptions are blurred with `Modifier.blur(16.dp)`.
   - D-Pad Center/SELECT reveals the description for the current session.
 
+#### Android TV / Google TV integration
+- **Per-Profile Watch Next & Dynamic Preview Channels** (`TvLauncherManager`, `RecommendationsWorker`, `WatchNextHelper`, `TvLauncherManagerTest`)
+  - `TvLauncherManager` now observes `ProfileRepository.currentProfile` and, on every profile switch, clears all system launcher tiles on `Dispatchers.IO`, then repopulates them with data scoped to the active profile.
+  - Unfinished resume sessions are pulled from `WatchHistoryRepository` and watchlist items from `SavedMediaRepository` for the current `profileId`.
+  - All candidates pass through `ContentFilter` with the active profile's `maxAgeRating` and `allowNsfw` limits; items without a rating are rejected for child profiles (fail-closed).
+  - Watch Next row entries are published as `WatchNextProgram` with type `CONTINUE` for resume positions and `WATCHLIST` for queued items.
+  - Preview/recommendations channel is rebuilt from `FederatedMediaRepository.featured()` (MDBList, Kitsu, home-cloud sources), filtered to movies/series/episodes and re-filtered by `ContentFilter`.
+  - `RecommendationsWorker` repeat interval changed from 24 h to 12 h and constrained to `NetworkType.CONNECTED` + `requiresBatteryNotLow`; it uses `ExistingPeriodicWorkPolicy.UPDATE` so the new interval replaces old schedules.
+  - `TVHubApplication` now calls `tvLauncherManager.start()` after scheduling workers; the manager no longer auto-starts in `init`, which improves testability.
+  - All `ContentResolver` cursor operations use `.use`, helper delete/insert calls run on `Dispatchers.IO`, and `ContentFilter` rejects unallowed entries before any IPC occurs.
+  - No `profileId` or media metadata is logged in release builds (`BuildConfig.DEBUG == false`).
+  - Added `TvLauncherManagerTest` (JUnit) verifying `isUnfinished`, `buildWatchNextItems`, `buildWatchlistItems` and `buildPreviewItems` filtering for child and adult profiles.
+
 #### Search & live TV
 - **Voice Search** (`SearchScreen`, `SearchViewModel`)
   - D-Pad Mic `TvIconButton` next to the search field.

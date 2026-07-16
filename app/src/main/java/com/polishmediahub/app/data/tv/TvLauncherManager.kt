@@ -11,9 +11,14 @@ import androidx.tvprovider.media.tv.PreviewChannel
 import androidx.tvprovider.media.tv.PreviewChannelHelper
 import androidx.tvprovider.media.tv.PreviewProgram
 import androidx.tvprovider.media.tv.TvContractCompat
+import com.polishmediahub.app.BuildConfig
 import com.polishmediahub.app.R
+import com.polishmediahub.app.data.ContentFilter
 import com.polishmediahub.app.data.ProfileRepository
+import com.polishmediahub.app.data.SavedMediaRepository
 import com.polishmediahub.app.data.WatchHistoryRepository
+import com.polishmediahub.app.data.local.ProfileEntity
+import com.polishmediahub.app.data.local.WatchedEntity
 import com.polishmediahub.app.data.source.FederatedMediaRepository
 import com.polishmediahub.app.model.MediaItem
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -31,6 +36,7 @@ import javax.inject.Singleton
 class TvLauncherManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val watchHistoryRepository: WatchHistoryRepository,
+    private val savedMediaRepository: SavedMediaRepository,
     private val watchNextHelper: WatchNextHelper,
     private val federatedMediaRepository: FederatedMediaRepository,
     private val profileRepository: ProfileRepository
@@ -47,34 +53,68 @@ class TvLauncherManager @Inject constructor(
         get() = prefs.getLong(KEY_PREVIEW_CHANNEL_ID, -1L)
         set(value) = prefs.edit { putLong(KEY_PREVIEW_CHANNEL_ID, value) }
 
-    init {
-        scope.launch { startWatchingHistory() }
+    fun start() {
         scope.launch { observeProfileChanges() }
-    }
-
-    private suspend fun startWatchingHistory() {
-        watchHistoryRepository.observeHistory().collectLatest { history ->
-            history.forEach { (item, entity) ->
-                syncWatchNext(item, entity.positionMs, entity.durationMs, force = false)
-            }
-        }
+        scope.launch { startWatchingHistory() }
     }
 
     private suspend fun observeProfileChanges() {
         profileRepository.currentProfile.collectLatest { profile ->
             if (profile == null) return@collectLatest
             withContext(Dispatchers.IO) {
-                watchNextHelper.clearAll()
-                // Re-push current profile history after the launcher row is cleared.
+                syncProfileData(profile)
+            }
+        }
+    }
+
+    private suspend fun syncProfileData(profile: ProfileEntity) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        try {
+            watchNextHelper.clearAll()
+            syncWatchNextForProfile(profile)
+            syncWatchlistForProfile(profile)
+            syncRecommendationsForProfile(profile)
+        } catch (e: Exception) {
+            if (BuildConfig.DEBUG) Log.w(TAG, "syncProfileData failed: ${e.message}", e)
+        }
+    }
+
+    internal suspend fun syncWatchNextForProfile(profile: ProfileEntity) {
+        val history = watchHistoryRepository.observeHistory().first()
+        val entries = buildWatchNextItems(profile, history)
+        entries.forEach { entry ->
+            watchNextHelper.addToWatchNext(entry.item, entry.positionMs, entry.durationMs, entry.kind)
+        }
+    }
+
+    internal suspend fun syncWatchlistForProfile(profile: ProfileEntity) {
+        val watchlist = savedMediaRepository.observeWatchlist().first()
+        val items = buildWatchlistItems(profile, watchlist)
+        items.forEach { item ->
+            watchNextHelper.addToWatchNext(item, 0, 0, WatchNextKind.WATCHLIST)
+        }
+    }
+
+    private suspend fun syncRecommendationsForProfile(profile: ProfileEntity) {
+        ensurePreviewChannel()
+        val channelId = previewChannelId
+        if (channelId <= 0) return
+
+        deleteExistingPreviewPrograms(channelId)
+
+        try {
+            val featured = federatedMediaRepository.featured()
+            val items = buildPreviewItems(profile, featured)
+            items.forEach { item ->
                 try {
-                    val history = watchHistoryRepository.observeHistory().first()
-                    history.forEach { (item, entity) ->
-                        syncWatchNext(item, entity.positionMs, entity.durationMs, force = true)
-                    }
+                    val program = buildPreviewProgram(item, channelId)
+                    previewChannelHelper.publishPreviewProgram(program)
                 } catch (e: Exception) {
-                    Log.w(TAG, "observeProfileChanges failed: ${e.message}", e)
+                    if (BuildConfig.DEBUG) Log.w(TAG, "publishPreviewProgram failed: ${e.message}", e)
                 }
             }
+        } catch (e: Exception) {
+            if (BuildConfig.DEBUG) Log.w(TAG, "syncRecommendationsForProfile failed: ${e.message}", e)
         }
     }
 
@@ -97,11 +137,32 @@ class TvLauncherManager @Inject constructor(
         }
     }
 
+    private suspend fun startWatchingHistory() {
+        watchHistoryRepository.observeHistory().collectLatest { history ->
+            val profile = profileRepository.currentProfile.value
+            history.forEach { (item, entity) ->
+                if (!ContentFilter.isAllowed(item, profile)) return@forEach
+                syncWatchNextToLauncher(item, entity.positionMs, entity.durationMs, force = false, kind = WatchNextKind.CONTINUE)
+            }
+        }
+    }
+
     private suspend fun syncWatchNext(
         mediaItem: MediaItem,
         positionMs: Long,
         durationMs: Long,
         force: Boolean
+    ) {
+        watchHistoryRepository.updatePosition(mediaItem, positionMs, durationMs)
+        syncWatchNextToLauncher(mediaItem, positionMs, durationMs, force, kind = WatchNextKind.CONTINUE)
+    }
+
+    private suspend fun syncWatchNextToLauncher(
+        mediaItem: MediaItem,
+        positionMs: Long,
+        durationMs: Long,
+        force: Boolean,
+        kind: WatchNextKind
     ) {
         if (!force) {
             val now = System.currentTimeMillis()
@@ -112,38 +173,26 @@ class TvLauncherManager @Inject constructor(
             lastProgressUpdateMs[mediaItem.id] = System.currentTimeMillis()
         }
 
-        watchHistoryRepository.updatePosition(mediaItem, positionMs, durationMs)
+        if (!ContentFilter.isAllowed(mediaItem, profileRepository.currentProfile.value)) {
+            watchNextHelper.removeFromWatchNext(mediaItem.id)
+            return
+        }
+
         val finished = durationMs > 0 && positionMs >= durationMs - FINISHED_THRESHOLD_MS
         if (finished) {
             watchNextHelper.removeFromWatchNext(mediaItem.id)
         } else {
-            watchNextHelper.addToWatchNext(mediaItem, positionMs, durationMs)
+            watchNextHelper.addToWatchNext(mediaItem, positionMs, durationMs, kind)
         }
     }
 
+    /**
+     * Public entry used by [RecommendationsWorker] to refresh the Preview Channel
+     * based on the currently active profile.
+     */
     suspend fun syncRecommendations() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        withContext(Dispatchers.IO) {
-            try {
-                ensurePreviewChannel()
-                val channelId = previewChannelId
-                if (channelId <= 0) return@withContext
-
-                deleteExistingPreviewPrograms(channelId)
-
-                val featured = federatedMediaRepository.featured().take(MAX_RECOMMENDATIONS)
-                featured.forEach { item ->
-                    try {
-                        val program = buildPreviewProgram(item, channelId)
-                        previewChannelHelper.publishPreviewProgram(program)
-                    } catch (e: Exception) {
-                        Log.w(TAG, "publishPreviewProgram failed for ${item.id}: ${e.message}", e)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "syncRecommendations failed: ${e.message}", e)
-            }
-        }
+        val profile = profileRepository.currentProfile.first() ?: return
+        syncRecommendationsForProfile(profile)
     }
 
     private suspend fun ensurePreviewChannel() {
@@ -166,7 +215,7 @@ class TvLauncherManager @Inject constructor(
                 id = previewChannelHelper.publishChannel(channel)
                 previewChannelId = id
             } catch (e: Exception) {
-                Log.w(TAG, "ensurePreviewChannel failed: ${e.message}", e)
+                if (BuildConfig.DEBUG) Log.w(TAG, "ensurePreviewChannel failed: ${e.message}", e)
             }
         }
     }
@@ -188,7 +237,7 @@ class TvLauncherManager @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "deleteExistingPreviewPrograms failed: ${e.message}", e)
+                if (BuildConfig.DEBUG) Log.w(TAG, "deleteExistingPreviewPrograms failed: ${e.message}", e)
             }
         }
     }
@@ -236,8 +285,50 @@ class TvLauncherManager @Inject constructor(
         private const val TAG = "TvLauncherManager"
         private const val PREFS_NAME = "tv_launcher_manager"
         private const val KEY_PREVIEW_CHANNEL_ID = "preview_channel_id"
-        private const val FINISHED_THRESHOLD_MS = 10_000L
-        private const val MAX_RECOMMENDATIONS = 20
         private const val MIN_PROGRESS_UPDATE_INTERVAL_MS = 15_000L
     }
+}
+
+private const val FINISHED_THRESHOLD_MS = 10_000L
+private const val MAX_RECOMMENDATIONS = 20
+
+internal data class WatchNextEntry(
+    val item: MediaItem,
+    val positionMs: Long,
+    val durationMs: Long,
+    val kind: WatchNextKind
+)
+
+internal fun isUnfinished(positionMs: Long, durationMs: Long): Boolean {
+    if (positionMs <= 0) return false
+    if (durationMs <= 0) return true
+    return positionMs < durationMs - FINISHED_THRESHOLD_MS
+}
+
+internal fun buildWatchNextItems(
+    profile: ProfileEntity?,
+    history: List<Pair<MediaItem, WatchedEntity>>
+): List<WatchNextEntry> = history.mapNotNull { (item, entity) ->
+    if (!ContentFilter.isAllowed(item, profile)) return@mapNotNull null
+    if (!isUnfinished(entity.positionMs, entity.durationMs)) return@mapNotNull null
+    WatchNextEntry(item, entity.positionMs, entity.durationMs, WatchNextKind.CONTINUE)
+}
+
+internal fun buildWatchlistItems(
+    profile: ProfileEntity?,
+    watchlist: List<MediaItem>
+): List<MediaItem> = watchlist.filter { ContentFilter.isAllowed(it, profile) }
+
+private val RECOMMENDATION_TYPES = setOf(
+    MediaItem.Type.MOVIE,
+    MediaItem.Type.SERIES,
+    MediaItem.Type.EPISODE
+)
+
+internal fun buildPreviewItems(
+    profile: ProfileEntity?,
+    featured: List<MediaItem>
+): List<MediaItem> {
+    val allowed = ContentFilter.filter(featured, profile)
+    return allowed.filter { it.type in RECOMMENDATION_TYPES }.take(MAX_RECOMMENDATIONS)
 }

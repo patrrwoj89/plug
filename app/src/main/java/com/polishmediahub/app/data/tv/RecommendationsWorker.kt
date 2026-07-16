@@ -2,11 +2,13 @@ package com.polishmediahub.app.data.tv
 
 import android.content.Context
 import androidx.hilt.work.HiltWorker
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import androidx.work.ExistingPeriodicWorkPolicy
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.util.concurrent.TimeUnit
@@ -29,16 +31,23 @@ class RecommendationsWorker @AssistedInject constructor(
 
     companion object {
         private const val WORK_NAME = "recommendations_work"
-        private const val REPEAT_INTERVAL_HOURS = 24L
+        private const val REPEAT_INTERVAL_HOURS = 12L
 
         fun schedule(context: Context) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .setRequiresBatteryNotLow(true)
+                .build()
+
             val request = PeriodicWorkRequestBuilder<RecommendationsWorker>(
                 REPEAT_INTERVAL_HOURS,
                 TimeUnit.HOURS
-            ).build()
+            ).setConstraints(constraints)
+                .build()
+
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 WORK_NAME,
-                ExistingPeriodicWorkPolicy.KEEP,
+                ExistingPeriodicWorkPolicy.UPDATE,
                 request
             )
         }

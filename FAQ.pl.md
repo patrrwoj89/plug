@@ -172,7 +172,11 @@ Nie. Każdy profil ma własne wiersze `WatchedEntity`, `SavedMediaEntity`, `Cust
 
 ### Czy ekran główny Android TV aktualizuje się przy zmianie profilu?
 
-Tak. `TvLauncherManager` nasłuchuje `ProfileRepository.currentProfile`, czyści `WatchNextPrograms` i publikuje ponownie niedokończone treści nowego profilu.
+Tak. `TvLauncherManager` nasłuchuje `ProfileRepository.currentProfile`. Przy każdej zmianie profilu, na `Dispatchers.IO`, czyści istniejące `WatchNextPrograms` i `PreviewPrograms`, a następnie ponownie publikuje:
+- niedokończone pozycje wznowienia z `WatchHistoryRepository` aktywnego profilu,
+- pozycje z listy do obejrzenia z `SavedMediaRepository` aktywnego profilu,
+- odświeżony kanał rekomendacji/preview zbudowany z `FederatedMediaRepository.featured()` (MDBList, Kitsu i chmury domowe), przefiltrowany do filmów/seriali/odcinków.
+Wszystkie kandydaty przechodzą przez `ContentFilter` z limitami `maxAgeRating` i `allowNsfw` aktywnego profilu; pozycje bez zadeklarowanego wieku są ukrywane dla profili z ograniczeniem wiekowym (tryb fail-closed).
 
 ## Nowoczesny panel boczny
 
@@ -244,11 +248,11 @@ Otwórz **Listy własne** w panelu bocznym, zaznacz wybraną listę i naciśnij 
 
 ### Dlaczego nie widzę Polish Media Hub na ekranie głównym?
 
-Na obsługiwanych launcherach Android TV / Google TV aplikacja publikuje kanał **Watch Next** i kanał rekomendacji **Preview**. Systemowy launcher decyduje, czy i jak wyświetlać kanały. Upewnij się, że aplikacja była otwarta co najmniej raz i `RecommendationsWorker` wykonał się.
+Na obsługiwanych launcherach Android TV / Google TV aplikacja publikuje kanał **Watch Next** i kanał rekomendacji **Preview**. Systemowy launcher decyduje, czy i jak wyświetlać kanały. Upewnij się, że aplikacja była otwarta co najmniej raz i `RecommendationsWorker` wykonał się. Worker odświeża kanał co 12 godzin, gdy urządzenie ma połączenie z siecią i bateria nie jest niska.
 
 ### Czy kanał Watch Next respektuje profile?
 
-Tak. Jest powiązany z `WatchHistoryRepository` aktywnego profilu. Zmiana profilu czy stare kafelki i publikuje niedokończone elementy nowego profilu.
+Tak. Wiersz Watch Next jest przypisany do profilu. Po przełączeniu profilu `TvLauncherManager` czyści systemowe `WatchNextPrograms` i publikuje ponownie wyłącznie niedokończone seanse oraz pozycje z listy do obejrzenia aktywnego profilu. Wszystko jest filtrowane przez `ContentFilter` zgodnie z ustawieniami `maxAgeRating` i `allowNsfw` aktywnego profilu, więc profil dziecka nigdy nie zobaczy niedozwolonych kafelków.
 
 ## Audio / Napisy / Muzyka
 

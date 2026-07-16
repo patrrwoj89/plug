@@ -85,8 +85,14 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 
 ### Integracja z Android TV
 
-- **Watch Next** — kontynuacja oglądania.
-- **Kanał rekomendacji / Preview** aktualizowany codziennie przez `WorkManager`.
+- **Wiersz Watch Next per profil** (`TvLauncherManager`, `WatchNextHelper`)
+  - Wiersz launchera jest powiązany z `ProfileRepository.currentProfile`; przy każdej zmianie profilu systemowe `WatchNextPrograms` są czyszczone i ponownie publikowane wyłącznie z niedokończonymi seansami oraz listą do obejrzenia bieżącego użytkownika.
+  - Wszystkie pozycje przepuszczane są przez `ContentFilter` z limitami `maxAgeRating` i `allowNsfw` aktywnego profilu; brak zadeklarowanego wieku powoduje odrzucenie dla profili z ograniczeniem wiekowym (tryb fail-closed).
+  - Pozycje wznowienia używają typu `WATCH_NEXT_TYPE_CONTINUE`; pozycje z listy do obejrzenia używają `WATCH_NEXT_TYPE_WATCHLIST`.
+- **Kanał rekomendacji / Preview per profil** (`TvLauncherManager`, `RecommendationsWorker`)
+  - Kanał budowany jest z `FederatedMediaRepository.featured()` (MDBList, Kitsu i chmury domowe), filtrowany do filmów/seriali/odcinków i ponownie filtrowany przez kontrolę rodzicielską aktywnego profilu.
+  - `RecommendationsWorker` odświeża kanał co 12 godzin przy `NetworkType.CONNECTED` i `requiresBatteryNotLow`.
+  - Wszystkie operacje `ContentResolver` wykonują się na `Dispatchers.IO`, kursory używają `.use`, a `ContentFilter` odrzuca niedozwolone pozycje przed jakimkolwiek IPC z systemowym launcherem.
 - **Globalne wyszukiwanie Android TV** przez `SearchActivity` i `SearchRecentSuggestionsProvider`.
 
 ### Bezpieczeństwo, stabilność i profile
