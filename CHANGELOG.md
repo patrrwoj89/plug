@@ -6,6 +6,17 @@ All notable changes to Polish Media Hub are documented in this file.
 
 ### Added
 
+#### Bundled QuickJS scraper plugins and engine improvements
+- Added `plugins/` directory with 7 PMH-compatible QuickJS scrapers (filman.cc, ekino-tv.pl, zaluknij.cc, desu-online.pl, animezone.pl, ogladajanime.pl, naszeanime.pl).
+- `plugins/manifest.json` contains a `PluginManifest` with all sources and embedded `config.script`.
+- `plugins/src/shared.js`, `plugin-template.js`, `providers.js` and `scripts/build-pmh.js` form a generator pipeline; `npm install && npm run build` in `plugins/` regenerates the scripts and manifest.
+- `plugins/scripts/test-pmh.js` provides a Node smoke test using a synchronous `httpFetch` mock.
+
+### Fixed
+
+- `QuickJsEngine.extractHeaders` now also accepts a JSON string for headers in addition to a JS object/Map.
+- `PluginRepository.applyPlugin` now falls back to `config.scriptUrl` when `config.script` is not present for `quickjs` sources.
+
 #### Centered D-Pad focus scrolling, full spoiler blur and player quick settings
 - **Centered TV focus scrolling** (`TvBringIntoViewSpec`)
   - Added `TvBringIntoViewSpec` implementing `BringIntoViewSpec` with a centered-child layout and a smooth `SpringSpec` animation.

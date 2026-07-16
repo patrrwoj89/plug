@@ -222,7 +222,17 @@ Go to **Torrents** in the sidebar, paste a magnet URI or `.torrent` URL, and con
 
 ### How do I write a plugin?
 
-See [PLUGIN_GUIDE.md](PLUGIN_GUIDE.md). A plugin is a JavaScript file that exposes functions such as `search(query)`, `categories()`, `featured()` and `resolve(id)`. The runtime provides a global `httpFetch(url, headersJson)` returning `{code, body, headers, error}`.
+See [PLUGIN_GUIDE.md](PLUGIN_GUIDE.md). A plugin is a JavaScript file that exposes functions such as `search(query)`, `byId(id)` and `resolve(id)`. The runtime provides a global synchronous `httpFetch(url, headers)` returning `{code, body, headers, error}`. `headers` can be a JavaScript object or a JSON string.
+
+### Where are the bundled Polish scraper plugins?
+
+The repository ships bundled scrapers under `plugins/`:
+
+- `plugins/manifest.json` — a `PluginManifest` with all 7 sources and embedded `config.script`.
+- `plugins/*.js` — individual provider scripts (filman.cc, ekino-tv.pl, zaluknij.cc, desu-online.pl, animezone.pl, ogladajanime.pl, naszeanime.pl).
+- `plugins/src/` and `plugins/scripts/build-pmh.js` — generator sources.
+
+You can load `plugins/manifest.json` into the app from the Admin panel or host it on an HTTPS URL.
 
 ### Can a plugin add headers for ExoPlayer?
 

@@ -292,7 +292,10 @@ class PluginRepository @Inject constructor(
                 "stremio", "iptv" -> null
                 "quickjs" -> {
                     val quickSource = quickJsMediaSourceProvider.get()
-                    quickSource.configure(source.config["script"] ?: "")
+                    val script = source.config["script"]
+                        ?: source.config["scriptUrl"]?.let { fetch(it) }
+                        ?: ""
+                    quickSource.configure(script)
                     quickSource
                 }
                 else -> null

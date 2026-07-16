@@ -46,16 +46,16 @@ function resolve(idOrMediaItemId) {
 
 Wszystkie funkcje są wywoływane z korutyn Kotlin na `Dispatchers.IO`, więc wywołania sieciowe wewnątrz `httpFetch` są synchroniczne i blokują tylko wątek JS.
 
-### Globalna funkcja `httpFetch(url, headersJson)`
+### Globalna funkcja `httpFetch(url, headers)`
 
 Silnik rejestruje globalną funkcję JS wykonującą żądanie HTTP przez OkHttp i zwracającą łańcuch JSON:
 
 ```js
 var response = httpFetch("https://example.com/page");
-// lub z nagłówkami:
+// lub z nagłówkami (obiekt JS):
 var response = httpFetch(
   "https://example.com/page",
-  JSON.stringify({ "User-Agent": "PolishMediaHub/1.0", "Referer": "https://example.com" })
+  { "User-Agent": "PolishMediaHub/1.0", "Referer": "https://example.com" }
 );
 
 var r = JSON.parse(response);
@@ -64,6 +64,8 @@ console.log(r.body);     // ciało odpowiedzi jako string
 console.log(r.headers);  // obiekt nagłówków odpowiedzi
 console.log(r.error);    // komunikat błędu, jeśli wystąpił
 ```
+
+`headers` może być obiektem JavaScript lub łańcuchem JSON. Do OkHttp przekazywane są tylko wartości tekstowe.
 
 Użyj `r.code` do wykrywania 403/429, odczytaj ciasteczka z `r.headers["Set-Cookie"]` i zaimplementuj logowanie / zarządzanie sesją wewnątrz wtyczki.
 
@@ -135,10 +137,10 @@ function byId(id) {
 
 function resolve(id) {
   var realId = id.replace("myplugin:", "");
-  var resp = httpFetch("https://example.com/stream/" + realId, JSON.stringify({
+  var resp = httpFetch("https://example.com/stream/" + realId, {
     "User-Agent": "Mozilla/5.0",
     "Referer": "https://example.com"
-  }));
+  });
   var r = JSON.parse(resp);
   var json = JSON.parse(r.body);
   return {
@@ -153,7 +155,7 @@ function resolve(id) {
 
 ### Manifest wtyczki QuickJS
 
-Wtyczka zazwyczaj dystrybuowana jest jako JSON `PluginManifest` plus jeden lub więcej plików `.js`:
+Wtyczka zazwyczaj dystrybuowana jest jako JSON `PluginManifest` plus jeden lub więcej plików `.js`. Repozytorium zawiera gotowe scrapery QuickJS w `plugins/manifest.json` oraz osobne pliki `plugins/*.js`.
 
 ```json
 {
@@ -174,6 +176,8 @@ Wtyczka zazwyczaj dystrybuowana jest jako JSON `PluginManifest` plus jeden lub w
   ]
 }
 ```
+
+`config.scriptUrl` pobiera plik `.js` przez HTTPS. Możesz też osadzić skrypt bezpośrednio w `config.script`. Oba sposoby działają; osadzenie sprawia, że wtyczka jest samowystarczalna i jest używane przez dołączone scrapery.
 
 Raw script możesz także wkleić bezpośrednio w panelu Admin. Zobacz [ADMIN_PANEL.md](ADMIN_PANEL.md) / [ADMIN_PANEL.pl.md](ADMIN_PANEL.pl.md).
 
