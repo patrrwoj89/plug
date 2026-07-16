@@ -1,7 +1,6 @@
 package com.polishmediahub.app.di
 
 import com.polishmediahub.app.data.plugin.PluginMediaSource
-import com.polishmediahub.app.data.remote.anime.DocchiMediaSource
 import com.polishmediahub.app.data.remote.emby.EmbyMediaSource
 import com.polishmediahub.app.data.remote.jellyfin.JellyfinMediaSource
 import com.polishmediahub.app.data.remote.mdblist.MdbListMediaSource
@@ -51,8 +50,4 @@ abstract class MediaSourceModule {
     @Binds
     @IntoSet
     abstract fun bindMdbListMediaSource(source: MdbListMediaSource): MediaSource
-
-    @Binds
-    @IntoSet
-    abstract fun bindDocchiMediaSource(source: DocchiMediaSource): MediaSource
 }

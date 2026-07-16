@@ -4,6 +4,17 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 
 ## [Unreleased]
 
+### Bezpieczeństwo
+
+#### Prywatność kodu PIN profilu domownika (`ProfileRepository`, `ProfileEntity`, `PinSecurity`)
+- Kody PIN profili są teraz haszowane solonym SHA-256 (`PinSecurity`) przed zapisem do bazy Room, dzięki czemu ani lokalna baza danych, ani chmurowe kopie ZIP w Cloudflare KV generowane przez `CloudProfileSyncWorker` nie zawierają PIN-ów w postaci jawnej. Weryfikacja PIN i starsze profile z jawnym PIN-em działają dalej dzięki przezroczystemu fallbackowi.
+
+### Zmieniono
+
+#### Konsolidacja silnika fokusu D-Pad (`TVFocus.kt`)
+- Usunięto przestarzały wzorzec `composed {}` z `tvFocusable`, eliminując zdublowaną animację skali o stałym celu `1f` oraz podwójną subskrypcję `interactionSource`. Skala oraz podświetlenie (obramowanie/poświata) są teraz obliczane w jednym miejscu w `FocusableSurface` przez współdzielony modyfikator `focusHighlight`.
+- `TvButton` w stanie `enabled = false` jest teraz wygaszony przez `.alpha(0.5f)` i całkowicie wykluczony z nawigacji pilotem D-Pad (`canFocus = false`), więc podświetlenie pilota nie najeżdża już na martwe akcje.
+
 ### Dodano
 
 #### Wzmocnienie ekosystemu P2P, Anime i Kodi
@@ -30,6 +41,11 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 - `plugins/scripts/test-pmh.js` dostarcza Node smoke test z mockiem synchronicznego `httpFetch`.
 
 ### Naprawione
+
+#### Duplikacja kafelków Anime i finalne hardeningi code-freeze
+- **Zdublowane kafelki Anime** (`MediaSourceModule.kt`) — usunięto multibinding `@IntoSet` dla `DocchiMediaSource`; jest ono teraz wstrzykiwane wyłącznie do `AnimeRepository` (jak `KitsuMediaSource`) i nie jest już podwójnie odpytywane przez `SourceRegistry.all`, co trwale usuwa zdublowane kafelki i rzędy kategorii Anime na ekranie głównym i w wyszukiwarce.
+- **Głuche bloki catch** — dodano logowanie `Log.w` do wcześniej pustych bloków catch w `KodiDiscoveryManager` (`stopServiceDiscovery`) oraz `QuickJsMediaSource` (`withContextOrEmpty`).
+- **Wycinanie logów w release** (`app/proguard-rules.pro`) — dodano regułę `-assumenosideeffects` usuwającą wywołania `Log.d`/`Log.v`/`isLoggable` z produkcyjnego `.apk`.
 
 - `QuickJsEngine.extractHeaders` akceptuje teraz łańcuch JSON jako nagłówki oprócz obiektu/Mapy JS.
 - `PluginRepository.applyPlugin` fallbackuje teraz do `config.scriptUrl`, gdy `config.script` jest nieobecne dla źródeł `quickjs`.

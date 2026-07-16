@@ -81,7 +81,8 @@ class KodiDiscoveryManager @Inject constructor(
         discoveryListener?.let { listener ->
             try {
                 nsdManager?.stopServiceDiscovery(listener)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                if (BuildConfig.DEBUG) Log.w("KodiDiscoveryManager", "stopServiceDiscovery failed: ${e.message}")
             }
         }
         discoveryListener = null
