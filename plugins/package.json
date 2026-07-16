@@ -1,0 +1,12 @@
+{
+  "name": "plug",
+  "version": "3.0.0",
+  "description": "Polish Media Hub — QuickJS scraper plugins (synchronous httpFetch, no async/await)",
+  "scripts": {
+    "build": "node scripts/build-pmh.js",
+    "test": "node scripts/test-pmh.js"
+  },
+  "devDependencies": {},
+  "keywords": ["pmh", "quickjs", "scrapers", "polish"],
+  "license": "MIT"
+}

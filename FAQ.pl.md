@@ -222,7 +222,17 @@ Przejdź do **Torrents** w panelu bocznym, wklej magnet URI lub URL `.torrent` i
 
 ### Jak napisać wtyczkę?
 
-Zobacz [PLUGIN_GUIDE.md](PLUGIN_GUIDE.md) / [PLUGIN_GUIDE.pl.md](PLUGIN_GUIDE.pl.md). Wtyczka to plik JavaScript, który udostępnia funkcje takie jak `search(query)`, `categories()`, `featured()` i `resolve(id)`. Runtime udostępnia globalną funkcję `httpFetch(url, headersJson)` zwracającą `{code, body, headers, error}`.
+Zobacz [PLUGIN_GUIDE.md](PLUGIN_GUIDE.md) / [PLUGIN_GUIDE.pl.md](PLUGIN_GUIDE.pl.md). Wtyczka to plik JavaScript, który udostępnia funkcje takie jak `search(query)`, `byId(id)` i `resolve(id)`. Runtime udostępnia globalną synchroniczną funkcję `httpFetch(url, headers)` zwracającą `{code, body, headers, error}`. `headers` może być obiektem JS lub łańcuchem JSON.
+
+### Gdzie znajdują się dołączone polskie scrapery QuickJS?
+
+Repozytorium zawiera gotowe scrapery w katalogu `plugins/`:
+
+- `plugins/manifest.json` — `PluginManifest` ze wszystkimi 7 źródłami i osadzonym `config.script`.
+- `plugins/*.js` — osobne skrypty providerów (filman.cc, ekino-tv.pl, zaluknij.cc, desu-online.pl, animezone.pl, ogladajanime.pl, naszeanime.pl).
+- `plugins/src/` oraz `plugins/scripts/build-pmh.js` — źródła generatora.
+
+Możesz wczytać `plugins/manifest.json` do aplikacji z panelu Admina lub hostować pod adresem HTTPS.
 
 ### Czy wtyczka może dodać nagłówki dla ExoPlayera?
 

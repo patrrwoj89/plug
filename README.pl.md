@@ -270,10 +270,16 @@ Ekran przewodnika TV (`EpgScreen` / `EpgViewModel`) renderuje profesjonalną dwu
 
 Wtyczki to pliki `.js` ewaluowane w dzielonym kontekście `QuickJsEngine`:
 
-- Globalna funkcja `httpFetch(url, headersJson)` zwraca JSON: `{code, body, headers, error}`.
+- Globalna funkcja `httpFetch(url, headers)` zwraca JSON: `{code, body, headers, error}`. `headers` może być obiektem JS lub łańcuchem JSON.
 - `evaluate()` działa na `Dispatchers.IO`, aby uniknąć ANR.
 - Singleton z cyklem życia Hilt i jawnym `dispose()` dla czyszczenia natywnego kontekstu.
 - `QuickJsMediaSource.mapToMediaItem` przekazuje opcjonalne nagłówki HTTP (`User-Agent`, `Referer`) do fabryki `DefaultHttpDataSource.Factory` w ExoPlayerze.
+
+To repozytorium zawiera gotowe polskie scrapery w katalogu `plugins/`:
+
+- `plugins/manifest.json` — `PluginManifest` ze wszystkimi 7 źródłami QuickJS i osadzonym `config.script`.
+- `plugins/*.js` — osobne skrypty providerów (filman.cc, ekino-tv.pl, zaluknij.cc, desu-online.pl, animezone.pl, ogladajanime.pl, naszeanime.pl).
+- `plugins/src/` oraz `plugins/scripts/build-pmh.js` — źródła generatora. Uruchom `npm install && npm run build` w `plugins/`, aby wygenerować skrypty ponownie.
 
 ## Dynamiczne ładowanie wtyczek binarnych
 

@@ -46,16 +46,16 @@ function resolve(idOrMediaItemId) {
 
 All functions are invoked from Kotlin coroutines on `Dispatchers.IO`, so network calls inside `httpFetch` are synchronous and block the JS thread only.
 
-### Global `httpFetch(url, headersJson)`
+### Global `httpFetch(url, headers)`
 
 The engine registers a global JavaScript function that performs an HTTP request through OkHttp and returns a JSON string:
 
 ```js
 var response = httpFetch("https://example.com/page");
-// or with headers:
+// or with headers (JavaScript object):
 var response = httpFetch(
   "https://example.com/page",
-  JSON.stringify({ "User-Agent": "PolishMediaHub/1.0", "Referer": "https://example.com" })
+  { "User-Agent": "PolishMediaHub/1.0", "Referer": "https://example.com" }
 );
 
 var r = JSON.parse(response);
@@ -64,6 +64,8 @@ console.log(r.body);     // response body as string
 console.log(r.headers);  // response headers object
 console.log(r.error);    // error message, if any
 ```
+
+`headers` can be a JavaScript object or a JSON string. Only string header values are forwarded to OkHttp.
 
 Use `r.code` to detect 403/429, read cookies from `r.headers["Set-Cookie"]`, and implement login/session handling inside the plugin.
 
@@ -135,10 +137,10 @@ function byId(id) {
 
 function resolve(id) {
   var realId = id.replace("myplugin:", "");
-  var resp = httpFetch("https://example.com/stream/" + realId, JSON.stringify({
+  var resp = httpFetch("https://example.com/stream/" + realId, {
     "User-Agent": "Mozilla/5.0",
     "Referer": "https://example.com"
-  }));
+  });
   var r = JSON.parse(resp);
   var json = JSON.parse(r.body);
   return {
@@ -153,7 +155,7 @@ function resolve(id) {
 
 ### QuickJS plugin manifest
 
-A plugin is usually distributed as a `PluginManifest` JSON plus one or more `.js` files:
+A plugin is usually distributed as a `PluginManifest` JSON plus one or more `.js` files. The repository ships bundled QuickJS scrapers in `plugins/manifest.json` and individual `plugins/*.js` files.
 
 ```json
 {
@@ -174,6 +176,8 @@ A plugin is usually distributed as a `PluginManifest` JSON plus one or more `.js
   ]
 }
 ```
+
+`config.scriptUrl` fetches the `.js` file over HTTPS. You can also embed the script directly in `config.script`. Both work; embedding keeps the plugin self-contained and is used by the bundled scrapers.
 
 You can also paste the raw script directly in the Admin panel. See [ADMIN_PANEL.md](ADMIN_PANEL.md).
 

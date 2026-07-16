@@ -7,6 +7,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import javax.inject.Inject
@@ -97,24 +100,28 @@ class QuickJsEngine @Inject constructor(
 
     @Suppress("UNCHECKED_CAST")
     private fun extractHeaders(input: Any?): Map<String, String> {
-        return when (input) {
-            is JSObject -> {
-                input.toMap()
-                    .mapNotNull { (key, value) ->
-                        val k = key as? String ?: return@mapNotNull null
-                        val v = value as? String ?: value?.toString() ?: return@mapNotNull null
-                        k to v
-                    }
-                    .toMap()
-            }
-            is Map<*, *> -> {
-                input.mapNotNull { (key, value) ->
-                    val k = key as? String ?: return@mapNotNull null
-                    val v = value as? String ?: value?.toString() ?: return@mapNotNull null
-                    k to v
+        val asMap: Map<*, *>? = when (input) {
+            is JSObject -> input.toMap()
+            is Map<*, *> -> input
+            is String -> parseJsonHeaders(input)
+            else -> null
+        }
+        return asMap?.mapNotNull { (key, value) ->
+            val k = key as? String ?: return@mapNotNull null
+            val v = value as? String ?: value?.toString() ?: return@mapNotNull null
+            k to v
+        }?.toMap() ?: emptyMap()
+    }
+
+    private fun parseJsonHeaders(input: String): Map<String, String>? {
+        return try {
+            json.parseToJsonElement(input).jsonObject
+                .mapNotNull { (key, value) ->
+                    val v = value.jsonPrimitive.contentOrNull ?: value.toString()
+                    key to v
                 }.toMap()
-            }
-            else -> emptyMap()
+        } catch (_: Exception) {
+            null
         }
     }
 

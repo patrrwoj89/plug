@@ -6,6 +6,17 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 
 ### Dodano
 
+#### Dołączone scrapery QuickJS i poprawki silnika
+- Dodano katalog `plugins/` z 7 scraperami QuickJS kompatybilnymi z PMH (filman.cc, ekino-tv.pl, zaluknij.cc, desu-online.pl, animezone.pl, ogladajanime.pl, naszeanime.pl).
+- `plugins/manifest.json` zawiera `PluginManifest` ze wszystkimi źródłami i osadzonym `config.script`.
+- `plugins/src/shared.js`, `plugin-template.js`, `providers.js` oraz `scripts/build-pmh.js` tworzą pipeline generatora; `npm install && npm run build` w `plugins/` regeneruje skrypty i manifest.
+- `plugins/scripts/test-pmh.js` dostarcza Node smoke test z mockiem synchronicznego `httpFetch`.
+
+### Naprawione
+
+- `QuickJsEngine.extractHeaders` akceptuje teraz łańcuch JSON jako nagłówki oprócz obiektu/Mapy JS.
+- `PluginRepository.applyPlugin` fallbackuje teraz do `config.scriptUrl`, gdy `config.script` jest nieobecne dla źródeł `quickjs`.
+
 #### Płynne centrowanie focusu, pełne rozmycie spoilerów i szybkie ustawienia playera
 - **Centrowanie focusu D-Pada na Android TV** (`TvBringIntoViewSpec`)
   - Dodano `TvBringIntoViewSpec` implementujący `BringIntoViewSpec` z wycentrowanym układem i płynną animacją `SpringSpec`.

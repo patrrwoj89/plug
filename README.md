@@ -271,10 +271,16 @@ The TV Guide screen (`EpgScreen` / `EpgViewModel`) renders a professional two-di
 
 Plugins are `.js` files evaluated in a shared `QuickJsEngine`:
 
-- Global `httpFetch(url, headersJson)` returns JSON: `{code, body, headers, error}`.
+- Global `httpFetch(url, headers)` returns JSON: `{code, body, headers, error}`. `headers` can be a JS object or a JSON string.
 - `evaluate()` runs on `Dispatchers.IO` to avoid ANRs.
 - Constructor-injected singleton lifecycle with explicit `dispose()` to destroy native contexts.
 - `QuickJsMediaSource.mapToMediaItem` carries optional HTTP headers (`User-Agent`, `Referer`) through to ExoPlayer's `DefaultHttpDataSource.Factory`.
+
+This repository ships bundled Polish scrapers in `plugins/`:
+
+- `plugins/manifest.json` — a `PluginManifest` with all 7 QuickJS sources and embedded `config.script`.
+- `plugins/*.js` — individual provider scripts (filman.cc, ekino-tv.pl, zaluknij.cc, desu-online.pl, animezone.pl, ogladajanime.pl, naszeanime.pl).
+- `plugins/src/` and `plugins/scripts/build-pmh.js` — generator sources. Run `npm install && npm run build` in `plugins/` to regenerate.
 
 ## Dynamic binary plugin loading
 
