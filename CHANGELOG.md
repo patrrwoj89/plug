@@ -7,7 +7,7 @@ All notable changes to Polish Media Hub are documented in this file.
 ### Security
 
 #### Household profile PIN privacy (`ProfileRepository`, `ProfileEntity`, `PinSecurity`)
-- Profile PIN codes are now hashed with a per-PIN salted SHA-256 (`PinSecurity`) before being written to the Room database, so neither the local database nor the Cloudflare KV ZIP backups produced by `CloudProfileSyncWorker` contain clear-text PINs. PIN verification and legacy plaintext profiles remain fully supported via a transparent fallback.
+- Profile PIN codes are now hashed with a per-PIN salted, high-iteration PBKDF2-HMAC-SHA256 (`PinSecurity`) before being written to the Room database, so neither the local database nor the Cloudflare KV ZIP backups produced by `CloudProfileSyncWorker` contain clear-text PINs. The deliberately slow KDF makes offline brute force of the small 4-digit PIN keyspace expensive even if a backup leaks. PIN verification, legacy salted-SHA-256 hashes and legacy plaintext profiles remain fully supported via a transparent fallback.
 
 ### Changed
 

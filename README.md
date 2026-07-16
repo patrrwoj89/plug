@@ -115,7 +115,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 
 ### Security, stability & profiles
 
-- **Multi-user profiles** with per-profile history, library, watchlist, custom lists and audio history; profile switcher in the sidebar and optional PIN lock per profile. Profile PINs are stored as a per-PIN salted SHA-256 hash (`PinSecurity`), so neither the Room database nor the Cloudflare KV ZIP backups ever contain a clear-text PIN.
+- **Multi-user profiles** with per-profile history, library, watchlist, custom lists and audio history; profile switcher in the sidebar and optional PIN lock per profile. Profile PINs are stored as a per-PIN salted, high-iteration PBKDF2-HMAC-SHA256 hash (`PinSecurity`), so neither the Room database nor the Cloudflare KV ZIP backups ever contain a clear-text PIN.
 - **Parental Control** per profile: `maxAgeRating` and `allowNsfw` flags stored in `ProfileEntity` (Room v12). `ContentFilter` uses a fail-closed policy: items without a declared age rating are hidden when an age cap is set, and items with a rating above the cap or flagged as adult/NSFW are removed before they reach `search()`, `categories()` and `featured()` results in `CompositeMediaRepository`, `FederatedMediaRepository` and `PluginMediaSource`. Managed in the PIN-protected **Parental Control** section of `SettingsScreen`.
 - **PIN lock** for Settings and Admin screens.
 - **Download support** for audio and video via `WorkManager`.

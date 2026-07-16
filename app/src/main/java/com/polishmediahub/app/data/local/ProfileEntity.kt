@@ -14,7 +14,7 @@ data class ProfileEntity(
     val name: String,
     val avatarUrl: String? = null,
     val isPinLocked: Boolean = false,
-    /** Salted SHA-256 hash of the profile PIN (see PinSecurity); never stored in clear text. */
+    /** Salted PBKDF2-HMAC-SHA256 hash of the profile PIN (see PinSecurity); never stored in clear text. */
     val pinCode: String? = null,
     val maxAgeRating: String? = null,
     val allowNsfw: Boolean = false

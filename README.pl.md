@@ -115,7 +115,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 
 ### Bezpieczeństwo, stabilność i profile
 
-- **Wielu użytkowników / profile** z per-profilową historią, biblioteką, listami obserwowanych, listami własnymi i historią audio; przełącznik profili w panelu bocznym i opcjonalny PIN na profil. Kody PIN profili są przechowywane jako solony skrót SHA-256 (`PinSecurity`), więc ani baza Room, ani chmurowe kopie ZIP w Cloudflare KV nigdy nie zawierają PIN-u w postaci jawnej.
+- **Wielu użytkowników / profile** z per-profilową historią, biblioteką, listami obserwowanych, listami własnymi i historią audio; przełącznik profili w panelu bocznym i opcjonalny PIN na profil. Kody PIN profili są przechowywane jako solony, wysokoiteracyjny skrót PBKDF2-HMAC-SHA256 (`PinSecurity`), więc ani baza Room, ani chmurowe kopie ZIP w Cloudflare KV nigdy nie zawierają PIN-u w postaci jawnej.
 - **Kontrola Rodzicielska** dla każdego profilu: pola `maxAgeRating` i `allowNsfw` w encji `ProfileEntity` (baza Room v12). `ContentFilter` działa w trybie „fail-closed”: pozycje bez zadeklarowanego ograniczenia wiekowego są ukrywane, gdy aktywny profil ma ustawiony limit wieku; pozycje z kategorią powyżej limitu lub oznaczone jako treści dla dorosłych/NSFW są usuwane z wyników `search()`, `categories()` i `featured()` w `CompositeMediaRepository`, `FederatedMediaRepository` i `PluginMediaSource`. Zarządzana w chronionej PIN-em sekcji **Kontrola Rodzicielska** w `SettingsScreen`.
 - **Blokada PIN** dla Ustawień i ekranu Admin.
 - **Pobieranie** audio i wideo przez `WorkManager`.
