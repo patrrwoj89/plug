@@ -249,4 +249,14 @@
     <string name="settings_cloudflare_worker_url_hint">https://twoj-worker.workers.dev</string>
     <string name="settings_cloudflare_auth_token">Token autoryzacyjny Workera</string>
     <string name="settings_cloudflare_auth_token_hint">Hub token współdzielony z sekretem Workera</string>
+    <string name="settings_profile_sync_section">Synchronizacja profili w chmurze</string>
+    <string name="profile_sync_now">Synchronizuj profile do chmury</string>
+    <string name="profile_last_sync">Ostatnia synchronizacja profili: %1$s — %2$s</string>
+    <string name="settings_plugin_update_section">Aktualizacje wtyczek i źródeł</string>
+    <string name="plugin_update_now">Sprawdź aktualizacje teraz</string>
+    <string name="plugin_update_clear_badge">Odrzuć odznakę aktualizacji</string>
+    <string name="plugin_last_check">Ostatnie sprawdzenie: %1$s</string>
+    <string name="sync_status_never">Nigdy</string>
+    <string name="sync_status_success">Sukces</string>
+    <string name="sync_status_error">Błąd</string>
 </resources>

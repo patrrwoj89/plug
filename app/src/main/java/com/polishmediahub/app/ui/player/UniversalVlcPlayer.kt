@@ -53,6 +53,7 @@ import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Spacing
 import com.polishmediahub.app.ui.viewmodel.PlayerViewModel
+import com.polishmediahub.app.data.source.FrameSample
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -276,6 +277,7 @@ fun UniversalVlcPlayer(
                     val length = mediaPlayer.length.coerceAtLeast(0L)
                     currentPosition = position
                     duration = length
+                    viewModel.onFrameSample(FrameSample(position, 1f, 0f), position, length)
                     viewModel.updatePosition(position, length)
 
                     val rem = if (length > position) length - position else 0L

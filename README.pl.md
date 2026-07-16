@@ -45,6 +45,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - **Nakładka Nerd Stats**: panel diagnostyczny w prawym górnym rogu (rozdzielczość, fps, kodeki, bitrate, pominięte klatki).
 - **Zaokrąglenie okładek i awatarów**: `MediaCard` i `WideCard` przycinają `AsyncImage` za pomocą `RoundedCornerShape(Radius.md)`; awatary profili w `Sidebar` i `CollapsedSidebarPill` używają `ContentScale.Crop` i `fillMaxSize()` w okrągłych kontenerach.
 - **Wyprzedzające pobieranie plakatów i dyskowy cache Coil** (`HomePreFetchWorker`, `ImageLoaderFactory`, `TVCard`): zadanie `WorkManager` uruchamiane co 12 godzin rozgrzewa URL-e plakatów i tła ekranu głównego w 100 MB trwałym cache dyskowym Coil przy niezlimitowanym Wi-Fi, gdy urządzenie jest bezczynne. Każdy `AsyncImage` używa jawnego `ImageRequest` z `diskCachePolicy(ENABLED)` i `memoryCachePolicy(ENABLED)`, więc siatka główna renderuje się natychmiast nawet offline.
+- **Lokalny mini-player audio** (`AudioMiniPlayer`, `AudioMiniPlayerViewModel`, `AudioRepository`): wysuwa się z dołu `HomeScreen`, gdy aktywny jest utwór audio (radio lub podcast), wyświetlając okładkę, tytuł, wykonawcę i przyciski Pauza/Stop obsługiwane D-Padem; kliknięcie paska przechodzi do `PlayerScreen`. Stan subskrybowany jest przez `collectAsStateWithLifecycle()` (Zasada 4) i współdzielony przez `MusicViewModel` oraz `PlayerViewModel`.
 
 ### Odtwarzacz i media
 
@@ -63,6 +64,7 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - **Inteligentne pomijanie czołówki i końcówki** (`PlayerScreen`, `PlayerViewModel`): wtyczki mogą dostarczać dokładne znaczniki czasowe `introStartMs/introEndMs/outroStartMs/outroEndMs` w `MediaItem`; w przeciwnym razie odtwarzacz używa konfigurowalnych domyślnych długości czołówki i końcówki. Półprzezroczysty przycisk obsługiwany pilotem D-Pad wysuwa się podczas segmentu, aby pominąć czołówkę lub wywołać nakładkę Auto-Play Next.
 - **Alternatywny silnik LibVLC** (`UniversalVlcPlayer`): wbudowany silnik `org.videolan.android:libvlc-all` działający bezpośrednio w procesie aplikacji. Włącz go w Ustawieniach / panelu Admina, aby ominąć problemy ExoPlayera z dekodowaniem dźwięku DTS/AC3 oraz kontenerów MKV/AVI z torrentów, Kodi i wtyczek webowych. Przekazuje `mediaItem.headers`, dodaje domyślny `User-Agent`, dołącza napisy zewnętrzne przez `Media.addSlave` wraz z `subtitleHeaders` i odpytuje `mediaPlayer.time`, aby scrobbling Trakt, historia Room, nakładka Auto-Play Next i Smart Skip Intro/Outro działały także na silniku LibVLC. Powiela również logikę polskiego doboru ścieżki dźwiękowej i napisów (preferuje `pl`/`pol`, depriorytetyzuje audiodeskrypcję), stosuje ustawienia rozmiaru/koloru/przesunięcia napisów przez opcje LibVLC oraz wyświetla nakładkę Nerd Stats i Tryb Kinowy nad `VLCVideoLayout`.
 - **Nagłówki strumieni**: `User-Agent`, `Referer`, `Cookie` i niestandardowe nagłówki przekazywane do `DefaultHttpDataSource.Factory` (ExoPlayer) lub wstrzykiwane do opcji `LibVLC` (silnik LibVLC).
+- **Detekcja czołówki/tyłówki przez czarne klatki** (`BlackFrameDetector`, `FrameSampler`, `AudioLevelMonitor`): testowalna jednostkowo maszyna stanu wykrywająca sekwencje czarnych klatek (luma < 0,05) i cichego dźwięku (< -40 dB) trwające powyżej 1500 ms w pierwszych 10% lub ostatnich 15% trwania filmu. Ścieżka ExoPlayer używa próbkowania `PixelCopy`/`TextureView` oraz monitora głośności `Visualizer`; fallback LibVLC zwraca pełną luminancję i 0 dB. Zasoby natywne zwalniane są w `DisposableEffect`/`release()` (Zasada 5). Jawne znaczniki `MediaItem` czołówki/tyłówki mają zawsze pierwszeństwo.
 
 ### Sieć i ochrona przed botami
 
@@ -83,6 +85,8 @@ Aplikacja jest przeznaczona **wyłącznie do użytku osobistego** i **nie zawier
 - **Ustawienia pomijania czołówki / końcówki**: przełącznik oraz domyślne czasy trwania można zmienić w `Ustawienia` lub w bezprzewodowym panelu admina.
 - **Ustawienia offloadingu Cloudflare**: przełącznik, URL Workera oraz maskowany token autoryzacyjny można ustawić w `Ustawienia → Offloading Chmury Cloudflare` lub w bezprzewodowym panelu admina.
 - **Onboarding pierwszego uruchomienia** pozwala nowym użytkownikom wybrać legalne pakiety startowe.
+- **Chmurowa synchronizacja profili** (`CloudProfileSyncWorker`, `CloudProfileSyncClient`, `CloudProfileSyncRestore`, `cloudflare-resolver/index.ts`): Worker pakuje pliki `media.db` + `shm`/`wal` co 12 godzin i na żądanie, wysyła na `POST /api/sync-profiles` i pobiera przez `GET /api/sync-profiles`; `CloudProfileSyncRestore` przywraca rozpakowaną kopię przed otwarciem Room przy następnym zimnym starcie. Autoryzacja Workera odbywa się nagłówkiem `X-Hub-Token`; tokeny nie są logowane w buildach release (Zasada 6).
+- **Automatyczny aktualizator wtyczek/źródeł w tle** (`PluginUpdateWorker`): co 24 godziny w stanie bezczynności sprawdza manifesty wtyczek i indeksy repozytoriów, czyści zoptymalizowany cache `plugins_dex` po wykryciu aktualizacji i wyświetla czerwoną odznakę z liczbą aktualizacji w `SettingsScreen` oraz panelu admina.
 
 ### Integracja z Android TV
 
@@ -302,11 +306,14 @@ Projekt utrzymuje zerową liczbę ostrzeżeń lintera:
 - `app/lint.xml` wycisza wyłącznie pre-existing, informacyjne ostrzeżenia o wersjach zależności i zasobach ikon.
 - Wszystkie ostrzeżenia kodu wprowadzone przez audyt zostały naprawione (`ModifierParameter`, `PrivateResource`, `UseKtx`, `PluralsCandidate`, `FrequentlyChangingValue`, `SetJavaScriptEnabled`, `RedundantLabel`, `IntentFilterUniqueDataAttributes`, `DefaultUncaughtExceptionDelegation` i inne).
 - Zdeprecjonowane wywołania `hazeChild` zostały zamienione na `hazeEffect`, aby build pozostał bez ostrzeżeń.
+- `FrameSampler` używa rozszerzenia KTX `createBitmap` i chroni `PixelCopy` adnotacją `@RequiresApi(24)`, podczas gdy ścieżka LibVLC raportuje neutralne próbki.
+- Formatowanie dat w `SettingsScreen` uwzględnia `LocalLocale.current.platformLocale`, aby uniknąć ostrzeżeń `NonObservableLocale`.
 - Puste bloki `catch` w krytycznych ścieżkach zostały zastąpione logowaniem przez `Log.w(...)`.
 
 ## Testowanie
 
-- Testy jednostkowe: `./gradlew :app:testDebugUnitTest`
+- Testy jednostkowe: `./gradlew :app:testDebugUnitTest` — obejmują m.in. `BlackFrameDetectorTest`, `CloudProfileSyncWorkerTest` (MockK), `SandboxEngineTest`, `HomePreFetchWorkerTest`, `TvLauncherManagerTest`, `CrashReportSanitizerTest`, `WebMediaSourceTest`.
+- Instrumentacyjne testy migracji Room: `./gradlew :app:connectedDebugAndroidTest` — obejmuje `ProfileSyncMigrationTest` weryfikujący przetrwanie danych profili i historii oglądania podczas przywracania bazy.
 - Testy zrzutów ekranu / record: `./gradlew :app:recordPaparazziDebug`
 - Lint: `./gradlew :app:lintDebug`
 - Testy instrumentacyjne UI / D-Pad: `./gradlew :app:connectedDebugAndroidTest`

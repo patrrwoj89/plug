@@ -4,6 +4,7 @@ import { intToToken } from './jsunpacker';
 export interface Env {
   HUB_TOKEN: string;
   CRASH_REPORTS?: KVNamespace;
+  PROFILE_BACKUPS?: KVNamespace;
 }
 
 interface StreamResult {
@@ -31,6 +32,10 @@ export default {
 
     if (url.pathname === '/report-error') {
       return handleReportError(request, env, ctx);
+    }
+
+    if (url.pathname === '/api/sync-profiles') {
+      return handleProfileSync(request, env, ctx);
     }
 
     if (url.pathname !== '/resolve') {
@@ -112,6 +117,46 @@ async function handleReportError(request: Request, env: Env, ctx: ExecutionConte
   } catch (e: any) {
     return jsonResponse({ error: e.message || 'Failed to log report' }, 500);
   }
+}
+
+async function handleProfileSync(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  const token = request.headers.get('X-Hub-Token');
+  if (!token || token !== env.HUB_TOKEN) {
+    return jsonResponse({ error: 'Forbidden' }, 403);
+  }
+
+  if (!env.PROFILE_BACKUPS) {
+    return jsonResponse({ error: 'Profile backups KV not configured' }, 503);
+  }
+
+  const key = 'latest-profile-backup';
+
+  if (request.method === 'POST') {
+    const bytes = await request.arrayBuffer();
+    if (bytes.byteLength === 0) {
+      return jsonResponse({ error: 'Empty backup' }, 400);
+    }
+    ctx.waitUntil(env.PROFILE_BACKUPS.put(key, bytes));
+    return jsonResponse({ success: true, bytes: bytes.byteLength }, 200, {
+      'Access-Control-Allow-Origin': '*'
+    });
+  }
+
+  if (request.method === 'GET') {
+    const data = await env.PROFILE_BACKUPS.get(key, 'arrayBuffer');
+    if (!data) {
+      return jsonResponse({ error: 'No backup found' }, 404);
+    }
+    return new Response(data, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/zip',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  }
+
+  return jsonResponse({ error: 'Method Not Allowed' }, 405);
 }
 
 function cryptoRandomHex(length: number): string {

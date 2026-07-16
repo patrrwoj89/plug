@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -87,6 +88,8 @@ fun SettingsScreen(
     val useCloudflareBypass by viewModel.useCloudflareBypass.collectAsStateWithLifecycle()
     val cloudflareWorkerUrl by viewModel.cloudflareWorkerUrl.collectAsStateWithLifecycle()
     val cloudflareAuthToken by viewModel.cloudflareAuthToken.collectAsStateWithLifecycle()
+    val lastProfileSync by viewModel.lastProfileSync.collectAsStateWithLifecycle()
+    val pluginUpdateBadge by viewModel.pluginUpdateBadge.collectAsStateWithLifecycle()
     val pinEnabled by pinViewModel.pinEnabled.collectAsStateWithLifecycle()
     val pinCode by pinViewModel.pinCode.collectAsStateWithLifecycle()
     val lastEpgSync by viewModel.lastEpgSync.collectAsStateWithLifecycle()
@@ -320,6 +323,90 @@ fun SettingsScreen(
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions.Default
         )
+
+        Text(
+            text = stringResource(id = R.string.settings_profile_sync_section),
+            style = AppTypography.headline,
+            modifier = Modifier.padding(top = Spacing.md)
+        )
+
+        val locale = LocalLocale.current.platformLocale
+        val profileSyncDate = if (lastProfileSync.at > 0L) {
+            SimpleDateFormat("yyyy-MM-dd HH:mm", locale).format(Date(lastProfileSync.at))
+        } else {
+            stringResource(id = R.string.sync_status_never)
+        }
+        val profileSyncStatus = when (lastProfileSync.status) {
+            "success" -> stringResource(id = R.string.sync_status_success)
+            "error" -> stringResource(id = R.string.sync_status_error) + (lastProfileSync.error?.let { " ($it)" } ?: "")
+            else -> if (lastProfileSync.at > 0L) lastProfileSync.status else ""
+        }
+        Text(
+            text = stringResource(id = R.string.profile_last_sync, profileSyncDate, profileSyncStatus),
+            style = AppTypography.caption,
+            color = AppColor.OnSurfaceVariant
+        )
+
+        TvButton(onClick = { viewModel.syncProfilesNow() }) {
+            Text(
+                text = stringResource(id = R.string.profile_sync_now),
+                color = AppColor.Black,
+                style = AppTypography.button
+            )
+        }
+
+        Text(
+            text = stringResource(id = R.string.settings_plugin_update_section),
+            style = AppTypography.headline,
+            modifier = Modifier.padding(top = Spacing.md)
+        )
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
+            TvButton(onClick = { viewModel.runPluginUpdateNow() }) {
+                Text(
+                    text = stringResource(id = R.string.plugin_update_now),
+                    color = AppColor.Black,
+                    style = AppTypography.button
+                )
+            }
+            if (pluginUpdateBadge.count > 0) {
+                Box(
+                    modifier = Modifier
+                        .background(AppColor.Error, shape = CircleShape)
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = pluginUpdateBadge.count.toString(),
+                        color = AppColor.Black,
+                        style = AppTypography.caption
+                    )
+                }
+            }
+        }
+
+        val pluginUpdateDate = if (pluginUpdateBadge.at > 0L) {
+            SimpleDateFormat("yyyy-MM-dd HH:mm", locale).format(Date(pluginUpdateBadge.at))
+        } else {
+            stringResource(id = R.string.sync_status_never)
+        }
+        Text(
+            text = stringResource(id = R.string.plugin_last_check, pluginUpdateDate),
+            style = AppTypography.caption,
+            color = AppColor.OnSurfaceVariant
+        )
+
+        if (pluginUpdateBadge.count > 0) {
+            TvButton(onClick = { viewModel.clearPluginUpdateBadge() }) {
+                Text(
+                    text = stringResource(id = R.string.plugin_update_clear_badge),
+                    color = AppColor.Black,
+                    style = AppTypography.button
+                )
+            }
+        }
 
         Text(
             text = stringResource(id = R.string.settings_skip_intro_section),

@@ -80,6 +80,12 @@
 # Keep application class
 -keep class com.polishmediahub.app.TVHubApplication { *; }
 
+# Cloud profile sync and plugin update workers
+-keep class com.polishmediahub.app.data.remote.cloud.** { *; }
+-keep class com.polishmediahub.app.data.plugin.PluginUpdateWorker { *; }
+-keep class com.polishmediahub.app.ui.viewmodel.** { *; }
+-keep class com.polishmediahub.app.ui.player.** { *; }
+
 # Crash reporter
 -keep class com.polishmediahub.app.CrashReportActivity { *; }
 -keep class com.polishmediahub.app.util.CrashReportSanitizer { *; }

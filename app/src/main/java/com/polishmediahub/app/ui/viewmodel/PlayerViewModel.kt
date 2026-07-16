@@ -12,6 +12,8 @@ import com.polishmediahub.app.data.WatchHistoryRepository
 import com.polishmediahub.app.data.audio.AudioHistoryRepository
 import com.polishmediahub.app.data.audio.AudioRepository
 import com.polishmediahub.app.data.remote.tmdb.TmdbMediaRepository
+import com.polishmediahub.app.data.source.BlackFrameDetector
+import com.polishmediahub.app.data.source.FrameSample
 import com.polishmediahub.app.data.remote.trakt.TraktMediaRepository
 import com.polishmediahub.app.data.torrent.TorrentMediaSource
 import com.polishmediahub.app.data.tv.TvLauncherManager
@@ -112,6 +114,9 @@ class PlayerViewModel @Inject constructor(
     private val _skipIntroState = MutableStateFlow(SkipIntroState())
     val skipIntroState: StateFlow<SkipIntroState> = _skipIntroState.asStateFlow()
 
+    private val blackFrameDetector = BlackFrameDetector()
+    private val _blackFrameState = MutableStateFlow(BlackFrameDetector.State())
+
     private val _pendingSeekToMs = MutableStateFlow<Long?>(null)
     val pendingSeekToMs: StateFlow<Long?> = _pendingSeekToMs.asStateFlow()
 
@@ -123,9 +128,20 @@ class PlayerViewModel @Inject constructor(
     private val _playerStats = MutableStateFlow(PlayerStats())
     val playerStats: StateFlow<PlayerStats> = _playerStats.asStateFlow()
 
-    fun setIsPlaying(playing: Boolean) { _isPlaying.value = playing }
+    fun setIsPlaying(playing: Boolean) {
+        _isPlaying.value = playing
+        currentAudioTrack?.let { audioRepository.setCurrentTrack(it, playing) }
+    }
     fun setPipMode(inPip: Boolean) { _isInPipMode.value = inPip }
     fun updatePlayerStats(stats: PlayerStats) { _playerStats.value = stats }
+
+    fun onFrameSample(sample: FrameSample, positionMs: Long, durationMs: Long) {
+        val current = item.value ?: return
+        if (isAudioItem(current) || current.isLive || durationMs <= 0) return
+        if (current.introStartMs != null && current.introEndMs != null) return
+        val next = blackFrameDetector.process(sample, positionMs, durationMs)
+        _blackFrameState.value = next
+    }
 
     fun updatePosition(positionMs: Long, durationMs: Long) {
         recomputeSkipState(positionMs, durationMs)
@@ -143,13 +159,24 @@ class PlayerViewModel @Inject constructor(
             return
         }
 
-        val introStart = current.introStartMs ?: 10_000L
-        val introEnd = current.introEndMs ?: (skipSettings.introEndSeconds * 1_000L)
-        val outroEnd = current.outroEndMs ?: durationMs
-        val outroStart = current.outroStartMs ?: (outroEnd - skipSettings.outroDurationSeconds * 1_000L).coerceAtLeast(0L)
+        val black = _blackFrameState.value
+        val hasExplicitMarkers = current.introStartMs != null && current.introEndMs != null
 
-        val inIntro = positionMs in introStart until introEnd
-        val inOutro = positionMs >= outroStart && positionMs < outroEnd && outroStart < outroEnd
+        val introEnd = when {
+            hasExplicitMarkers -> current.introEndMs!!
+            black.showSkipIntro -> black.introEndMs
+            else -> (skipSettings.introEndSeconds * 1_000L)
+        }
+
+        val outroEnd = current.outroEndMs ?: (if (black.showSkipOutro) durationMs else durationMs)
+        val outroStart = when {
+            current.outroStartMs != null -> current.outroStartMs
+            black.showSkipOutro -> black.outroStartMs.coerceAtLeast(0L)
+            else -> (outroEnd - skipSettings.outroDurationSeconds * 1_000L).coerceAtLeast(0L)
+        }
+
+        val inIntro = introEnd > 0 && positionMs in 0L until introEnd
+        val inOutro = outroStart < outroEnd && positionMs >= outroStart && positionMs < outroEnd
 
         _skipIntroState.value = SkipIntroState(
             showSkipIntro = inIntro && !inOutro,
@@ -498,6 +525,7 @@ class PlayerViewModel @Inject constructor(
         if (isAudioItem(mediaItem)) {
             currentAudioTrack?.let { track ->
                 audioHistoryRepository.save(track.copy(durationMs = durationMs), positionMs)
+                audioRepository.setCurrentTrack(track, false)
             }
         } else {
             tvLauncherManager.onPlaybackStopped(mediaItem, positionMs, durationMs)

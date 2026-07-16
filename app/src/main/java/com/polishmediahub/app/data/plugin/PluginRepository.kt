@@ -231,6 +231,12 @@ class PluginRepository @Inject constructor(
 
     fun loadAll(): List<MediaSource> = _activeSources.value
 
+    /**
+     * Clears the optimized DEX cache used by binary plugins. Call when an update is downloaded
+     * so the next load regenerates the optimized classes (Zasada 5).
+     */
+    fun clearDexCache() = dynamicPluginLoader.clearDexCache()
+
     private suspend fun refreshSources(entities: List<PluginEntity>) {
         val newDynamicKeys = mutableSetOf<String>()
         val sources = mutableListOf<MediaSource>()

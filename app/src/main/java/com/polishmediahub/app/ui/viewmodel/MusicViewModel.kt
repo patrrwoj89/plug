@@ -45,6 +45,7 @@ class MusicViewModel @Inject constructor(
                 val streamUrl = audioRepository.resolve(track)
                 val resolved = if (!streamUrl.isNullOrBlank()) track.copy(streamUrl = streamUrl) else track
                 audioRepository.cache(resolved)
+                audioRepository.setCurrentTrack(resolved, true)
                 audioHistoryRepository.save(resolved)
                 if (!resolved.streamUrl.isNullOrBlank()) {
                     onResolved(resolved)

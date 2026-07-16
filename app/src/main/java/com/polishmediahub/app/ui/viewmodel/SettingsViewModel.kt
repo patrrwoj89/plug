@@ -5,9 +5,11 @@ import androidx.lifecycle.viewModelScope
 import android.content.Context
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.SettingsRepository
+import com.polishmediahub.app.data.remote.cloud.CloudProfileSyncWorker
 import com.polishmediahub.app.data.remote.health.HealthCheckWorker
 import com.polishmediahub.app.data.remote.health.HealthStatus
 import com.polishmediahub.app.data.remote.trakt.TraktSyncWorker
+import com.polishmediahub.app.data.plugin.PluginUpdateWorker
 import kotlinx.serialization.json.Json
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -123,6 +125,19 @@ class SettingsViewModel @Inject constructor(
     val cloudflareAuthToken: StateFlow<String> = apiConfigRepository.cloudflareAuthToken
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = "")
 
+    val lastProfileSync: StateFlow<LastProfileSyncState> = combine(
+        apiConfigRepository.lastProfileSyncAt,
+        apiConfigRepository.lastProfileSyncStatus,
+        apiConfigRepository.lastProfileSyncError
+    ) { at, status, error -> LastProfileSyncState(at, status, error) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = LastProfileSyncState())
+
+    val pluginUpdateBadge: StateFlow<PluginUpdateBadgeState> = combine(
+        apiConfigRepository.lastPluginUpdateAt,
+        apiConfigRepository.pluginUpdateCount
+    ) { at, count -> PluginUpdateBadgeState(at, count) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = PluginUpdateBadgeState())
+
     fun setDarkTheme(value: Boolean) = viewModelScope.launch { settingsRepository.setDarkTheme(value) }
     fun setAutoplayTrailers(value: Boolean) = viewModelScope.launch { settingsRepository.setAutoplayTrailers(value) }
     fun setSaveSearchHistory(value: Boolean) = viewModelScope.launch { settingsRepository.setSaveSearchHistory(value) }
@@ -151,8 +166,25 @@ class SettingsViewModel @Inject constructor(
 
     fun syncTraktNow() = viewModelScope.launch { TraktSyncWorker.startImmediate(context) }
 
+    fun syncProfilesNow() = viewModelScope.launch { CloudProfileSyncWorker.startBackup(context) }
+
     fun checkSourceHealthNow() = viewModelScope.launch { HealthCheckWorker.startImmediate(context) }
+
+    fun runPluginUpdateNow() = viewModelScope.launch { PluginUpdateWorker.startImmediate(context) }
+
+    fun clearPluginUpdateBadge() = viewModelScope.launch { apiConfigRepository.clearPluginUpdateBadge() }
 }
+
+data class LastProfileSyncState(
+    val at: Long = 0L,
+    val status: String = "",
+    val error: String? = null
+)
+
+data class PluginUpdateBadgeState(
+    val at: Long = 0L,
+    val count: Int = 0
+)
 
 data class LastTraktSyncState(
     val at: Long = 0L,

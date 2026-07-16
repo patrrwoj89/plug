@@ -461,3 +461,31 @@ The **Hero Featured Banner** highlights the first featured item. It shows a cine
 ### Where can I report a bug?
 
 Open an issue in the repository with reproduction steps and, if relevant, the source config you are using.
+
+## Cloud profile sync
+
+### How do I back up or restore my profiles?
+
+Go to **Settings → Profile Cloud Sync** and tap **Sync profiles to cloud now**. `CloudProfileSyncWorker` zips `media.db` + `shm`/`wal` on `Dispatchers.IO` and uploads it to your Cloudflare Worker (`POST /api/sync-profiles`). On a new device, after setting the same Worker URL and `X-Hub-Token`, the next cold start downloads the backup and applies it before Room opens. The Worker stores the zip in a KV namespace (`PROFILE_BACKUPS`).
+
+### Where are profiles stored in the cloud?
+
+The zip is stored as a single object under the key `latest-profile-backup` in the Cloudflare KV namespace bound to `PROFILE_BACKUPS` in `wrangler.toml`. It is protected by `X-Hub-Token`; unauthenticated requests receive HTTP 403.
+
+## Plugin updates
+
+### What does the red badge in Settings mean?
+
+`PluginUpdateWorker` has checked your configured plugin indexes and found newer versions. Tap **Check for updates now** to run it manually, or **Dismiss update badge** to clear the count. The worker clears `plugins_dex` so updated plugins are loaded next time.
+
+## Skip intro detection
+
+### How does "Skip intro" work without plugin timestamps?
+
+When a media item has no explicit `introStartMs`/`introEndMs`, the player samples the video surface for black frames and the audio `Visualizer` for quiet audio. If a black (<0.05 luma) and quiet (<-40 dB) sequence lasts longer than 1500 ms inside the first 10% of the duration, the **Pomiń czołówkę ⏭️** button appears. A similar rule in the last 15% detects the outro and triggers the Auto-Play Next overlay. Native resources are released when the player is closed.
+
+## Audio mini-player
+
+### Why does a small player appear at the bottom of Home?
+
+When you start a radio stream or podcast from Music, `AudioRepository` exposes the current track. `AudioMiniPlayer` slides up at the bottom of `HomeScreen` showing cover, title, artist and Pause/Stop D-Pad buttons. Pressing Center/SELECT on the bar opens the player. The state is collected with `collectAsStateWithLifecycle()` so the mini-player disappears automatically when playback stops.

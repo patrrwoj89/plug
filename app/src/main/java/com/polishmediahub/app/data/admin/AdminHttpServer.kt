@@ -5,6 +5,9 @@ import android.util.Log
 import com.polishmediahub.app.data.ApiConfigRepository
 import com.polishmediahub.app.data.SettingsRepository
 import com.polishmediahub.app.data.plugin.PluginRepository
+import com.polishmediahub.app.data.plugin.PluginUpdateWorker
+import com.polishmediahub.app.data.remote.cloud.CloudProfileSyncRestore
+import com.polishmediahub.app.data.remote.cloud.CloudProfileSyncWorker
 import com.polishmediahub.app.data.remote.trakt.TraktSyncWorker
 import com.polishmediahub.app.data.source.KodiMediaSource
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -141,6 +144,9 @@ class AdminHttpServer @Inject constructor(
                     method == "POST" && path == "/api/config" -> handleConfigPost(body, out, allowedOrigin)
                     method == "POST" && path == "/api/plugin" -> handlePluginPost(body, out, allowedOrigin)
                     method == "POST" && path == "/api/plugin/test" -> handlePluginTest(query, body, out, allowedOrigin)
+                    method == "POST" && path == "/api/plugin/update" -> handlePluginUpdate(out, allowedOrigin)
+                    method == "POST" && path == "/api/profile/sync" -> handleProfileSync(out, allowedOrigin)
+                    method == "POST" && path == "/api/profile/restore" -> handleProfileRestore(out, allowedOrigin)
                     method == "POST" && path == "/api/trakt/sync" -> handleTraktSync(out, allowedOrigin)
                     method == "GET" && path == "/api/config" -> serveConfig(out, allowedOrigin)
                     method == "GET" && path == "/api/health" -> serveHealth(out, allowedOrigin)
@@ -197,7 +203,12 @@ class AdminHttpServer @Inject constructor(
                     "lastTraktSyncError" to lastTraktSyncError.map { it ?: "" },
                     "useCloudflareBypass" to useCloudflareBypass,
                     "cloudflareWorkerUrl" to cloudflareWorkerUrl,
-                    "cloudflareAuthToken" to cloudflareAuthToken
+                    "cloudflareAuthToken" to cloudflareAuthToken,
+                    "lastProfileSyncAt" to lastProfileSyncAt,
+                    "lastProfileSyncStatus" to lastProfileSyncStatus,
+                    "lastProfileSyncError" to lastProfileSyncError.map { it ?: "" },
+                    "lastPluginUpdateAt" to lastPluginUpdateAt,
+                    "pluginUpdateCount" to pluginUpdateCount
                 ) + with(settingsRepository) {
                     mapOf(
                         "autoSkipIntro" to autoSkipIntro,
@@ -305,6 +316,21 @@ class AdminHttpServer @Inject constructor(
     private fun handleTraktSync(out: java.io.OutputStream, corsOrigin: String?) {
         TraktSyncWorker.startImmediate(context)
         writeResponse(out, 200, "OK", "text/plain", "Trakt sync scheduled", corsOrigin)
+    }
+
+    private fun handleProfileSync(out: java.io.OutputStream, corsOrigin: String?) {
+        CloudProfileSyncWorker.startBackup(context)
+        writeResponse(out, 200, "OK", "text/plain", "Profile cloud sync scheduled", corsOrigin)
+    }
+
+    private fun handleProfileRestore(out: java.io.OutputStream, corsOrigin: String?) {
+        CloudProfileSyncRestore.restoreIfNeeded(context)
+        writeResponse(out, 200, "OK", "text/plain", "Profile restore applied; restart to finish", corsOrigin)
+    }
+
+    private fun handlePluginUpdate(out: java.io.OutputStream, corsOrigin: String?) {
+        PluginUpdateWorker.startImmediate(context)
+        writeResponse(out, 200, "OK", "text/plain", "Plugin update check scheduled", corsOrigin)
     }
 
     private fun handlePluginTest(
@@ -556,6 +582,13 @@ label .status-dot { margin-left: 0.5rem; }
   <button type="submit">Save Configuration</button>
   <div id="status" class="status"></div>
 </form>
+<h2>Profile Cloud Sync</h2>
+<p id="profileSyncStatus" class="status"></p>
+<button type="button" id="profileSyncBtn">Sync profiles to cloud now</button>
+<button type="button" id="profileRestoreBtn">Restore profile backup</button>
+<h2>Plugin Updates <span id="pluginUpdateBadge" style="background:#ff4d4d; color:#fff; border-radius:50%; padding:0 6px; font-size:0.75rem; display:none;"></span></h2>
+<p id="pluginUpdateStatus" class="status"></p>
+<button type="button" id="pluginUpdateBtn">Check for plugin updates</button>
 <h2>Trakt Sync</h2>
 <p id="traktStatus" class="status"></p>
 <button type="button" id="traktSyncBtn">Sync with Trakt now</button>
@@ -668,6 +701,56 @@ async function loadEpgStatus() {
     el.style.display = status ? 'block' : 'none';
   } catch (e) { console.error(e); }
 }
+async function syncProfiles() {
+  try {
+    const res = await fetch(api('/api/profile/sync'), { method: 'POST' });
+    if (res.ok) { alert('Profile sync scheduled'); }
+    else { alert('Profile sync failed'); }
+  } catch (err) { alert(err.message); }
+}
+async function restoreProfiles() {
+  try {
+    const res = await fetch(api('/api/profile/restore'), { method: 'POST' });
+    const text = await res.text();
+    if (res.ok) { alert(text); }
+    else { alert('Profile restore failed: ' + text); }
+  } catch (err) { alert(err.message); }
+}
+async function loadProfileSyncStatus() {
+  try {
+    const res = await fetch(api('/api/config'));
+    const cfg = await res.json();
+    const at = cfg.lastProfileSyncAt ? new Date(Number(cfg.lastProfileSyncAt)).toLocaleString() : 'Never';
+    const status = cfg.lastProfileSyncStatus || '';
+    const error = cfg.lastProfileSyncError;
+    const el = document.getElementById('profileSyncStatus');
+    el.textContent = 'Last profile sync: ' + at + ' — ' + status + (error ? ' (' + error + ')' : '');
+    el.className = 'status ' + (status === 'success' ? 'ok' : status ? 'err' : '');
+    el.style.display = status ? 'block' : 'none';
+  } catch (e) { console.error(e); }
+}
+async function checkPluginUpdates() {
+  try {
+    const res = await fetch(api('/api/plugin/update'), { method: 'POST' });
+    if (res.ok) { alert('Plugin update check scheduled'); }
+    else { alert('Plugin update check failed'); }
+  } catch (err) { alert(err.message); }
+}
+async function loadPluginUpdateStatus() {
+  try {
+    const res = await fetch(api('/api/config'));
+    const cfg = await res.json();
+    const at = cfg.lastPluginUpdateAt ? new Date(Number(cfg.lastPluginUpdateAt)).toLocaleString() : 'Never';
+    const count = Number(cfg.pluginUpdateCount) || 0;
+    const el = document.getElementById('pluginUpdateStatus');
+    el.textContent = 'Last plugin update check: ' + at + (count > 0 ? ' (' + count + ' updates available)' : '');
+    el.className = 'status ' + (count > 0 ? 'err' : 'ok');
+    el.style.display = 'block';
+    const badge = document.getElementById('pluginUpdateBadge');
+    if (count > 0) { badge.textContent = count; badge.style.display = 'inline'; }
+    else { badge.style.display = 'none'; }
+  } catch (e) { console.error(e); }
+}
 async function syncTrakt() {
   try {
     const res = await fetch(api('/api/trakt/sync'), { method: 'POST' });
@@ -739,11 +822,16 @@ async function loadHealth() {
   } catch (e) { console.error(e); }
 }
 document.getElementById('traktSyncBtn').addEventListener('click', syncTrakt);
+document.getElementById('profileSyncBtn')?.addEventListener('click', syncProfiles);
+document.getElementById('profileRestoreBtn')?.addEventListener('click', restoreProfiles);
+document.getElementById('pluginUpdateBtn')?.addEventListener('click', checkPluginUpdates);
 updateSandboxButtonLabel();
 loadConfig();
 loadHealth();
 loadEpgStatus();
 loadTraktStatus();
+loadProfileSyncStatus();
+loadPluginUpdateStatus();
 </script>
 </body>
 </html>

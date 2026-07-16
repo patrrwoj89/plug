@@ -252,4 +252,14 @@
     <string name="settings_cloudflare_worker_url_hint">https://your-worker.workers.dev</string>
     <string name="settings_cloudflare_auth_token">Cloudflare Worker auth token</string>
     <string name="settings_cloudflare_auth_token_hint">Hub token shared with the worker secret</string>
+    <string name="settings_profile_sync_section">Profile Cloud Sync</string>
+    <string name="profile_sync_now">Sync profiles to cloud now</string>
+    <string name="profile_last_sync">Last profile sync: %1$s — %2$s</string>
+    <string name="settings_plugin_update_section">Plugin &amp; Source Updates</string>
+    <string name="plugin_update_now">Check for updates now</string>
+    <string name="plugin_update_clear_badge">Dismiss update badge</string>
+    <string name="plugin_last_check">Last check: %1$s</string>
+    <string name="sync_status_never">Never</string>
+    <string name="sync_status_success">Success</string>
+    <string name="sync_status_error">Error</string>
 </resources>

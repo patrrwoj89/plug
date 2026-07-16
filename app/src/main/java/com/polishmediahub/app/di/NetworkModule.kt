@@ -10,6 +10,8 @@ import com.polishmediahub.app.data.source.CloudflareBypassInterceptor
 import com.polishmediahub.app.data.source.MemoryCookieJar
 import com.polishmediahub.app.data.remote.anilist.AniListApi
 import com.polishmediahub.app.data.remote.stremio.StremioApi
+import com.polishmediahub.app.data.remote.cloud.CloudProfileSyncClient
+import com.polishmediahub.app.data.remote.cloud.OkHttpCloudProfileSyncClient
 import com.polishmediahub.app.data.remote.tmdb.TmdbApi
 import com.polishmediahub.app.data.remote.trakt.TraktApi
 import com.polishmediahub.app.data.remote.trakt.TraktAuthenticator
@@ -66,6 +68,11 @@ object NetworkModule {
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
     }
+
+    @Provides
+    @Singleton
+    fun provideCloudProfileSyncClient(client: OkHttpClient): CloudProfileSyncClient =
+        OkHttpCloudProfileSyncClient(client)
 
     @Provides
     @Singleton

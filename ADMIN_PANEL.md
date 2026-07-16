@@ -37,6 +37,9 @@ The URL contains a unique per-process pairing token. All API endpoints require t
 | POST | `/api/config` | Receives form-encoded values and saves them into `ApiConfigRepository` (DataStore). Requires `?token=...`. |
 | POST | `/api/plugin` | Receives a plugin manifest / script URL and stores it through `PluginRepository`. Requires `?token=...`. |
 | POST | `/api/trakt/sync` | Triggers an immediate Trakt two-way sync (`TraktSyncWorker.startImmediate`). Requires `?token=...`. |
+| POST | `/api/profile/sync` | Schedules an immediate cloud profile backup (`CloudProfileSyncWorker.startBackup`). Requires `?token=...`. |
+| POST | `/api/profile/restore` | Applies a staged profile backup from `CloudProfileSyncRestore.restoreIfNeeded`. Requires `?token=...`. |
+| POST | `/api/plugin/update` | Schedules an immediate plugin/source update check (`PluginUpdateWorker.startImmediate`). Requires `?token=...`. |
 | GET | `/api/health` | Returns the current background source health-check result as JSON. Requires `?token=...`. |
 
 ## Source health indicators
@@ -93,6 +96,12 @@ Send form fields matching the keys supported by `ApiConfigRepository`. The admin
 | `useCloudflareBypass` | `true` or `false` — enable the Cloudflare Edge Offloading Worker for web stream extraction |
 | `cloudflareWorkerUrl` | Your Worker URL, e.g. `https://your-worker.workers.dev` |
 | `cloudflareAuthToken` | Shared `HUB_TOKEN` secret; masked in GET `/api/config` |
+| `lastProfileSyncAt` | Read-only timestamp of the last profile cloud sync (ms since epoch) |
+| `lastProfileSyncStatus` | Read-only status: `success`, `error` or empty |
+| `lastProfileSyncError` | Read-only error message from the last failed profile sync, if any |
+| `lastPluginUpdateAt` | Read-only timestamp of the last plugin update check (ms since epoch) |
+| `lastPluginUpdateCount` | Read-only number of available plugin/source updates; `0` clears the badge |
+| `lastPluginUpdateError` | Read-only error message from the last failed update check, if any |
 
 Only the fields you actually use need to be present. Empty strings are ignored.
 

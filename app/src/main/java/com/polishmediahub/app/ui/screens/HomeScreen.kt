@@ -47,12 +47,14 @@ import com.polishmediahub.app.ui.components.CategoryRow
 import com.polishmediahub.app.ui.components.EmptyState
 import com.polishmediahub.app.ui.components.ErrorState
 import com.polishmediahub.app.ui.components.ShimmerBox
+import com.polishmediahub.app.ui.components.AudioMiniPlayer
 import com.polishmediahub.app.ui.components.TvButton
 import com.polishmediahub.app.ui.theme.AppColor
 import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Radius
 import com.polishmediahub.app.ui.theme.Spacing
 import com.polishmediahub.app.ui.viewmodel.HomeViewModel
+import com.polishmediahub.app.ui.viewmodel.AudioMiniPlayerViewModel
 
 @Composable
 fun HomeScreen(
@@ -65,32 +67,36 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val columnState = rememberLazyListState()
     val firstItemRequester = remember { FocusRequester() }
+    val audioMiniPlayerViewModel = hiltViewModel<AudioMiniPlayerViewModel>()
+    val currentTrack by audioMiniPlayerViewModel.currentTrack.collectAsStateWithLifecycle()
+    val miniPlayerHeight = if (currentTrack != null) 80.dp else Spacing.lg
 
     LaunchedEffect(Unit) {
         firstItemRequester.requestFocus()
     }
 
-    when {
+    Box(modifier = modifier.fillMaxSize()) {
+        when {
         uiState.isLoading -> {
-            HomeLoading(modifier = modifier)
+            HomeLoading(modifier = Modifier.fillMaxSize())
         }
         uiState.error != null -> {
             ErrorState(
                 message = uiState.error ?: stringResource(id = R.string.item_not_found),
-                modifier = modifier
+                modifier = Modifier.fillMaxSize()
             )
         }
         uiState.featured.isEmpty() && uiState.categories.isEmpty() -> {
             EmptyState(
                 message = stringResource(id = R.string.no_featured_content),
-                modifier = modifier
+                modifier = Modifier.fillMaxSize()
             )
         }
         else -> {
             LazyColumn(
                 state = columnState,
-                modifier = modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = Spacing.lg),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(top = Spacing.lg, bottom = miniPlayerHeight),
                 verticalArrangement = Arrangement.spacedBy(Spacing.lg)
             ) {
                 item {
@@ -134,6 +140,14 @@ fun HomeScreen(
             }
         }
     }
+
+    if (currentTrack != null) {
+        AudioMiniPlayer(
+            onPlay = { track -> onNavigate(Screen.Player(track.id)) },
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
+}
 }
 
 @Composable

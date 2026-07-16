@@ -272,6 +272,38 @@ All notable changes to Polish Media Hub are documented in this file.
 - A 500 ms position loop reads `mediaPlayer.time`/`length` and feeds `PlayerViewModel.updatePosition(...)`, keeping Trakt scrobbling, Room watch history, Auto-Play Next and Smart Skip Intro/Outro functional on the LibVLC engine.
 - Solves ExoPlayer decoding issues with DTS/AC3 audio and MKV/AVI containers from torrents, Kodi and web plugins.
 
+#### Final Phase: Player Intelligence, Cloud Profile Sync & Background Updates
+
+- **Black-frame intro/outro detection** (`BlackFrameDetector`, `FrameSampler`, `AudioLevelMonitor`)
+  - Pure, unit-testable state machine that detects black (<0.05 luma) and quiet (<-40 dB) frame sequences longer than 1500 ms.
+  - Triggers inside the first 10% (intro) or last 15% (outro) of the video duration and feeds `SkipIntroState` in `PlayerViewModel`.
+  - ExoPlayer path uses `FrameSampler` (`PixelCopy` on API 24+ or `TextureView.bitmap`) plus `Visualizer` via `AudioLevelMonitor`; LibVLC fallback reports full luma and 0 dB.
+  - Explicit `introStartMs`/`introEndMs`/`outroStartMs`/`outroEndMs` markers always take precedence.
+  - All native listeners, visualizers and bitmaps are released in `DisposableEffect`/`release()` (Zasada 5).
+
+- **Cloud profile sync** (`CloudProfileSyncWorker`, `CloudProfileSyncClient`, `CloudProfileSyncRestore`, `cloudflare-resolver/index.ts`)
+  - `CloudProfileSyncWorker` runs every 12 hours and on demand, zips `media.db` + `media.db-shm` + `media.db-wal` on `Dispatchers.IO` and uploads it to `POST /api/sync-profiles`.
+  - `GET /api/sync-profiles` downloads the latest backup; `CloudProfileSyncRestore` applies the staged files before Room opens on the next cold start.
+  - Cloudflare Worker endpoint is protected by `X-Hub-Token` and stores the zip in a bound `PROFILE_BACKUPS` KV namespace.
+  - No worker URL or auth token is logged to Logcat in release builds (Zasada 6); ProGuard keep rules added for `com.polishmediahub.app.data.remote.cloud.**`.
+  - Added `BlackFrameDetectorTest` (JUnit) and `CloudProfileSyncWorkerTest` (JUnit/MockK) verifying the detection logic and upload/retry behavior.
+  - Added `ProfileSyncMigrationTest` (instrumented) verifying that profile and watch-history data survive Room database restore/reopen.
+
+- **Background plugin/source updater** (`PluginUpdateWorker`)
+  - Runs every 24 hours when the device is idle and battery is not low.
+  - Polls plugin manifests and repository indexes (`checkUpdates`/`syncIndexes`); if newer versions are found, clears the `plugins_dex` optimized cache so updated binaries are loaded next time.
+  - Stores update count and timestamp in `ApiConfigRepository` / DataStore and shows them as a red badge in `SettingsScreen` and in `AdminHttpServer`.
+
+- **Home audio mini-player** (`AudioMiniPlayer`, `AudioMiniPlayerViewModel`, `AudioRepository`)
+  - Slides up at the bottom of `HomeScreen` when `AudioRepository.currentTrack` is active.
+  - Shows cover, title, artist and D-Pad Pause/Stop buttons; tapping the bar navigates to `PlayerScreen`.
+  - State is collected with `collectAsStateWithLifecycle()` (Zasada 4).
+  - `MusicViewModel` and `PlayerViewModel` update `AudioRepository` so the mini-player stays in sync across screens.
+
+- **Settings / Admin panel additions**
+  - SettingsScreen sections "Profile Cloud Sync" and "Plugin & Source Updates" with manual triggers, last sync timestamp and status.
+  - `AdminHttpServer` endpoints `/api/profile/sync`, `/api/profile/restore` and `/api/plugin/update`.
+
 ### Changed
 - `TVNavHost` waits for the `isFirstLaunch` value before choosing the `NavHost` start destination, avoiding graph resets.
 - `TvLauncherManager` progress writes throttled to 15 seconds during playback, with a forced write on `onPlaybackStopped`.

@@ -272,6 +272,38 @@ Wszystkie istotne zmiany w Polish Media Hub są dokumentowane w tym pliku.
 - Pętla pozycji co 500 ms odczytuje `mediaPlayer.time`/`length` i przekazuje do `PlayerViewModel.updatePosition(...)`, dzięki czemu scrobbling Trakt, historia profilu w Room, nakładka Auto-Play Next i przycisk Smart Skip Intro/Outro działają także na silniku LibVLC.
 - Rozwiązuje problemy dekodowania ExoPlayera z dźwiękiem DTS/AC3 oraz kontenerami MKV/AVI z torrentów, Kodi i wtyczek webowych.
 
+#### Faza finalna: Inteligencja playera, chmurowa synchronizacja profili i aktualizacje w tle
+
+- **Detekcja czołówki/tyłówki przez czarne klatki** (`BlackFrameDetector`, `FrameSampler`, `AudioLevelMonitor`)
+  - Czysta, testowalna jednostkowo maszyna stanu wykrywająca sekwencje czarnych klatek (luma < 0,05) i cichego dźwięku (< -40 dB) trwające powyżej 1500 ms.
+  - Aktywuje się w pierwszych 10% (czołówka) lub ostatnich 15% (tyłówka) trwania filmu i aktualizuje `SkipIntroState` w `PlayerViewModel`.
+  - Ścieżka ExoPlayer używa `FrameSampler` (`PixelCopy` na API 24+ lub `TextureView.bitmap`) oraz `Visualizer` przez `AudioLevelMonitor`; fallback LibVLC zwraca pełną luminancję i 0 dB.
+  - Jawne znaczniki `introStartMs`/`introEndMs`/`outroStartMs`/`outroEndMs` zawsze mają pierwszeństwo.
+  - Wszystkie natywne listenery, wizualizery i bitmapy są zwalniane w `DisposableEffect`/`release()` (Zasada 5).
+
+- **Chmurowa synchronizacja profili** (`CloudProfileSyncWorker`, `CloudProfileSyncClient`, `CloudProfileSyncRestore`, `cloudflare-resolver/index.ts`)
+  - `CloudProfileSyncWorker` uruchamia się co 12 godzin i na żądanie, pakuje na `Dispatchers.IO` pliki `media.db` + `media.db-shm` + `media.db-wal` do ZIP i wysyła na `POST /api/sync-profiles`.
+  - `GET /api/sync-profiles` pobiera ostatnią kopię; `CloudProfileSyncRestore` podstawia rozpakowane pliki przed otwarciem Room przy następnym zimnym starcie.
+  - Endpoint Cloudflare Workera chroniony jest nagłówkiem `X-Hub-Token` i przechowuje ZIP w powiązanej przestrzeni KV `PROFILE_BACKUPS`.
+  - W wersjach produkcyjnych nie logowane są URL Workera ani token autoryzacyjny (Zasada 6); dodano reguły ProGuard `-keep` dla `com.polishmediahub.app.data.remote.cloud.**`.
+  - Dodano testy `BlackFrameDetectorTest` (JUnit) oraz `CloudProfileSyncWorkerTest` (JUnit/MockK) weryfikujące logikę detekcji i wysyłkę/powtórki.
+  - Dodano `ProfileSyncMigrationTest` (instrumentalny) sprawdzający, że dane profili i historii oglądania przetrwają przywrócenie bazy Room.
+
+- **Automatyczny aktualizator wtyczek/źródeł w tle** (`PluginUpdateWorker`)
+  - Uruchamia się co 24 godziny, gdy urządzenie jest bezczynne i poziom baterii nie jest niski.
+  - Odpytuje manifesty wtyczek i indeksy repozytoriów (`checkUpdates`/`syncIndexes`); jeśli wykryto nowsze wersje, czyści zoptymalizowany cache `plugins_dex`, aby przy następnym użyciu załadować zaktualizowane pliki.
+  - Liczbę dostępnych aktualizacji i znacznik czasu zapisuje w `ApiConfigRepository` / DataStore i wyświetla jako czerwoną odznakę w `SettingsScreen` oraz w `AdminHttpServer`.
+
+- **Lokalny mini-player audio na ekranie głównym** (`AudioMiniPlayer`, `AudioMiniPlayerViewModel`, `AudioRepository`)
+  - Wysuwa się z dołu `HomeScreen`, gdy `AudioRepository.currentTrack` jest aktywny.
+  - Wyświetla okładkę, tytuł, wykonawcę i przyciski Pauza/Stop obsługiwane D-Padem; kliknięcie paska przechodzi do `PlayerScreen`.
+  - Stan subskrybowany jest przez `collectAsStateWithLifecycle()` (Zasada 4).
+  - `MusicViewModel` i `PlayerViewModel` aktualizują `AudioRepository`, dzięki czemu mini-player pozostaje zsynchronizowany między ekranami.
+
+- **Rozszerzenia ekranu ustawień i panelu admina**
+  - W `SettingsScreen` sekcje "Synchronizacja profili w chmurze" i "Aktualizacje wtyczek i źródeł" z ręcznym wyzwalaniem, datą ostatniej synchronizacji i statusem.
+  - Endpointy `AdminHttpServer`: `/api/profile/sync`, `/api/profile/restore` oraz `/api/plugin/update`.
+
 ### Zmieniono
 - `TVNavHost` czeka na wartość `isFirstLaunch` przed wyborem startu `NavHost`, co zapobiega resetowaniu grafu nawigacji.
 - `TvLauncherManager` zapisuje postęp co 15 sekund podczas odtwarzania, z wymuszonym zapisem przy `onPlaybackStopped`.

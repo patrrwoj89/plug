@@ -8,9 +8,12 @@ import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.request.CachePolicy
 import com.polishmediahub.app.data.remote.cache.HomePreFetchWorker
+import com.polishmediahub.app.data.remote.cloud.CloudProfileSyncRestore
+import com.polishmediahub.app.data.remote.cloud.CloudProfileSyncWorker
 import com.polishmediahub.app.data.remote.health.HealthCheckWorker
 import com.polishmediahub.app.data.remote.iptv.IptvUpdateWorker
 import com.polishmediahub.app.data.remote.trakt.TraktSyncWorker
+import com.polishmediahub.app.data.plugin.PluginUpdateWorker
 import com.polishmediahub.app.data.source.GlobalExceptionHandler
 import com.polishmediahub.app.data.tv.RecommendationsWorker
 import com.polishmediahub.app.data.tv.TvLauncherManager
@@ -37,6 +40,7 @@ class TVHubApplication : Application(), Configuration.Provider, ImageLoaderFacto
         // The crash-report process should not schedule workers, configure torrents,
         // or install another crash handler, to avoid recursion and heavy init.
         if (GlobalExceptionHandler.shouldInstallHandler(this)) {
+            CloudProfileSyncRestore.restoreIfNeeded(this)
             val previousHandler = Thread.getDefaultUncaughtExceptionHandler()
             Thread.setDefaultUncaughtExceptionHandler(GlobalExceptionHandler(this, previousHandler))
             File(filesDir, "torrents").apply { mkdirs() }
@@ -49,6 +53,8 @@ class TVHubApplication : Application(), Configuration.Provider, ImageLoaderFacto
             HealthCheckWorker.schedule(this)
             HealthCheckWorker.startImmediate(this)
             HomePreFetchWorker.schedule(this)
+            CloudProfileSyncWorker.schedule(this)
+            PluginUpdateWorker.schedule(this)
         }
     }
 

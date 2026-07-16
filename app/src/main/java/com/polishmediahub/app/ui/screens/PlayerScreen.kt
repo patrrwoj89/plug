@@ -111,6 +111,9 @@ import com.polishmediahub.app.ui.theme.AppTypography
 import com.polishmediahub.app.ui.theme.Spacing
 import com.polishmediahub.app.ui.player.UniversalVlcPlayer
 import com.polishmediahub.app.ui.viewmodel.PlayerViewModel
+import com.polishmediahub.app.ui.player.AudioLevelMonitor
+import com.polishmediahub.app.ui.player.FrameSampler
+import com.polishmediahub.app.data.source.FrameSample
 import kotlinx.coroutines.delay
 import java.util.Locale
 
@@ -295,6 +298,9 @@ fun PlayerScreen(
             viewModel.reportPlaybackProgress(position, duration, state)
         },
         onUpdatePosition = { position, duration -> viewModel.updatePosition(position, duration) },
+        onFrameSample = { sample, position, duration ->
+            viewModel.onFrameSample(sample, position, duration)
+        },
         onEnterPip = { activity?.enterPipMode() },
         onIsPlayingChanged = { playing -> viewModel.setIsPlaying(playing) },
         onCancelAutoPlay = { viewModel.cancelAutoPlay() },
@@ -338,6 +344,7 @@ private fun PlayerContent(
     onScrobbleStop: (Long, Long) -> Unit,
     onReportProgress: (Long, Long, Boolean) -> Unit,
     onUpdatePosition: (Long, Long) -> Unit,
+    onFrameSample: (FrameSample, Long, Long) -> Unit,
     onCancelAutoPlay: () -> Unit,
     onPlayNextEpisode: (Long, Long) -> Unit,
     onSkipIntro: () -> Unit,
@@ -361,6 +368,7 @@ private fun PlayerContent(
     dialogueBoostGainmB: Int,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var controlsVisible by remember { mutableStateOf(!isInPipMode) }
     var isPlaying by remember { mutableStateOf(exoPlayer.isPlaying) }
     var currentPosition by remember { mutableLongStateOf(0L) }
@@ -415,12 +423,22 @@ private fun PlayerContent(
         controlsVisible = !isInPipMode
     }
 
+    val playerView = remember(exoPlayer) {
+        PlayerView(context).apply {
+            player = exoPlayer
+            useController = false
+        }
+    }
+    val frameSampler = remember { FrameSampler() }
+    val audioLevelMonitor = remember { mutableStateOf<AudioLevelMonitor?>(null) }
     val loudnessEnhancer = remember { mutableStateOf<LoudnessEnhancer?>(null) }
 
     DisposableEffect(exoPlayer, nightModeEnabled) {
         val listener = object : Player.Listener {
             override fun onAudioSessionIdChanged(audioSessionId: Int) {
                 if (audioSessionId == 0) return
+                audioLevelMonitor.value?.release()
+                audioLevelMonitor.value = AudioLevelMonitor(context, audioSessionId)
                 loudnessEnhancer.value?.release()
                 loudnessEnhancer.value = null
                 if (!nightModeEnabled) return
@@ -440,6 +458,8 @@ private fun PlayerContent(
         }
         onDispose {
             exoPlayer.removeListener(listener)
+            audioLevelMonitor.value?.release()
+            audioLevelMonitor.value = null
             loudnessEnhancer.value?.release()
             loudnessEnhancer.value = null
         }
@@ -469,7 +489,7 @@ private fun PlayerContent(
         audioLabel = audioOptions.getOrNull(index)?.label ?: ""
     }
 
-    LaunchedEffect(exoPlayer, nextEpisode, autoPlayCancelled, isLive, isSeriesLike, preferredAudioType) {
+    LaunchedEffect(exoPlayer, playerView, nextEpisode, autoPlayCancelled, isLive, isSeriesLike, preferredAudioType) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
@@ -509,8 +529,13 @@ private fun PlayerContent(
         }
 
         while (true) {
-            currentPosition = exoPlayer.currentPosition.coerceAtLeast(0L)
-            duration = exoPlayer.duration.coerceAtLeast(0L)
+            val position = exoPlayer.currentPosition.coerceAtLeast(0L)
+            val dur = exoPlayer.duration.coerceAtLeast(0L)
+            val luma = frameSampler.sample(playerView)
+            val audioDb = audioLevelMonitor.value?.levelDb?.value ?: 0f
+            onFrameSample(FrameSample(position, luma, audioDb), position, dur)
+            currentPosition = position
+            duration = dur
             onUpdatePosition(currentPosition, duration)
             val rem = if (duration > currentPosition) duration - currentPosition else 0L
             if (nextEpisode != null && !autoPlayCancelled && isSeriesLike && !isLive && !autoPlayTriggered && rem <= 0) {
@@ -605,14 +630,9 @@ private fun PlayerContent(
             }
     ) {
         AndroidView(
-            factory = { ctx ->
-                PlayerView(ctx).apply {
-                    player = exoPlayer
-                    useController = false
-                }
-            },
-            update = { playerView ->
-                playerView.subtitleView?.let { subtitleView ->
+            factory = { playerView },
+            update = { view ->
+                view.subtitleView?.let { subtitleView ->
                     subtitleView.visibility = if (isInPipMode) View.GONE else View.VISIBLE
                     subtitleView.setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, subtitleSize)
                     val foregroundColor = when (subtitleColor) {

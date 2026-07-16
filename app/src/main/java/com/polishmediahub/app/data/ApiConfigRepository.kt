@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -65,6 +66,13 @@ class ApiConfigRepository @Inject constructor(
         .map { it[KEY_USE_CLOUDFLARE_BYPASS] ?: false }
     val cloudflareWorkerUrl: Flow<String> = plainStringFlow(KEY_CLOUDFLARE_WORKER_URL)
     val cloudflareAuthToken: Flow<String> = stringFlow(KEY_CLOUDFLARE_AUTH_TOKEN)
+
+    val lastProfileSyncAt: Flow<Long> = longFlow(KEY_LAST_PROFILE_SYNC_AT)
+    val lastProfileSyncStatus: Flow<String> = plainStringFlow(KEY_LAST_PROFILE_SYNC_STATUS)
+    val lastProfileSyncError: Flow<String?> = nullableStringFlow(KEY_LAST_PROFILE_SYNC_ERROR)
+    val lastPluginUpdateAt: Flow<Long> = longFlow(KEY_LAST_PLUGIN_UPDATE_AT)
+    val pluginUpdateCount: Flow<Int> = context.apiConfigDataStore.data
+        .map { it[KEY_PLUGIN_UPDATE_COUNT] ?: 0 }
 
     suspend fun setTmdbApiKey(value: String) = edit(KEY_TMDB, value)
     suspend fun setAniListToken(value: String) = edit(KEY_ANILIST, value)
@@ -146,11 +154,49 @@ class ApiConfigRepository @Inject constructor(
         context.apiConfigDataStore.edit { it[key] = value }
     }
 
+    private suspend fun edit(key: Preferences.Key<Int>, value: Int) {
+        context.apiConfigDataStore.edit { it[key] = value }
+    }
+
+    private fun longFlow(key: Preferences.Key<Long>): Flow<Long> =
+        context.apiConfigDataStore.data.map { it[key] ?: 0L }
+
+    private fun nullableStringFlow(key: Preferences.Key<String>): Flow<String?> =
+        context.apiConfigDataStore.data.map { it[key] }
+
     suspend fun setHealthStatuses(value: String) = edit(KEY_HEALTH_STATUSES, value)
 
     suspend fun setUseCloudflareBypass(value: Boolean) = context.apiConfigDataStore.edit { it[KEY_USE_CLOUDFLARE_BYPASS] = value }
     suspend fun setCloudflareWorkerUrl(value: String) = edit(KEY_CLOUDFLARE_WORKER_URL, value)
     suspend fun setCloudflareAuthToken(value: String) = edit(KEY_CLOUDFLARE_AUTH_TOKEN, value)
+
+    suspend fun setLastProfileSync(timestamp: Long, status: String, error: String? = null) {
+        context.apiConfigDataStore.edit {
+            it[KEY_LAST_PROFILE_SYNC_AT] = timestamp
+            it[KEY_LAST_PROFILE_SYNC_STATUS] = status
+            if (error != null) {
+                it[KEY_LAST_PROFILE_SYNC_ERROR] = error
+            } else {
+                it.remove(KEY_LAST_PROFILE_SYNC_ERROR)
+            }
+        }
+    }
+
+    suspend fun setLastPluginUpdate(count: Int, timestamp: Long, error: String? = null) {
+        context.apiConfigDataStore.edit {
+            it[KEY_LAST_PLUGIN_UPDATE_AT] = timestamp
+            it[KEY_PLUGIN_UPDATE_COUNT] = count
+            if (error != null) {
+                it[KEY_PLUGIN_UPDATE_ERROR] = error
+            } else {
+                it.remove(KEY_PLUGIN_UPDATE_ERROR)
+            }
+        }
+    }
+
+    suspend fun clearPluginUpdateBadge() {
+        context.apiConfigDataStore.edit { it[KEY_PLUGIN_UPDATE_COUNT] = 0 }
+    }
 
     companion object {
         private val KEY_TMDB = stringPreferencesKey("tmdb_api_key")
@@ -190,6 +236,12 @@ class ApiConfigRepository @Inject constructor(
         private val KEY_LAST_TRAKT_SYNC_STATUS = stringPreferencesKey("last_trakt_sync_status")
         private val KEY_LAST_TRAKT_SYNC_ERROR = stringPreferencesKey("last_trakt_sync_error")
         private val KEY_HEALTH_STATUSES = stringPreferencesKey("health_statuses")
+        private val KEY_LAST_PROFILE_SYNC_AT = longPreferencesKey("last_profile_sync_at")
+        private val KEY_LAST_PROFILE_SYNC_STATUS = stringPreferencesKey("last_profile_sync_status")
+        private val KEY_LAST_PROFILE_SYNC_ERROR = stringPreferencesKey("last_profile_sync_error")
+        private val KEY_LAST_PLUGIN_UPDATE_AT = longPreferencesKey("last_plugin_update_at")
+        private val KEY_PLUGIN_UPDATE_COUNT = intPreferencesKey("plugin_update_count")
+        private val KEY_PLUGIN_UPDATE_ERROR = stringPreferencesKey("last_plugin_update_error")
         private val KEY_USE_CLOUDFLARE_BYPASS = booleanPreferencesKey("use_cloudflare_bypass")
         private val KEY_CLOUDFLARE_WORKER_URL = stringPreferencesKey("cloudflare_worker_url")
         private val KEY_CLOUDFLARE_AUTH_TOKEN = stringPreferencesKey("cloudflare_auth_token")

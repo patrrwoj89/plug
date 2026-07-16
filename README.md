@@ -45,6 +45,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **Nerd Stats Overlay**: optional real-time panel with resolution, fps, active codecs, current bitrate and dropped/jank frames.
 - **Rounded media and avatar clipping**: `MediaCard` and `WideCard` clip `AsyncImage` with `RoundedCornerShape(Radius.md)`; profile avatars in `Sidebar` and `CollapsedSidebarPill` use `ContentScale.Crop` and `fillMaxSize()` inside circular containers.
 - **Offline poster pre-fetch and Coil disk cache** (`HomePreFetchWorker`, `ImageLoaderFactory`, `TVCard`): a 12-hour `WorkManager` job pre-warms home poster and backdrop URLs into a 100 MB persistent Coil disk cache on unmetered Wi-Fi while the device is idle. Every `AsyncImage` uses explicit `ImageRequest` options with `diskCachePolicy(ENABLED)` and `memoryCachePolicy(ENABLED)`, so the home grid renders instantly even when offline.
+- **Home audio mini-player** (`AudioMiniPlayer`, `AudioMiniPlayerViewModel`, `AudioRepository`): slides up from the bottom of `HomeScreen` when an audio track (radio or podcast) is active, showing cover, title, artist and D-Pad Pause/Stop buttons; clicking the bar navigates to `PlayerScreen`. State is collected with `collectAsStateWithLifecycle()` (Zasada 4) and shared by `MusicViewModel` and `PlayerViewModel`.
 
 ### Player & media
 
@@ -63,6 +64,7 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **Smart Skip Intro/Outro** (`PlayerScreen`, `PlayerViewModel`): plugins can provide exact `introStartMs/introEndMs/outroStartMs/outroEndMs` timestamps in `MediaItem`; otherwise the player uses configurable default intro/outro durations. A D-Pad-focusable button slides in during the segment to skip the intro or trigger the Auto-Play Next overlay.
 - **LibVLC alternative player** (`UniversalVlcPlayer`): built-in `org.videolan.android:libvlc-all` engine that runs inside the app process. Toggle it in Settings / Admin panel to bypass ExoPlayer decoding issues with DTS/AC3 audio and MKV/AVI containers from torrents, Kodi and web plugins. It forwards `mediaItem.headers`, adds a default `User-Agent`, attaches external subtitles via `Media.addSlave` with `subtitleHeaders`, and polls `mediaPlayer.time` to keep Trakt scrobbling, Room history, Auto-Play Next and Smart Skip Intro/Outro working. It also mirrors the Polish audio/subtitle selection logic (prefer `pl`/`pol`, deprioritize Audio Description), applies subtitle size/color/vertical-offset settings through LibVLC options, and renders the Nerd Stats Overlay and Cinema Dimming Mode overlays over `VLCVideoLayout`.
 - **Stream headers**: `User-Agent`, `Referer`, `Cookie` and custom headers forwarded to `DefaultHttpDataSource.Factory` (ExoPlayer) or injected into `LibVLC` options (LibVLC engine).
+- **Black-frame intro/outro detection** (`BlackFrameDetector`, `FrameSampler`, `AudioLevelMonitor`): a unit-testable state machine that detects black (<0.05 luma) and quiet (<-40 dB) frame sequences longer than 1500 ms within the first 10% or last 15% of the video. ExoPlayer uses `PixelCopy`/`TextureView` sampling plus a `Visualizer` loudness monitor; LibVLC fallback reports full luma and 0 dB. Native resources are released in `DisposableEffect`/`release()` (Zasada 5). Explicit `MediaItem` intro/outro markers always take precedence.
 
 ### Network & anti-bot
 
@@ -83,6 +85,8 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **Smart Skip Intro/Outro settings**: toggle and default intro/outro durations can be set from `Settings` or the wireless admin panel.
 - **Cloudflare Edge Offloading settings**: toggle, Worker URL and masked auth token can be set from `Settings → Cloudflare Edge Offloading` or the wireless admin panel.
 - **First-launch onboarding** lets new users pick legal starter source packages, including an MDBList starter package in `legal_sources.json`.
+- **Cloud profile sync** (`CloudProfileSyncWorker`, `CloudProfileSyncClient`, `CloudProfileSyncRestore`, `cloudflare-resolver/index.ts`): the Worker zips `media.db` + `shm`/`wal` every 12 hours and on demand, uploads to `POST /api/sync-profiles` and downloads via `GET /api/sync-profiles`; `CloudProfileSyncRestore` applies the staged backup before Room opens on the next cold start. Worker auth uses `X-Hub-Token`; tokens are never logged in release builds (Zasada 6).
+- **Background plugin/source updater** (`PluginUpdateWorker`): checks plugin manifests and repository indexes every 24 hours when idle, clears the `plugins_dex` optimized cache when updates are found and exposes a red badge with the update count in `SettingsScreen` and the admin panel.
 
 ### Android TV integration
 
@@ -303,11 +307,14 @@ The project maintains a zero-lint-warning baseline:
 - `app/lint.xml` suppresses only pre-existing, informational dependency-version and icon-asset warnings.
 - All code warnings introduced by the audit were fixed (`ModifierParameter`, `PrivateResource`, `UseKtx`, `PluralsCandidate`, `FrequentlyChangingValue`, `SetJavaScriptEnabled`, `RedundantLabel`, `IntentFilterUniqueDataAttributes`, `DefaultUncaughtExceptionDelegation`, etc.).
 - Migrated deprecated Haze `hazeChild` calls to `hazeEffect` to keep the build warning-free.
+- `FrameSampler` uses the KTX `createBitmap` extension and guards `PixelCopy` with `@RequiresApi(24)` while the LibVLC path reports neutral samples.
+- `SettingsScreen` locale-aware date formatting uses `LocalLocale.current.platformLocale` to avoid `NonObservableLocale` lint warnings.
 - Silent empty `catch` blocks in critical paths now log warnings via `Log.w(...)`.
 
 ## Testing
 
-- Unit tests: `./gradlew :app:testDebugUnitTest`
+- Unit tests: `./gradlew :app:testDebugUnitTest` — includes `BlackFrameDetectorTest`, `CloudProfileSyncWorkerTest` (MockK), `SandboxEngineTest`, `HomePreFetchWorkerTest`, `TvLauncherManagerTest`, `CrashReportSanitizerTest`, `WebMediaSourceTest` and others.
+- Instrumented Room migration tests: `./gradlew :app:connectedDebugAndroidTest` — includes `ProfileSyncMigrationTest` verifying profile and watch-history data survive database restore/reopen.
 - Paparazzi snapshot tests / record: `./gradlew :app:recordPaparazziDebug`
 - Lint: `./gradlew :app:lintDebug`
 - Instrumented UI / D-Pad tests: `./gradlew :app:connectedDebugAndroidTest`
