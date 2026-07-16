@@ -42,6 +42,7 @@ data class LegalSources(
     val webSources: List<WebSourceConfig> = emptyList(),
     @SerialName("mdbList") val mdbList: MdbListStarter? = null,
     @SerialName("kitsu") val kitsu: SourceEntry? = null,
+    @SerialName("aniyomiRepo") val aniyomiRepo: SourceEntry? = null,
     val polish: PolishSources? = null
 )
 

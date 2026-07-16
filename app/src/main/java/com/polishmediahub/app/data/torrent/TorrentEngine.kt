@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
+import java.net.URLEncoder
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -100,6 +101,7 @@ class TorrentEngine @Inject constructor(
     fun addTorrent(torrentBytes: ByteArray): String {
         start()
         val info = TorrentInfo(torrentBytes)
+        DEFAULT_TRACKERS.forEach { info.addTracker(it) }
         session.download(info, saveDir)
         val hash = info.infoHashV1().toString()
         // Try to find handle immediately, fallback to alert
@@ -109,8 +111,18 @@ class TorrentEngine @Inject constructor(
 
     fun addMagnet(magnetUri: String, timeoutSeconds: Int = 30): String? {
         start()
-        val bytes = session.fetchMagnet(magnetUri, timeoutSeconds, saveDir) ?: return null
+        val magnetWithTrackers = appendTrackersToMagnet(magnetUri)
+        val bytes = session.fetchMagnet(magnetWithTrackers, timeoutSeconds, saveDir) ?: return null
         return addTorrent(bytes)
+    }
+
+    private fun appendTrackersToMagnet(magnetUri: String): String {
+        if (!magnetUri.startsWith("magnet:", ignoreCase = true)) return magnetUri
+        val builder = StringBuilder(magnetUri)
+        DEFAULT_TRACKERS.forEach { tracker ->
+            builder.append("&tr=").append(URLEncoder.encode(tracker, "UTF-8"))
+        }
+        return builder.toString()
     }
 
     fun findHandle(infoHash: String): TorrentHandle? = handles[infoHash]
@@ -247,6 +259,21 @@ class TorrentEngine @Inject constructor(
 
     companion object {
         const val bufferPiecesCount = 50
+
+        /**
+         * Active Polish and global BitTorrent announce endpoints added to every
+         * torrent/magnet as of 2026-07-14. Verified with curl reachability
+         * (electro-torrent.pl and devil-torrents.pl redirect to HTTPS;
+         * opentrackr/stealth.si/coppersurfer/leechers-paradise are public trackers).
+         */
+        private val DEFAULT_TRACKERS = listOf(
+            "http://electro-torrent.pl",
+            "http://devil-torrents.pl",
+            "udp://tracker.opentrackr.org:1337/announce",
+            "udp://open.stealth.si:80/announce",
+            "udp://tracker.coppersurfer.tk:6969/announce",
+            "udp://tracker.leechers-paradise.org:6969/announce"
+        )
 
         fun pieceForByte(fileInfo: TorrentFileInfo, bytePos: Long): Int {
             return ((fileInfo.offset + bytePos) / fileInfo.pieceLength).toInt()

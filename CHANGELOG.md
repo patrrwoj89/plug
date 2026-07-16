@@ -6,6 +6,23 @@ All notable changes to Polish Media Hub are documented in this file.
 
 ### Added
 
+#### P2P, anime and Kodi ecosystem hardening
+- **Torrent tracker seeding** (`TorrentEngine.kt`)
+  - `addTorrent()` and `addMagnet()` now inject a global list of verified Polish and public trackers (`electro-torrent.pl`, `devil-torrents.pl`, `tracker.opentrackr.org`, `open.stealth.si`, `tracker.coppersurfer.tk`, `tracker.leechers-paradise.org`) into every libtorrent download.
+- **Docchi anime source** (`DocchiMediaSource.kt`, `AnimeRepository`, `MediaSourceModule`)
+  - New `MediaSource` backed by the official `https://api.docchi.pl/v1` API.
+  - Implements `featured`, `categories`, `search`, `byId` and `resolve`/`resolveItem`, mapping Polish anime metadata and episode player links to `MediaItem`.
+  - Wired as the primary source in `AnimeRepository`, with AniList and Kitsu as fallbacks.
+- **Polish Aniyomi repository integration** (`PluginRepository.kt`, `LegalSourcesRepository.kt`, `legal_sources.json`)
+  - Default Aniyomi extension index from `https://raw.githubusercontent.com/yuzono/anime-repo/repo` is fetched automatically during `syncIndexes()`.
+  - `AniyomiExtension` now parses `sources` and computes an absolute APK URL and a best-guess `mainClass` for `DynamicPluginLoader` / `DexClassLoader`.
+  - Added `installAniyomiExtension()` helper that persists an Aniyomi APK as an `aniyomi_apk` plugin manifest.
+- **Kodi FanFilm TorBox bridging** (`AdminHttpServer.kt`)
+  - `pushAddonSettingsIfKodiConfigured` now pushes `torbox_token` and `torbox_apikey` when `debridProvider` is `torbox`, and prefers `traktAccessToken` for `trakt_token` when available.
+- **Unit-test coverage** (`DocchiMediaSourceTest`, `AniyomiRepoParserTest`)
+  - Added MockK/MockWebServer tests verifying Docchi mapping and Aniyomi index parsing, including network-timeout handling.
+  - Removed stale `ExampleUnitTest.kt` (was already absent).
+
 #### Bundled QuickJS scraper plugins and engine improvements
 - Added `plugins/` directory with 7 PMH-compatible QuickJS scrapers (filman.cc, ekino-tv.pl, zaluknij.cc, desu-online.pl, animezone.pl, ogladajanime.pl, naszeanime.pl).
 - `plugins/manifest.json` contains a `PluginManifest` with all sources and embedded `config.script`.

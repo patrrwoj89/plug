@@ -32,6 +32,7 @@ sealed class InstallablePlugin {
         override val fileSize: Long? = null,
         val pkg: String = "",
         val lang: String = "en",
-        val nsfw: Boolean = false
+        val nsfw: Boolean = false,
+        val mainClass: String = ""
     ) : InstallablePlugin()
 }

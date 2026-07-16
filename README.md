@@ -13,13 +13,14 @@ The app is **personal-use only** and does **not** ship any pre-bundled pirated c
 - **TV-first UI** built with Jetpack Compose Foundation and Material3, D-Pad focus handling, scale/glow outlines and the **Modern Sidebar**.
 - **Federated media sources** aggregated through `FederatedMediaRepository` and `SourceRegistry`:
   - **Kodi** JSON-RPC integration with DRM stream support, plugin directory browsing (`Files.GetDirectory`), automatic LAN discovery (`KodiDiscoveryManager`) and remote setting updates (`Settings.SetSettingValue`).
-  - **Cloudstream** plugin-style repositories and **Aniyomi** `.apk` extensions loaded dynamically via `DexClassLoader`.
+  - **Cloudstream** plugin-style repositories and **Aniyomi** `.apk` extensions loaded dynamically via `DexClassLoader`. The default Polish Aniyomi index (`yuzono/anime-repo`) is fetched automatically from `legal_sources.json`.
   - **QuickJS plugins** (`.js`) with built-in `httpFetch` network bridge, headers and async evaluation.
   - **Web scraping** configuration via JSON with validation and dynamic fallback to QuickJS.
   - **Cloudflare Edge Offloading Engine** (`cloudflare-resolver/`): an optional TypeScript/Wrangler Worker (`https://*.workers.dev/resolve`) handles heavy web stream extraction (P.A.C.K.E.R unpacking, CDA decoding, media-regex extraction) in the cloud. `WebMediaSource.resolve()` calls the Worker first when enabled and transparently falls back to the local Kotlin resolver on network errors, 5xx or 403. Returned stream headers are merged into `MediaItem.headers`.
   - **IPTV/M3U** with XMLTV EPG support, local Room cache, background refresh by `IptvUpdateWorker` and a professional **EPG Timeline Grid**.
   - **Jellyfin, Plex, Emby, Subsonic/Airsonic, Stremio, AniList, TMDB, Trakt, MDBList, podcasts (RSS)**, internet radio and Deezer proxy.
   - **MDBList integration** (`MdbListMediaSource`): public top lists, user lists, media search and cross-ID lookup by imdb/tmdb/trakt/tvdb; every item carries `tmdbId`, `imdbId` and `traktId` for matching with other sources.
+  - **Docchi Polish anime** (`DocchiMediaSource`, `AnimeRepository`): primary anime source for Polish releases and episode players from the official `https://api.docchi.pl/v1` API; falls back to AniList and Kitsu when Docchi is unreachable.
   - **Kitsu anime fallback** (`KitsuMediaSource`, `AnimeRepository`): when AniList GraphQL fails (network, timeout, 429), the app silently falls back to Kitsu JSON:API. Cross-linked `malId` and `aniListId` are parsed from `include=mappings` to keep stream resolver compatibility.
   - **Filmweb.pl metadata fallback** (`FilmwebMediaSource`, `FederatedMediaRepository`): when a TMDB detail page has no description, a short description or no Polish diacritics, the app fetches the Polish title, plot, poster and community rating from the public Filmweb API (`www.filmweb.pl/api/v1`). Results are cached in Room v14 so the detail screen opens instantly on future visits, and a `Filmweb: X.X` label is shown next to the TMDB rating.
 - **BitTorrent streaming** via `jlibtorrent` with sequential download, local HTTP proxy and buffering UI.
@@ -262,6 +263,7 @@ The TV Guide screen (`EpgScreen` / `EpgViewModel`) renders a professional two-di
 
 - Sequential download flag enabled for the selected video file.
 - First pieces prioritized with deadlines for fast ExoPlayer startup.
+- A default tracker list (Polish and public: `electro-torrent.pl`, `devil-torrents.pl`, `tracker.opentrackr.org`, `open.stealth.si`, `tracker.coppersurfer.tk`, `tracker.leechers-paradise.org`) is seeded into every added `.torrent` and `magnet:` URI to accelerate discovery of Polish releases.
 - A local `TorrentHttpServer` proxy with `Range: bytes=` support.
 - `TorrentInputStream` that blocks until requested pieces are available.
 - `TorrentMediaSource.resolve()` returns `http://127.0.0.1:<port>/stream?infoHash=...&file=...` for ExoPlayer.
@@ -286,7 +288,7 @@ This repository ships bundled Polish scrapers in `plugins/`:
 
 Cloudstream (`.cs3` / `.cs4`) and Aniyomi (`.apk`) plugins can be loaded without an Android system installer:
 
-- `PluginRepository` fetches the binary to `context.cacheDir/plugins/`.
+- `PluginRepository` fetches the binary to `context.cacheDir/plugins/` and parses the default Aniyomi extension index from `legal_sources.json`.
 - `DynamicPluginLoader` creates an optimized DEX output directory under `codeCacheDir/plugins_dex` and instantiates `DexClassLoader` with the app class loader as parent.
 - Loaded classes are adapted through `ReflectiveMediaSource` to the app's `MediaSource` contract.
 - Plugin results feed `PluginMediaSource` and appear in Search, Home and the federated dashboard.
@@ -332,7 +334,8 @@ The project maintains a zero-lint-warning baseline:
 
 ## Testing
 
-- Unit tests: `./gradlew :app:testDebugUnitTest` — includes `BlackFrameDetectorTest`, `CloudProfileSyncWorkerTest` (MockK), `SandboxEngineTest`, `HomePreFetchWorkerTest`, `TvLauncherManagerTest`, `CrashReportSanitizerTest`, `WebMediaSourceTest` and others.
+- QuickJS plugin smoke tests: `npm install && npm run build && npm test` in `plugins/` (or from the project root).
+- Unit tests: `./gradlew clean test :app:compileDebugKotlin :app:lintDebug` — includes `BlackFrameDetectorTest`, `CloudProfileSyncWorkerTest` (MockK), `SandboxEngineTest`, `HomePreFetchWorkerTest`, `TvLauncherManagerTest`, `CrashReportSanitizerTest`, `WebMediaSourceTest`, `DocchiMediaSourceTest` and `AniyomiRepoParserTest`.
 - Instrumented Room migration tests: `./gradlew :app:connectedDebugAndroidTest` — includes `ProfileSyncMigrationTest` verifying profile and watch-history data survive database restore/reopen.
 - Paparazzi snapshot tests / record: `./gradlew :app:recordPaparazziDebug`
 - Lint: `./gradlew :app:lintDebug`

@@ -68,14 +68,18 @@ MDBList (https://mdblist.com) is a metadata aggregation service that lets users 
 | MDBList | https://mdblist.com | User-generated public lists; API key required |
 | MDBList public list example | `https://api.mdblist.com/lists/top?apikey=<your_key>` | Top public lists |
 
-## Kitsu anime metadata
+## Anime metadata and community sources
 
-Kitsu (https://kitsu.io) is a free, public JSON:API for anime and manga metadata. The app uses `https://kitsu.io/api/edge` as a reactive fallback when AniList is unavailable, with `include=mappings` to preserve cross-links to MyAnimeList and AniList IDs. No API key is required.
+- **Docchi** (`https://docchi.pl`) — official public API for Polish anime releases and episode players (`https://api.docchi.pl/v1`). Used as the primary anime source; no API key required.
+- **Kitsu** (`https://kitsu.io`) — free, public JSON:API for anime and manga metadata. The app uses `https://kitsu.io/api/edge` as a reactive fallback when AniList is unavailable, with `include=mappings` to preserve cross-links to MyAnimeList and AniList IDs. No API key is required.
+- **Aniyomi extension index** (`yuzono/anime-repo`) — community-curated open-source Aniyomi `.apk` index referenced in `legal_sources.json` under `aniyomiRepo`. APKs are loaded dynamically via `DexClassLoader`; users remain responsible for the legality of the extensions they enable.
 
 | Source | URL | Notes |
 |--------|-----|-------|
+| Docchi API | `https://api.docchi.pl/v1` | Polish anime metadata and episode players; free, no key |
 | Kitsu API | https://kitsu.io/api/edge | Public anime/manga metadata; free, no key |
 | Kitsu mappings endpoint | `https://kitsu.io/api/edge/anime/{id}/mappings` | External ID mapping records |
+| Aniyomi repo (default) | `https://raw.githubusercontent.com/yuzono/anime-repo/repo/index.min.json` | Community extension index; verify each extension before use |
 
 ## Music / Audio / Podcasts
 
@@ -139,6 +143,7 @@ The app ships `app/src/main/assets/legal_sources.json` with curated, no-rights-r
 - **Free Internet TV** — public IPTV M3U playlists and an XMLTV EPG URL.
 - **Music & Podcasts** — sample podcast RSS feeds and a placeholder `deezerProxyUrl`.
 - **Public Web Catalogs** — official Stremio add-ons (YouTube, TED) and an empty `webSources` list for user-defined crawlers.
+- **Anime** — `kitsu` API metadata and the default `aniyomiRepo` index for dynamically loadable community extensions.
 - **MDBList** — a starter public list entry plus the official API-key URL so users can generate their own key.
 
 These sample sources are intended only as a starting point; you are responsible for verifying that each source is legal in your region.

@@ -86,6 +86,11 @@
     "url": "https://kitsu.io/api/edge",
     "license": "free public API, CC-BY-NC-SA community data"
   },
+  "aniyomiRepo": {
+    "name": "Aniyomi Anime Extensions Repository (yuzono/anime-repo)",
+    "url": "https://raw.githubusercontent.com/yuzono/anime-repo/repo",
+    "license": "open-source extensions index"
+  },
   "webSources": [],
   "polish": {
     "note": "Polish audio tracks and subtitles are selected automatically when available. Polish legal sources include TVP Info, Ninateka and Player.pl (subscription). Web crawlers should be configured in legal_sources.json or in the Admin panel. Starter URLs in this file were verified against current public sources as of 2026-07-15; live stream availability changes frequently and should be verified locally."

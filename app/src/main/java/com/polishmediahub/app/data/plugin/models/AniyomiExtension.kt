@@ -11,5 +11,14 @@ data class AniyomiExtension(
     val lang: String = "en",
     val code: Long = 0,
     val version: String = "",
-    val nsfw: Boolean = false
+    val nsfw: Int = 0,
+    val sources: List<AniyomiExtensionSource> = emptyList()
+)
+
+@Serializable
+data class AniyomiExtensionSource(
+    val name: String,
+    val lang: String = "",
+    val id: String = "",
+    @SerialName("baseUrl") val baseUrl: String = ""
 )

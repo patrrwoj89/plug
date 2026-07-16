@@ -211,21 +211,31 @@ Repozytoria Cloudstream mają punkt wejścia `repo.json` wskazujący na `plugins
 ]
 ```
 
-Repozytoria Aniyomi to pliki `index.min.json`:
+Repozytoria Aniyomi to pliki `index.min.json`. Aplikacja dostarcza też domyślny polski URL repozytorium Aniyomi w `legal_sources.json` (`aniyomiRepo`) i ładuje go automatycznie:
 
 ```json
 [
   {
-    "name": "Example Extension",
+    "name": "Aniyomi: Example",
     "pkg": "eu.example.extension",
-    "apk": "https://example.com/extension.apk",
+    "apk": "extension.apk",
     "lang": "pl",
     "code": 1,
     "version": "1.0.0",
-    "nsfw": 0
+    "nsfw": 0,
+    "sources": [
+      {
+        "name": "ExampleSource",
+        "lang": "pl",
+        "id": "1234567890123456789",
+        "baseUrl": "https://example.com"
+      }
+    ]
   }
 ]
 ```
+
+`PluginRepository` rozwiązuje względne nazwy `apk` względem bazy URL repozytorium i wyprowadza najlepszy `mainClass` (`{pkg}.{SourceName}`) dla `DexClassLoader`.
 
 ### Ładowanie i adaptacja
 
